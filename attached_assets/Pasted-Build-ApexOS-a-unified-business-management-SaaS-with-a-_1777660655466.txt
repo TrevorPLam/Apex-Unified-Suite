@@ -1,0 +1,107 @@
+Build "ApexOS," a unified business management SaaS with a futuristic, developer‑tool aesthetic (Supabase/Neon inspired). The interface must use a single‑page‑per‑domain pattern: a global sidebar switches between domains; within each domain, a minimal horizontal tab bar (3–5 tabs) subdivides the workspace, and detail views open as glassmorphism slide‑out panels from the right. All content is placeholder. Core design system: #0B0C0E backgrounds, #005BB5 electric blue accent, Inter/Space Grotesk typography, glassmorphism cards, Framer Motion transitions.
+
+### Global Shell
+- **Left Sidebar (collapsible, icons + labels)**: Dashboard, CRM, Projects, Documents, Finance, Assets, Portal, Analytics, Settings
+- **Top Bar**: Breadcrumbs, ⌘K command palette, notification bell, user avatar
+- **Domain Header**: Module title, horizontal tab bar (electric blue underline on active), and a contextual “+ New” button
+
+### 1. Dashboard (`/dashboard`)
+- Single page, no tabs.
+- **Bento grid**: Metric cards (revenue, projects, leads), activity timeline, quick actions (create lead/project/invoice/document), upcoming deadlines table, notifications grouped by category.
+- No sub‑pages.
+
+### 2. CRM (`/crm`)
+*Covers: ActiveCampaign Leads, Contacts, Companies, Deals, Email, Web Visitors, Forms/Proposals/Contracts, Renewals*
+
+- **Tabs**: Leads, Contacts, Deals, Email, Templates
+- **Leads**: Kanban board (stages: New, Contacted, Qualified). Cards show name, company, source, value. Slide‑out panel on click shows activity, associated deals, option to convert to contact/deal.
+- **Contacts**: Sortable table. Click opens a slide‑out 360° profile with tabs: Overview, Activity Timeline, Deals, Documents, Tasks. Quick filters (My Contacts, Uncontacted, Hot Leads). Bulk actions.
+- **Deals**: Kanban pipeline (Prospecting → Closed Won/Lost). “Generate Proposal” button creates a placeholder in Documents. Deal detail slide‑out shows linked contacts, documents, activity.
+- **Email**: Unified inbox simulation. Compose modal with template selector (Intro, Follow‑up). Email threads link to contacts/deals. A separate “Web Visitors” sub‑tab is not needed; visitor tracking can appear as a widget in the Dashboard or a filter in Leads.
+- **Templates**: Grid of email/proposal/contract templates. Edit modal. “Send for Signature” triggers the document workflow.
+- **Renewals & Forms**: Accessible via a “Renewals” filter in Deals, or as a tab “Engagements” (combines proposals, contracts, renewals) to reduce tabs. I’ll collapse under a single “Engagements” tab showing a table of all proposals/contracts/renewals with status and action buttons.
+
+Final CRM tabs: **Leads, Contacts, Deals, Email, Engagements**
+
+### 3. Project Management (`/projects`)
+*Covers: Karbon My Week, Kanban, Project Detail, Templates, Scheduler, Queues*
+
+- **Tabs**: My Week, Board, Projects, Templates, Scheduler
+- **My Week**: Buckets (Focus, This Week, Later) with draggable work cards. Inline mini‑calendar.
+- **Board**: Kanban with drag‑and‑drop; multi‑view toggle (List, Timeline). Queue items appear in a dedicated “Queue” lane (FIFO icon) within the Board—no separate sub‑page needed.
+- **Projects**: Table of all projects. Clicking opens a full‑page detail (with subtabs: Tasks, Timeline, Time & Budget, Details) — this is a drill‑down, still within the module’s routing.
+- **Templates**: Grid, opens template builder with automator rule chains. Visual builder with task list and triggers.
+- **Scheduler**: Table of recurring work; create modal with frequency and template selection.
+- **Practice Intelligence**: Not a tab—all charts and metrics consolidated in the global Analytics module.
+
+Final PM tabs: **My Week, Board, Projects, Templates, Scheduler**
+
+### 4. Document Management (`/documents`)
+*Covers: ShareFile Repository, Projects, Workflows, E‑Signatures, Inbox, Client Hub, PDF Tools, Scanning/OCR*
+
+- **Tabs**: Repository, E‑Sign, Workflows, Inbox
+- **Repository**: Left folder tree (Cabinets > Folders), right file list with bulk rename. File preview modal with version history. Toolbar buttons: Scan (simulates OCR), Merge/Split PDF, Create Fillable Form. Upload via drag‑and‑drop zone.
+- **E‑Sign**: Table of signature requests with status (Sent, Viewed, Signed). “New Request” flow: select doc → add signers → set order → send. Templates for reusable signature documents.
+- **Workflows**: Central place to monitor document request lists, feedback/approval tasks, and the accelerated agreements process. Clicking an item opens a detail panel showing due dates, approvers, progress.
+- **Inbox**: Feed of shared files, signature invites, workflow requests. Quick accept/decline actions.
+- **Client Hub**: Not a separate tab; accessible as a filtered view (by client) within Repository, or a “Client” button in the top bar that opens a drawer showing that client’s files/requests.
+
+Final Doc tabs: **Repository, E‑Sign, Workflows, Inbox**
+
+### 5. Finance (`/finance`)
+*Covers: Bill.com AP, AR, Spend & Expense*
+
+- **Secondary Navigation**: A product‑switcher style toggle at the top: AP | AR | Spend
+- **AP**: Scrollable sections: **Invoice Capture** (forward email simulation + AI extraction card), **Approvals** (list with approve/deny swipe buttons), **Payments** (run batch), **Vendors** (table with network connection). +New Bill button.
+- **AR**: Invoices list with status badges, customer payment portal preview, payment tracking table, recurring invoice settings.
+- **Spend**: Corporate card management interface (virtual/physical), receipt capture, budget vs. actual meters.
+- No separate dashboards per area; KPIs are inline in each section or visible via global Analytics.
+
+Final Finance layout: toggle‑based, single page with contextual sections.
+
+### 6. Asset Management (`/assets`)
+*Covers: AssetTiger Inventory, Check‑Out/In, Maintenance, Depreciation*
+
+- **Tabs**: Inventory, Check‑Out, Maintenance, Depreciation
+- **Inventory**: Table with barcode scan button. Asset detail slide‑out with Overview, History, Maintenance, Docs, Audit Log.
+- **Check‑Out**: Flow panel: select asset → select person (from CRM) → set return date. Active check‑outs list below.
+- **Maintenance**: Calendar + list view; configuration for email alerts.
+- **Depreciation**: Straight‑line schedule table and line chart.
+
+Final Asset tabs: **Inventory, Check‑Out, Maintenance, Depreciation**
+
+### 7. Client Portal (`/portal`)
+*Covers: ShareFile Client Hub, Karbon Client Portal*
+
+- **Tabs**: Management, Preview
+- **Management**: Client table with toggles. Click client opens slide‑out content manager: tabs for Documents, Tasks, Invoices, Messages. Branding config panel.
+- **Preview**: Simulated client‑side interface with a clean, branded dashboard.
+
+### 8. Analytics (`/analytics`)
+*Covers: ActiveCampaign Reports, Karbon Practice Intelligence, Bill.com insights*
+
+- **Single page with vertical sub‑sidebar** (or dropdown) to switch between report categories: Overview, CRM, Projects, Finance, Assets, Custom.
+- **Overview**: Cross‑module KPI bento grid.
+- **Category views**: Relevant charts and tables (e.g., CRM → Deals Funnel, Lead Conversion; Finance → AR Aging, Cash Flow; Projects → Team Utilization).
+- **Custom**: Report builder (select fields, filters, chart type) and saved reports list.
+
+### 9. Settings (`/settings`)
+*Inspired by Supabase project settings*
+
+- **Vertical sub‑sidebar**: General, Users & Permissions, Email & Notifications, Integrations, Audit Log, Billing, API & Webhooks.
+- Each item loads a form or table in the main content area.
+
+---
+
+## 🔧 Interaction & Design Consistency
+- **Slide‑out panels**: Glassmorphism, 400px width, animated from right, overlay backdrop. Contain edit forms, detail views, or compose interfaces.
+- **Hover/glow**: All interactive elements (buttons, cards, table rows) get an `#005BB5` edge glow on hover.
+- **Empty states**: Low‑opacity geometric patterns with helpful prompts.
+- **Toasts**: `react‑hot-toast` for confirmations, dark theme.
+- **Page transitions**: `AnimatePresence` fade+slide‑up (200ms).
+- **Drag‑and‑drop**: Used in Kanban, My Week, template builder.
+
+## Mock Data
+All placeholder, stored in a `data/` module. Use realistic names, dynamic dates, and status variations.
+
+The outcome must be a fully navigable, stunning, and production‑ready UI that showcases the depth of an all‑in‑one platform without unnecessary page clutter.
