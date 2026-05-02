@@ -9,7 +9,8 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "consolidate-skills": "node scripts/consolidate-skills.cjs"
+    "consolidate-skills": "node scripts/consolidate-skills.cjs",
+    "consolidate-docs": "node scripts/consolidate-docs.cjs"
   },
   "private": true,
   "devDependencies": {
