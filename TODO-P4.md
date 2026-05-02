@@ -1,3 +1,15 @@
+This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
+
+Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
+
+Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
+
+Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
+
+Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
+
+Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
+
 Now applying all corrections to **Phase 4 – API Business Logic: Documents, Assets, Portal, Analytics & Settings**. This phase completes the API surface for the remaining bounded contexts. It introduces the file storage adapter (Cloudflare R2) and portal authentication with magic-link hashing. Every endpoint follows the established patterns: contract‑first, test‑first, service‑as‑deep‑module, soft delete where applicable, Either error handling, and domain event emission. Portal content permissions are enforced at the service layer, ensuring that client‑side queries respect access controls.
 
 Key improvements integrated:

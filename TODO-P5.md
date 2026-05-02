@@ -1,3 +1,15 @@
+This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
+
+Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
+
+Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
+
+Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
+
+Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
+
+Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
+
 Now producing **Phase 5 – Frontend Data Integration, E2E Tests & Contracts**, fully updated per all corrections. This phase replaces mock data with API‑driven React Query hooks, builds the missing auth pages and route guards, adds error boundaries and loading skeletons, and wires every interactive element to live mutations. It also establishes Playwright end‑to‑end tests and consumer‑driven contracts.
 
 Key improvements applied:

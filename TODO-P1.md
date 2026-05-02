@@ -1,3 +1,15 @@
+This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
+
+Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
+
+Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
+
+Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
+
+Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
+
+Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
+
 Now applying all corrections to **Phase 1 – Identity & Access**. Because identity database tasks have been moved to Phase 2 (to follow the Organization table), this phase focuses entirely on the authentication API layer—OpenAPI spec, services, middleware, and front‑end auth wiring—using test doubles where necessary. The integration tests will be written now but remain **red** until the identity schema is created in Phase 2 and the test infrastructure (TEST‑INFRA‑001) is in place.
 
 Key changes:
