@@ -1,6 +1,6 @@
 ---
 name: api-business-endpoints
-description: Implement CRUD operations for all 8 business modules (CRM, Projects, Finance, etc.) with type safety
+description: Implement CRUD operations for all 8 business modules with 2026 API standards and OpenAPI-first development
 ---
 
 # API Business Endpoints Development

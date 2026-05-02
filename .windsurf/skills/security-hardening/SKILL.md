@@ -1,6 +1,6 @@
 ---
 name: security-hardening
-description: Implement security headers, rate limiting, input validation, and audit logging
+description: Implement 2026 security best practices including headers, rate limiting, OWASP ZAP integration, and audit logging
 ---
 
 # Security Hardening Implementation

@@ -1,6 +1,6 @@
 ---
 name: authentication-implementation
-description: Complete JWT-based authentication system with RBAC for Apex Unified Suite (no auth exists)
+description: Complete JWT-based authentication system with RBAC for Apex Unified Suite using 2026 best practices (refresh tokens, rate limiting, minimal payloads)
 ---
 
 # Authentication System Implementation
@@ -96,6 +96,7 @@ export class AuthService {
   }
 
   generateTokens(payload: JWTPayload): AuthTokens {
+    // 2026 Best Practice: Minimal, non-sensitive JWT payloads
     const accessToken = jwt.sign(payload, this.jwtSecret, {
       expiresIn: this.accessTokenExpiry,
     });

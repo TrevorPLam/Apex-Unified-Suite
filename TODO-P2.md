@@ -37,6 +37,45 @@ Key changes applied:
 
 ---
 
+## Test Infrastructure (Moved from Phase 1)
+
+### TEST‑INFRA‑001: Test Infrastructure Setup
+**Status:** ⏳ Not Started  
+**Current state:** No test infrastructure exists – integration tests cannot be written or executed.  
+**Definition of Done:**  
+- Test database setup with separate database for testing (`TEST_DATABASE_URL`)  
+- Test server harness in `artifacts/api-server/__tests__/utils/test-server.ts`  
+- Database seeding utilities for test data  
+- Global test hooks in `vitest.config.ts` for database setup/teardown  
+- Test utilities for authentication token generation  
+- Example integration test structure demonstrating the pattern  
+
+**Anti-Patterns:** Using production database for tests; leaking test data; no cleanup between tests.  
+**Related Files:** `vitest.config.ts`, `__tests__/utils/test-server.ts`, `__tests__/utils/test-db.ts`
+
+**DDD:** N/A – testing infrastructure.  
+**TDD:** This infrastructure enables all subsequent TDD work.  
+**BDD:** Provides the foundation for executable BDD scenarios.  
+**Deep Module:** N/A – infrastructure utilities.
+
+### Subtasks:
+- [ ] TEST‑INFRA‑001.1: Configure Vitest for integration testing with database setup. (AGENT) – `vitest.config.ts`  
+  **verification:** `pnpm vitest --version` works; test configuration loads.
+- [ ] TEST‑INFRA‑001.2: Create test database utilities (setup, teardown, migration). (AGENT) – `__tests__/utils/test-db.ts`  
+  **verification:** Test database can be created and migrated.
+- [ ] TEST‑INFRA‑001.3: Implement test server harness with Express app and database connection. (AGENT) – `__tests__/utils/test-server.ts`  
+  **verification:** Test server starts and stops cleanly.
+- [ ] TEST‑INFRA‑001.4: Create authentication test utilities (token generation, headers). (AGENT) – `__tests__/utils/auth-helpers.ts`  
+  **verification:** Can generate valid JWT tokens for testing.
+- [ ] TEST‑INFRA‑001.5: Write example integration test demonstrating the full pattern (setup → request → cleanup). (AGENT) – `__tests__/api/example.integration.test.ts`  
+  **verification:** Example test runs and passes against health endpoint.
+- [ ] TEST‑INFRA‑001.6: Add global test hooks for database cleanup between tests. (AGENT)  
+  **verification:** Multiple tests run without data interference.
+- **Depends on:** DEP-001 (vitest), DB‑ORG‑001 (organizations table as foundation).
+- **Blocks:** All integration test writing in Phase 3 and beyond.
+
+---
+
 ## Organizations Context (Multi‑Tenancy Anchor)
 
 ### DB‑ORG‑001: Define Organizations Table
@@ -219,6 +258,20 @@ Zod schemas generated.
 - GIN index on `cancellation_policy`.  
 - Soft delete: `deleted_at`.  
 
+### DB‑APPT‑004: Add Client Foreign Key to Appointments
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑APPT‑001, DB‑CRM‑002  
+**Definition of Done:** Migration adds `client_id` foreign key constraint to appointments table pointing to contacts.id.  
+**Reason:** The initial appointments table was created with nullable `client_id` before contacts table existed. This migration enforces the relationship after both tables exist.  
+**Related Files:** `lib/db/migrations/xxxx_add_client_fk_to_appointments.sql`
+
+**Subtasks:**
+- [ ] DB‑APPT‑004.1: Create migration to add foreign key constraint. (AGENT)  
+  **verification:** `drizzle-kit generate` produces migration with ALTER TABLE ADD CONSTRAINT.
+- [ ] DB‑APPT‑004.2: Test migration on fresh database. (AGENT)  
+  **verification:** Migration applies successfully; foreign key enforced.
+- **Depends on:** DB‑APPT‑001, DB‑CRM-002.
+
 ---
 
 ## CRM Context
@@ -233,7 +286,7 @@ Zod schemas.
 
 ### DB‑CRM‑002: Contacts – with indexes
 ### DB‑CRM‑003: Companies – with GIN on settings and index on domain.
-### DB‑CRM‑004: Deals – with stage enum and index.
+### DB‑CRM‑004: Deals – with stage enum, index, and optimistic locking version.
 ### DB‑CRM‑005: Activities – append‑only, no soft delete, index on `(entity_type, entity_id)`.
 
 *(I will detail each with subtasks and verification, but keep them concise to avoid excessive length, while ensuring they all include the required columns, indexes, and verification commands.)*
@@ -439,6 +492,7 @@ Zod schemas.
 **Subtasks:** test + implement.
 
 **Depends on:** DB‑ORG‑001, DB‑IDENTITY‑001 (users FK).  
+**Blocks:** DB‑APPT‑004 (client FK enforcement).  
 *(contacts FK will be added in a follow‑up migration after DB‑CRM‑002.)*
 
 ---
@@ -453,7 +507,7 @@ Columns: `id`, `organization_id`, `service_provider_id`, `start_time`, `end_time
 
 ### DB‑APPT‑003: Define Booking Rules Table
 **Status:** ⏳ Not Started  
-`lib/db/src/schema/appointments/booking_rules.ts`  
+**Definition of Done:** `lib/db/src/schema/appointments/booking_rules.ts`  
 Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booking_days`, `cancellation_policy` (JSONB, GIN index), `buffer_before/after_minutes`, `reminder_lead_time`, `reminder_frequency`, `deleted_at`.  
 **Index:** GIN on `cancellation_policy`.  
 
@@ -473,7 +527,7 @@ Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booki
 `id`, `organization_id`, `name`, `domain` (unique), `settings` (JSONB, GIN index), `deleted_at`.  
 
 ### DB‑CRM‑004: Deals  
-`id`, `organization_id`, `lead_id` (FK), `stage` (enum), `probability`, `amount` (cents), `close_date`, `assigned_to`, `deleted_at`. **Index:** `(organization_id, stage)`.  
+`id`, `organization_id`, `lead_id` (FK), `stage` (enum), `probability`, `amount` (cents), `close_date`, `assigned_to`, `optimistic_locking_version` (int NOT NULL default 0), `deleted_at`. **Index:** `(organization_id, stage)`.  
 
 ### DB‑CRM‑005: Activities (append‑only)  
 `id`, `organization_id`, `entity_type`, `entity_id`, `activity_type`, `description`, `user_id`, `created_at`. **No soft delete, no update**. **Index:** `(entity_type, entity_id)`.  
@@ -500,7 +554,7 @@ Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booki
 *Amounts stored in minor currency units (cents).*
 
 ### DB‑FIN‑001: Invoices  
-`id`, `organization_id`, `type` (ap/ar), `vendor_id`/`customer_id` (FK companies – conditional), `amount`, `status` (draft/sent/paid/overdue), `due_date`, `deleted_at`. **Index:** `(organization_id, type, status)`.  
+`id`, `organization_id`, `type` (ap/ar), `vendor_id`/`customer_id` (FK companies – conditional), `amount`, `status` (draft/sent/paid/overdue), `due_date`, `optimistic_locking_version` (int NOT NULL default 0), `deleted_at`. **Index:** `(organization_id, type, status)`.  
 
 ### DB‑FIN‑002: Payments  
 `id`, `organization_id`, `invoice_id` (FK), `amount`, `method`, `paid_at`, `idempotency_key` (text UNIQUE nullable), timestamps. **Append‑only**. **Index:** `(invoice_id)`.  
@@ -509,7 +563,14 @@ Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booki
 `id`, `organization_id`, `user_id` (FK), `last_four`, `limit`, `balance`, `status` (active/frozen), `expiry`, `deleted_at`.  
 
 ### DB‑FIN‑004: Budgets  
-`id`, `organization_id`, `project_id` (FK nullable), `name`, `allocated_amount`, `spent_amount`, period dates, `deleted_at`.  
+`id`, `organization_id`, `project_id` (FK nullable), `name`, `allocated_amount`, `spent_amount`, period dates, `deleted_at`.
+
+### DB‑FIN‑005: Idempotency Records  
+**Status:** ⏳ Not Started  
+**Definition of Done:** `lib/db/src/schema/finance/idempotency_records.ts`  
+Columns: `id` (uuid PK), `organization_id` (FK), `key` (text NOT NULL), `created_at`, `expires_at`.  
+**Index:** UNIQUE on `(organization_id, key)`.  
+**Purpose:** Centralized idempotency tracking per FRAMEWORK.md recommendation. Services check this table before processing operations with idempotency keys.  
 
 ---
 
@@ -529,7 +590,7 @@ Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booki
 ## Asset Tracking Context
 
 ### DB‑ASSETS‑001: Assets  
-`id`, `organization_id`, `name`, `category`, `location`, `status` (enum), `serial_number` (UNIQUE), `deleted_at`.  
+`id`, `organization_id`, `name`, `category`, `location`, `status` (enum), `serial_number` (UNIQUE), `optimistic_locking_version` (int NOT NULL default 0), `deleted_at`.  
 
 ### DB‑ASSETS‑002: Asset Checkout Log (append‑only)  
 `id`, `organization_id`, `asset_id`, `user_id`, `checkout_at`, `checkin_at`.  
@@ -581,21 +642,41 @@ Columns: `id`, `organization_id`, `min_advance_notice_hours`, `max_advance_booki
 - Drizzle Kit `generate` creates migration files for **all** tables, with foreign keys, indexes, and `deleted_at` columns.  
 - `drizzle‑kit migrate` applies the migration to the target database.  
 - Seed scripts (organisations, identity, CRM, appointments, etc.) populate essential data.  
-- Smoke test (`pnpm test -- smoke`) verifies all tables exist, row counts correct, indexes present.  
+- Smoke test (`pnpm test -- smoke`) verifies all tables exist, row counts correct, indexes present.
 
 **Subtasks:**
 - [ ] DB‑MIGRATE‑ALL.1: Generate migration files. (AGENT)  
   **verification:** `drizzle‑kit generate` succeeds.
 - [ ] DB‑MIGRATE‑ALL.2: Apply migration. (AGENT)  
-  **verification:** Database contains all tables.
 - [ ] DB‑MIGRATE‑ALL.3: Write comprehensive seed scripts (orgs → identity → CRM → …). (AGENT)  
   **verification:** Seeds run without errors.
 - [ ] DB‑MIGRATE‑ALL.4: Run seeds. (HUMAN)  
   **verification:** Data present.
-- [ ] DB‑MIGRATE‑ALL.5: Write DB smoke test – connect, count rows, verify key indexes (GIN on JSONB columns, composite indexes). (AGENT)  
+- [ ] DB‑MIGRATE‑ALL.5: Write DB smoke test – connect, count rows, verify key indexes (GIN on JSONB columns, composite indexes). Use `TEST_DATABASE_URL` for database access. (AGENT)  
   **verification:** `pnpm test -- smoke` passes.
 - [ ] DB‑MIGRATE‑ALL.6: Run smoke test and confirm. (AGENT)  
   **verification:** All checks green.
+
+### DB‑SEED‑ALL: Seed Coordination Script
+**Status:** ⏳ Not Started  
+**Depends on:** All individual seed scripts (DB‑IDENTITY‑005, etc.)  
+**Definition of Done:** A single coordination script that runs all seed files in the correct dependency order:  
+1. Organizations (anchor)  
+2. Identity & Access (users, roles, permissions)  
+3. CRM (companies, contacts, leads, deals, activities)  
+4. Projects & Finance  
+5. Appointments & Documents  
+6. Portal & Analytics  
+**Related Files:** `lib/db/src/seed/seed-all.ts`
+
+**Subtasks:**
+- [ ] DB‑SEED‑ALL.1: Create coordination script that imports and runs all seed scripts in order. (AGENT)  
+  **verification:** Script runs without dependency errors.
+- [ ] DB‑SEED‑ALL.2: Add package.json script: `"seed": "pnpm run seed-all"`. (AGENT)  
+  **verification:** `pnpm run seed` executes successfully.
+- [ ] DB‑SEED‑ALL.3: Test full seed on fresh database. (HUMAN)  
+  **verification:** All data populated correctly; foreign key constraints satisfied.
+- **Depends on:** All individual seed tasks.
 
 ---
 

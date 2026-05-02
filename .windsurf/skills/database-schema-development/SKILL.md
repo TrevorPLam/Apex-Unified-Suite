@@ -1,6 +1,6 @@
 ---
 name: database-schema-development
-description: Complete guide for implementing Drizzle ORM schemas from scratch in the Apex Unified Suite (currently empty)
+description: Complete Drizzle ORM schema implementation using 2026 best practices with type-safe enum patterns and full TypeScript integration
 ---
 
 # Database Schema Development

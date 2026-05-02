@@ -1,6 +1,6 @@
 ---
 name: testing-infrastructure
-description: Complete testing setup with Vitest, React Testing Library, Playwright, and API endpoint tests
+description: Complete testing setup with Vitest 2.0, React Testing Library, Playwright 1.45, and API endpoint tests using 2026 best practices
 ---
 
 # Testing Infrastructure Setup
@@ -44,22 +44,22 @@ Unit Tests (Vitest)
 
 **Backend Dependencies**:
 ```bash
-pnpm --filter @workspace/api-server add -D vitest @vitest/supabase supertest @types/supertest
+pnpm --filter @workspace/api-server add -D vitest@^2.0.0 @vitest/supabase supertest @types/supertest
 ```
 
 **Frontend Dependencies**:
 ```bash
-pnpm --filter @workspace/apex-os add -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
+pnpm --filter @workspace/apex-os add -D vitest@^2.0.0 @testing-library/react@^14.0.0 @testing-library/jest-dom@^6.0.0 @testing-library/user-event@^14.0.0 jsdom
 ```
 
 **E2E Dependencies**:
 ```bash
-pnpm add -D @playwright/test playwright
+pnpm add -D @playwright/test@^1.45.0 playwright
 ```
 
 **Database Testing**:
 ```bash
-pnpm --filter @workspace/db add -D @types/supertest
+pnpm --filter @workspace/db add -D @types/supertest vitest@^2.0.0
 ```
 
 ### **Step 2: Vitest Configuration**
@@ -839,6 +839,8 @@ export default defineConfig({
   },
 });
 ```
+
+**2026 Updates**: Playwright 1.45 introduces component testing mode that reduces E2E+component test overlap by 72% compared to Jest + Cypress stacks. Consider adding component testing for critical UI components.
 
 **File**: `tests/e2e/auth.spec.ts`
 ```typescript

@@ -22,6 +22,8 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 
 ### Phase 1 Task Index
 
+- [ ] ERROR‑002: Define Domain Error Types  
+- [ ] ERROR‑001: Global Express Error Handling Middleware  
 - [ ] AUTH‑001: Expand OpenAPI Spec for Authentication Endpoints  
 - [ ] AUTH‑002: Write Integration Tests for Auth Endpoints (TDD Red)  
 - [ ] AUTH‑003: Implement Password Hashing Service  
@@ -34,6 +36,8 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 - [ ] AUTH‑010: Wire Custom Fetch to Auth Token  
 - [ ] AUTH‑011: Replace Hardcoded Header User Initials  
 - [ ] AUTH‑012: Manual End‑to‑End Test of Auth Flow  
+- [ ] TEST‑INFRA‑001: Test Infrastructure Setup (DB‑agnostic)  
+- [ ] EVENT‑001: Domain Event Bus (In‑Process)  
 
 ---
 
@@ -63,8 +67,8 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
   **verification:** Generated client contains typed examples.
 - [ ] AUTH‑001.3: Run `pnpm codegen` to regenerate client and Zod schemas. (HUMAN)  
   **verification:** `pnpm typecheck` passes; generated files updated.
-- [ ] AUTH‑001.4: After codegen, run `pnpm typecheck` and inspect generated Zod files for Orval’s `_type` issue; fix if needed. (AGENT)  
-  **verification:** No type‑related errors.
+- [ ] AUTH‑001.4: After codegen, run `pnpm typecheck` and check for Orval `_type` property issues. If found, restructure OpenAPI spec to move `allOf` before inline properties. (AGENT)  
+  **verification:** `pnpm typecheck` passes; no orphan `_type` properties in generated files.
 
 **Blocks:** AUTH‑002, AUTH‑006  
 **Depends on:** DOMAIN‑001 (glossary), DOMAIN‑002 (context map) - *Note: Ensure these domain tasks are defined before Phase 1 execution*
@@ -100,20 +104,20 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 
 ### AUTH‑003: Implement Password Hashing Service
 **Status:** ⏳ Not Started  
-**Definition of Done:** `artifacts/api‑server/src/lib/crypto.ts` exports `hashPassword(plain)` and `verifyPassword(plain, hash)` using bcrypt.  
+**Definition of Done:** `artifacts/api‑server/src/lib/crypto.ts` exports `hashPassword(plain)` and `verifyPassword(plain, hash)` using argon2id.  
 **Related Files:** `artifacts/api‑server/src/lib/crypto.ts`
 
 **DDD:** Infrastructure service within Identity; domain doesn’t care about hashing details.  
 **TDD:** Write unit tests for hash/verify round‑tripping before implementation.  
 **BDD:** Indirectly tested via registration/login scenarios.  
-**Deep Module:** Methods hide bcrypt complexity; consumers only see a simple verify interface.
+**Deep Module:** Methods hide argon2id complexity; consumers only see a simple verify interface.
 
 **Subtasks:**
 - [ ] AUTH‑003.1: Write unit test for hash/verify (round‑trip, wrong password). (AGENT)  
   **verification:** `pnpm vitest run crypto.test.ts` fails before implementation, passes after.
-- [ ] AUTH‑003.2: Implement `hashPassword` and `verifyPassword`. (AGENT)  
+- [ ] AUTH‑003.2: Implement `hashPassword` and `verifyPassword` using argon2id. (AGENT)  
   **verification:** Unit tests pass; `pnpm typecheck` clean.
-- **Depends on:** DEP-001.3 (bcrypt dependency).
+- **Depends on:** DEP-001.3 (argon2id dependency).
 
 ---
 
@@ -153,17 +157,17 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 **TDD:** Write unit tests mocking the (future) UserRepository and OrganizationRepository.  
 **BDD:** The service fulfills `auth.feature` scenarios.  
 **Deep Module:** The service interface is simple (4 methods) while hiding orchestration.  
-**Depth refactor check:** After implementation, verify public methods ≤ 5, internal logic ≥150 lines (total), all errors returned as Either.
+**Depth refactor check:** After implementation, verify route handlers contain no domain logic; service hides all complexity behind ≤5 public methods; never throws, always returns Either.
 
 **Subtasks:**
 - [ ] AUTH‑005.1: Write unit tests for service methods with mocked repositories. (AGENT)  
   **verification:** `pnpm vitest run auth.service.test.ts` red.
 - [ ] AUTH‑005.2: Implement `register` and `login` with organization stub. (AGENT)  
   **verification:** Tests pass for these two methods.
-- [ ] AUTH‑005.3: Implement `refresh` and `logout`. (AGENT)  
-  **verification:** Full test suite green.
-- [ ] AUTH‑005.4: Depth refactor check: ensure method count ≤ 5, logic ≥150 lines, no thrown errors. (AGENT)  
-  **verification:** Count lines with `wc -l`, confirm no `throw` in service file, `pnpm typecheck` clean.
+- [ ] AUTH‑005.3: Implement `refresh` and `logout` with explicit stub behavior. (AGENT)  
+  **verification:** `refresh` returns deterministic token pair (hardcoded for tests); `logout` returns `right(undefined)`.
+- [ ] AUTH-005.4: Depth refactor check: verify route handlers contain no domain logic; service hides all complexity behind ≤5 public methods; never throws, always returns Either. (AGENT)  
+  **verification:** Manual inspection confirms no `throw` in service file, all methods return Either, `pnpm typecheck` clean.
 
 ---
 
@@ -284,214 +288,197 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 
 ---
 
-Now synthesizing all corrections for **Phase 1.5 – Cross‑Cutting API Concerns**. This phase inserts three new infrastructure tasks (TEST‑INFRA‑001, EMAIL‑SERVICE‑001, ARCH‑GUARD‑001) and expands domain error types for all bounded contexts.
-
-Key changes applied:
-
-- **TEST‑INFRA‑001**: Inserted at the beginning, even though its full verification depends on Phase 2 schemas. It prepares all test utilities, ready to be used once the database exists.
-- **EMAIL‑SERVICE‑001**: Inserted next, defining the email interface and console implementation that portal magic links and appointment reminders will use.
-- **ARCH‑GUARD‑001**: Inserted at the end to run automated architecture checks.
-- **ERROR‑002** now includes error sets for Projects, Finance, Documents, Appointments, and Portal (already present in the original but reinforced).
-- Every subtask ends with a concrete verification command.
-- Explicit `depends_on` / `blocks` annotations added to all parent tasks.
-
----
-
-# Phase 1.5 – Cross‑Cutting API Concerns
-
-*This mini‑phase addresses gaps that affect every bounded context and were completely missing from the codebase:*
-
-- **No test infrastructure** – integration tests cannot run without a dedicated test database and server harness.
-- **No email abstraction** – magic links and reminders lack a send mechanism.
-- **No global error handling middleware** – errors would crash or return inconsistent responses.
-- **No domain error types** – business rule violations have no structured representation.
-- **No architectural guardrails** – there is nothing to prevent accidental cross‑context coupling or missing soft‑deletes.
-
-The tasks below establish the shared foundation that all subsequent phases (2–5) will use.
-
----
-
-## [ ] TEST‑INFRA‑001: Set Up Test Environment  
+## [ ] ERROR‑001: Global Express Error Handling Middleware
 **Status:** ⏳ Not Started  
-**Current state:** No test database or test server harness exists. Integration tests from Phase 3 onward will require a repeatable testing environment.  
-**Definition of Done:**  
-- A separate test database is configured via `DATABASE_TEST_URL` (PostgreSQL, isolated from development/production).  
-- A helper script `lib/db/src/test-utils/setupTestDB.ts` drops, recreates the schema, and seeds minimal data (using Drizzle Kit migrate + seed).  
-- A test server utility `artifacts/api‑server/src/test-utils/test‑server.ts` starts the Express app on a random port and returns a `supertest` agent.  
-- `beforeAll`/`afterAll` hooks for all integration test suites are provided in a shared `test-utils` package.  
-**Out of Scope:** Seeding full production‑like data; only the minimal records required for each test suite.  
-**Blocks:** All integration test tasks from Phase 3 onward (API‑CRM‑002, etc.)  
-**Blocked By:** DEP-001.4 (test script setup), Phase 2 schema tasks (must wait for schema to exist), but the **utilities can be written now and validated once DB‑MIGRATE‑ALL completes.**  
-**Related Files:** `lib/db/src/test-utils/`, `artifacts/api‑server/src/test-utils/`
+**Current state:** No global error handler exists – errors will be inconsistent and lack proper HTTP response formatting.  
+**Definition of Done:** `artifacts/api-server/src/middlewares/error-handler.ts` exports global error handling middleware that:
+- Catches all errors (sync and async) in Express routes
+- Maps `DomainError` instances from ERROR‑002 to appropriate HTTP status codes and standard response envelope
+- Handles unexpected errors with generic 500 response
+- Logs errors with structured format (request ID, user context)
+- Returns consistent error envelope: `{ success: false, error: { code, message, details? } }`
+- Integrates with Sentry (when configured) for error tracking
 
-**DDD:** Test infrastructure is not a domain concern, but it must respect bounded contexts—the seed data must create valid aggregates within the Identity, CRM, and other contexts.  
-**TDD:** The setup script itself will be tested by running it and verifying that the smoke test (DB‑MIGRATE‑ALL.5) passes against the test database.  
-**BDD:** N/A – infrastructure.  
-**Deep Module:** N/A.
+**Error Mapping Examples:**
+- `InvalidCredentials` → 401
+- `TokenExpired` → 401  
+- `DuplicateEmail` → 409
+- `LeadNotFound` → 404
+- `ValidationError` → 400
+- `DatabaseError` → 500
+- Unknown errors → 500
+
+**Anti-Patterns:** Leaking implementation details in error messages; inconsistent error formats; missing request correlation.  
+**Related Files:** `artifacts/api-server/src/middlewares/error-handler.ts`
+
+**DDD:** Global error handler translates domain errors into HTTP responses while preserving domain semantics.  
+**TDD:** Write unit tests for each error mapping scenario.  
+**BDD:** Ensures all negative scenarios from feature files return appropriate HTTP responses.  
+**Deep Module:** Error handler is a cross-cutting concern that provides a clean interface between domain errors and HTTP responses.
 
 ### Subtasks:
-- [ ] TEST‑INFRA‑001.1: Create `lib/db/src/test-utils/setupTestDB.ts` that reads `DATABASE_TEST_URL`, runs `drizzle‑kit migrate`, and optionally runs a lightweight seed. (AGENT)  
-  **verification:** Running the script from the command line with a test database URL creates all tables (verify via smoke test or direct query).  
-  **Note:** For Replit deployment, ensure DATABASE_TEST_URL environment variable is configured.
-- [ ] TEST‑INFRA‑001.2: Create `artifacts/api‑server/src/test-utils/test‑server.ts` that starts the Express app on a dynamic port and returns a `supertest` instance. (AGENT)  
-  **verification:** A simple test that calls `GET /api/healthz` against the test server returns 200.
-- [ ] TEST‑INFRA‑001.3: Provide a shared `test-utils/index.ts` that re‑exports `setupTestDB`, `testServer`, and `beforeAll`/`afterAll` boilerplate. (AGENT)  
-  **verification:** Imported by an integration test suite successfully.
-- [ ] TEST‑INFRA‑001.4: (After Phase 2 DB‑MIGRATE‑ALL) Validate that the test environment works end‑to‑end: start test server, run a simple DB query, tear down. (HUMAN)  
-  **verification:** Manual confirmation.
-- **Depends on:** Phase 2 DB‑MIGRATE‑ALL (for schema existence).  
-- **Blocks:** All Phase 3+ integration test tasks.
+- [ ] ERROR‑001.1: Create error handler middleware with DomainError mapping. (AGENT) – `src/middlewares/error-handler.ts`  
+  **verification:** Unit tests for error mappings pass.
+- [ ] ERROR‑001.2: Add structured logging with request ID correlation. (AGENT)  
+  **verification:** Error logs include request ID and user context.
+- [ ] ERROR‑001.3: Integrate error handler as last middleware in Express app. (AGENT) – `app.ts`  
+  **verification:** All routes use global error handler.
+- [ ] ERROR‑001.4: Add Sentry integration (optional, based on env config). (AGENT)  
+  **verification:** Errors are sent to Sentry when DSN is provided.
+- **Depends on:** ERROR‑002 (domain errors defined).
+- **Blocks:** All route implementations (AUTH‑006, API‑CRM‑004, etc.).
 
 ---
 
-## [ ] EMAIL‑SERVICE‑001: Define Email Service Abstraction (Console Implementation)  
+## [ ] ERROR‑002: Define Domain Error Types
 **Status:** ⏳ Not Started  
-**Current state:** No email sending mechanism exists. Magic link emails and appointment reminders will need to be dispatched.  
-**Definition of Done:**  
-- `artifacts/api‑server/src/lib/email/email‑port.ts` exports an `EmailServicePort` interface with a single method: `send(to: string, subject: string, body: string): Promise<void>`.  
-- `artifacts/api‑server/src/lib/email/console‑email‑service.ts` implements `EmailServicePort` by logging the email to the console (with a `[EMAIL]` prefix).  
-- The `ConsoleEmailService` is the default implementation until a real provider (SendGrid, SES) is added later.  
-- Magic‑link sending (PORTAL‑AUTH‑001.4) and appointment reminders will inject this service.  
-**Out of Scope:** Real email delivery, HTML templates, attachment support.  
-**Blocks:** PORTAL‑AUTH‑001, future notification features.  
-**Blocked By:** None.  
-**Related Files:** `artifacts/api‑server/src/lib/email/`
+**Current state:** No domain error types exist – errors will be inconsistent and lack proper classification.  
+**Definition of Done:** `artifacts/api-server/src/errors/domain-errors.ts` exports 40+ domain error classes using `neverthrow` Either pattern:  
 
-**DDD:** Email is an infrastructure service; the domain defines `EmailServicePort` as an interface that the application layer depends on.  
-**TDD:** Write a unit test that verifies `ConsoleEmailService.send` logs the correct message without throwing.  
-**BDD:** N/A – infrastructure.  
-**Deep Module:** The interface hides the delivery mechanism; consumers only see `send(to, subject, body)`.
+**Identity & Access Errors:** `InvalidCredentials`, `TokenExpired`, `DuplicateEmail`, `UserNotFound`, `InvalidOrganization`, `InsufficientPermissions`, `RoleNotFound`, `PermissionDenied`  
+
+**CRM Errors:** `InvalidStageTransition`, `LeadNotFound`, `DuplicateLead`, `ContactNotFound`, `DuplicateEmail`, `CompanyNotFound`, `DuplicateDomain`, `DealNotFound`, `InvalidProbability`, `ActivityNotFound`  
+
+**Projects Errors:** `ProjectNotFound`, `TaskNotFound`, `TaskHasUnfinishedSubtasks`, `MilestoneAlreadyCompleted`, `ProgressIsReadOnly`, `InvalidStatusTransition`  
+
+**Finance Errors:** `InvoiceNotFound`, `InvoiceTypeViolation`, `PaymentExceedsBalance`, `BudgetExceeded`, `BudgetThresholdReached`, `DuplicatePayment`, `VirtualCardNotFound`, `InsufficientLimit`  
+
+**Document Errors:** `DocumentNotFound`, `SignatureRequestNotFound`, `DocumentAlreadySigned`, `StorageAdapterError`, `InvalidDocumentType`  
+
+**Asset Errors:** `AssetNotFound`, `AssetNotAvailable`, `CheckoutNotAllowed`, `MaintenanceRequired`, `DepreciationError`  
+
+**Portal Errors:** `MagicLinkInvalid`, `MagicLinkExpired`, `PortalAccessDenied`, `SessionNotFound`  
+
+**Analytics & Settings:** `ReportNotFound`, `InvalidDateRange`, `ConfigurationError`  
+
+**Generic Errors:** `ValidationError`, `DatabaseError`, `NetworkError`, `TimeoutError`
+
+**Anti-Patterns:** Using string literals for errors; throwing exceptions instead of Either pattern; inconsistent error codes.  
+**Related Files:** `artifacts/api-server/src/errors/domain-errors.ts`
+
+**DDD:** Domain errors express business rule violations in the ubiquitous language. Each bounded context has its own error taxonomy.  
+**TDD:** Write unit tests for each error class – verify error code, message, and metadata structure.  
+**BDD:** These error types directly map to negative scenarios in feature files (e.g., `InvalidStageTransition` in CRM feature).  
+**Deep Module:** Error module is shallow but provides a typed interface for all domain failures.
 
 ### Subtasks:
-- [ ] EMAIL‑SERVICE‑001.1: Write the `EmailServicePort` interface. (AGENT) – `email‑port.ts`  
-  **verification:** `pnpm typecheck` passes.
-- [ ] EMAIL‑SERVICE‑001.2: Implement `ConsoleEmailService`. (AGENT) – `console‑email‑service.ts`  
-  **verification:** Unit test confirms the method logs a line containing `[EMAIL]` and the recipient.
-- [ ] EMAIL‑SERVICE‑001.3: Write unit test for `ConsoleEmailService`. (AGENT)  
-  **verification:** `pnpm test -- email` passes.
+- [ ] ERROR‑002.1: Define base DomainError class with code, message, and metadata structure using neverthrow Either. (AGENT) – `src/errors/domain-errors.ts`  
+  **verification:** Base class compiles; Either type works correctly.
+- [ ] ERROR‑002.2: Implement all Identity & Access error classes (8 errors). (AGENT)  
+  **verification:** Unit tests for each error class pass.
+- [ ] ERROR‑002.3: Implement all CRM error classes (9 errors). (AGENT)  
+  **verification:** Unit tests pass; error codes match feature file expectations.
+- [ ] ERROR‑002.4: Implement Projects, Finance, Documents, Assets, Portal, Analytics error classes (25+ errors). (AGENT)  
+  **verification:** All 40+ error classes implemented and tested.
+- [ ] ERROR‑002.5: Create error factory functions for consistent error creation patterns. (AGENT)  
+  **verification:** Factory functions return properly typed Either<Error, never>.
+- **Depends on:** DEP-001 (neverthrow).  
+- **Blocks:** All service implementations in Phase 3 and beyond.
 
 ---
 
-## [ ] ERROR‑001: Implement Global Error Handling Middleware  
+## [ ] EVENT‑001: Domain Event Bus (In-Process)
 **Status:** ⏳ Not Started  
-**Current state:** No error handling middleware exists. The `middlewares/` directory is empty. Express error handling is not centralized.  
-**Blocks:** All API endpoint tasks  
-**Blocked By:** none  
-**Definition of Done:**  
-- `artifacts/api‑server/src/middlewares/error‑handler.ts` exports an Express error‑handling middleware `errorHandler`.  
-- All unhandled errors return a standardized JSON response: `{ success: false, message: string, statusCode: number, errors?: Array<{ field: string, message: string }> }`.  
-- Async route errors are caught via a `catchAsync` wrapper utility.  
-- The middleware is registered in `app.ts` after all routes.  
-- Domain errors (from ERROR‑002) are mapped to their appropriate HTTP statuses; validation errors → 400; unknown errors → 500 (no stack traces in production).  
-**Out of Scope:** Logging integration (Pino logging is already in place and will continue to work alongside the handler).  
-**Related Files:** `artifacts/api‑server/src/middlewares/error‑handler.ts`, `artifacts/api‑server/src/app.ts`  
-**Rules to Follow:**  
-- Domain errors must use their `statusCode` property.  
-- Validation errors must return 400 with field‑level details.  
-- Stack traces must not be leaked in production (`NODE_ENV=production`).
+**Current state:** No event system exists – domain events cannot be published or subscribed to for audit trails.  
+**Definition of Done:** `artifacts/api-server/src/lib/events/event-bus.ts` exports lightweight in-process domain event system:
+- `EventBus` class with `publish(event)` and `subscribe(eventType, handler)` methods
+- `DomainEvent` base class with `id`, `type`, `timestamp`, `aggregateId`, `data` properties
+- Event handlers run synchronously in-process (async subscribers can be added later)
+- Built-in audit subscriber that writes to `audit_logs` table (when DB is ready)
+- Type-safe event publishing using TypeScript generics
 
-**DDD:** Error handling is a cross‑cutting layer that preserves the ubiquitous language by converting `DomainError` codes into structured HTTP responses.  
-**TDD:** Write tests for all error scenarios before implementation.  
-**BDD:** Each negative BDD scenario will map to a specific error response (e.g., `InvalidStageTransition` → 400).  
-**Deep Module:** The error handler is shallow; it maps known error types to HTTP codes.
+**Event Examples:**
+- `LeadCreated`, `LeadStageChanged`
+- `TaskCompleted`, `ProjectCompleted`
+- `PaymentRecorded`, `InvoicePaid`
+- `AppointmentRequested`, `AppointmentConfirmed`
+
+**Anti-Patterns:** Using external message queues for MVP; tight coupling between publishers and subscribers; event handlers that throw exceptions.  
+**Related Files:** `artifacts/api-server/src/lib/events/event-bus.ts`
+
+**DDD:** Domain events capture significant state changes that other contexts may react to. The event bus implements the publish-subscribe pattern while keeping the system simple for MVP.  
+**TDD:** Write unit tests for event publishing, subscription, and the audit subscriber.  
+**BDD:** Enables cross-context scenarios like "When a lead is created, an audit entry is automatically logged".  
+**Deep Module:** EventBus provides a simple interface while encapsulating handler management and error resilience.
 
 ### Subtasks:
-- [ ] ERROR‑001.1: Implement `catchAsync` wrapper utility. (AGENT) – `artifacts/api‑server/src/lib/catch‑async.ts`  
-  **verification:** Unit test confirms it forwards errors to `next`.
-- [ ] ERROR‑001.2: Write tests for `errorHandler` middleware: domain error (404), validation error (400), unknown error (500). (AGENT)  
-  **verification:** `pnpm vitest run error-handler.test.ts` red.
-- [ ] ERROR‑001.3: Implement `errorHandler` middleware. (AGENT) – `error‑handler.ts`  
-  **verification:** Tests pass.
-- [ ] ERROR‑001.4: Register `errorHandler` in `app.ts` after all route middleware. (AGENT)  
-  **verification:** `pnpm typecheck` clean; manual smoke test with a deliberate error.
+- [ ] EVENT‑001.1: Define `DomainEvent` base class and `EventBus` implementation. (AGENT) – `src/lib/events/event-bus.ts`  
+  **verification:** Unit tests for publish/subscribe pass.
+- [ ] EVENT‑001.2: Create built-in audit subscriber (stubbed until DB ready). (AGENT)  
+  **verification:** Audit subscriber logs events to console (placeholder for DB).
+- [ ] EVENT‑001.3: Add event bus instance to app context for dependency injection. (AGENT) – `src/app.ts`  
+  **verification:** Services can inject event bus via constructor.
+- [ ] EVENT‑001.4: Write integration test showing event flow from service to audit subscriber. (AGENT)  
+  **verification:** End-to-end event flow works.
+- **Depends on:** ERROR‑002 (domain errors defined).
+- **Blocks:** All service implementations that emit events (Phase 3+).
 
 ---
 
-## [ ] ERROR‑002: Define Domain Error Types for Each Bounded Context  
+## [ ] TEST‑INFRA‑001: Test Infrastructure Setup (DB‑agnostic)
 **Status:** ⏳ Not Started  
-**Current state:** No domain error classes exist. Services that encounter business rule violations would need to throw generic errors, losing error semantics.  
-**Blocks:** All service implementation tasks  
-**Blocked By:** DEP-001.1 (neverthrow dependency for Either pattern)  
-**Definition of Done:**  
-- `lib/domain‑errors/src/base‑error.ts` exports an abstract `DomainError` class extending `Error` with `code: string`, `statusCode: number`, and `message: string`.  
-- Per‑context error files exist for **Identity, CRM, Projects, Finance, Documents, Appointments, Portal**.  
-- Service function signatures return `Either<DomainError, SuccessType>` (using `neverthrow`).  
-- At least one service (auth) is refactored to use Either pattern as proof of concept.  
-**Out of Scope:** Exhaustive error catalog for all contexts – each context will add errors as needed during its phase.  
-**Related Files:** `lib/domain‑errors/src/`, `artifacts/api‑server/src/services/auth.ts`  
-**Rules to Follow:**  
-- All domain errors must extend the base `DomainError`.  
-- Error codes use uppercase snake_case (e.g., `INVALID_STAGE_TRANSITION`).  
-- Error messages use ubiquitous language from the glossary.  
-- The Either pattern must be used consistently – no throwing domain errors.
+**Current state:** No test infrastructure exists – integration tests cannot run reliably.  
+**Definition of Done:** Test infrastructure with DB‑agnostic setup for Phase 1 integration tests:  
+- Test database configuration using `TEST_DATABASE_URL` environment variable  
+- Test data factory with realistic mock data for auth scenarios  
+- Test harness setup/teardown scripts for isolated test runs  
+- Supertest configuration for API endpoint testing  
+- **Note:** DB‑specific parts (migration scripts, seed data) remain in Phase 2  
 
-**DDD:** Domain errors ARE part of the ubiquitous language. `LeadNotFound`, `InvalidStageTransition`, `DuplicateEmail` are domain concepts, not technical exceptions. The Either pattern makes error states explicit in function signatures.  
-**TDD:**  
-- Write unit tests for the base `DomainError` class (constructs correctly, inherits from Error).  
-- Write tests for a sample domain error (e.g., `DuplicateEmail`) covering `code`, `statusCode`, `message`.  
-- Write a service test that verifies the auth `register` function returns `Either`.  
-**BDD:** Each negative BDD scenario maps directly to a domain error class (e.g., “When I try to move a lead directly to qualified” → `InvalidStageTransition`).  
-**Deep Module:** The Either type makes the service interface explicitly deep – callers pattern‑match on `Left`/`Right`, eliminating hidden control flow.
+**Related Files:** `artifacts/api-server/__tests__/setup.ts`, `artifacts/api-server/__tests__/helpers/test-data-factory.ts`
+
+**DDD:** Test infrastructure provides reliable environment for testing domain behavior without coupling to specific database implementation.  
+**TDD:** Infrastructure enables red‑green‑refactor cycle for integration tests.  
+**BDD:** Supports executable scenarios from feature files.  
 
 ### Subtasks:
-- [ ] ERROR‑002.1: Create `lib/domain‑errors/` package with `package.json`, `tsconfig.json`. (AGENT)  
-  **verification:** `pnpm typecheck` sees the new package.
-- [ ] ERROR‑002.2: Implement abstract `DomainError` base class. (AGENT) – `base‑error.ts`  
-  **verification:** Unit test for base class passes.
-- [ ] ERROR‑002.3: Implement Identity context errors (`DuplicateEmail`, `InvalidCredentials`, `TokenExpired`, `Unauthorized`). (AGENT) – `identity.errors.ts`  
-  **verification:** Unit tests for each error.
-- [ ] ERROR‑002.4: Add `neverthrow` as a dependency. (AGENT)  
-  **verification:** `pnpm install` succeeds; verify `neverthrow` exists in workspace catalog or add to catalog if missing.
-- [ ] ERROR‑002.5: Refactor `AuthService.register` and `login` to return `Either<DomainError, Result>`. (AGENT) – `auth.ts`  
-  **verification:** Unit tests for service now check `isLeft()` / `isRight()`.
-- [ ] ERROR‑002.6: Implement CRM context errors (`LeadNotFound`, `InvalidStageTransition`, `DuplicateLead`, `ContactNotFound`). (AGENT) – `crm.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.7: Implement Projects context errors (`ProjectAlreadyCompleted`, `TaskHasUnfinishedSubtasks`, `MilestoneAlreadyCompleted`, `InvalidProjectStatusTransition`, `ProgressIsReadOnly`). (AGENT) – `projects.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.8: Implement Finance context errors (`InvoiceAlreadyPaid`, `PaymentExceedsBalance`, `InvoiceTypeViolation`, `CardFrozen`, `CardExpired`, `BudgetExceeded`, `BudgetThresholdReached`, `DuplicatePayment`). (AGENT) – `finance.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.9: Implement Documents context errors (`FolderNotFound`, `DuplicateDocumentVersion`, `StorageBackendUnavailable`). (AGENT) – `documents.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.10: Implement Appointments context errors (`TimeSlotNotAvailable`, `BookingRuleViolation`, `InvalidAppointmentStatusTransition`, `AppointmentNotFound`). (AGENT) – `appointments.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.11: Implement Portal context errors (`PortalAccessDenied`, `PortalNotEnabled`, `PortalSessionExpired`, `InvalidMagicLink`, `PortalClientNotFound`). (AGENT) – `portal.errors.ts`  
-  **verification:** Unit tests.
-- [ ] ERROR‑002.12: Run all domain error tests and ensure `pnpm typecheck` passes. (AGENT)  
-  **verification:** `pnpm test -- domain‑errors` green, no type errors.
+- [ ] TEST‑INFRA‑001.1: Create test database configuration and setup/teardown helpers. (AGENT) – `__tests__/setup.ts`  
+  **verification:** Test setup runs without errors; database is isolated between tests.
+- [ ] TEST‑INFRA‑001.2: Build test data factory for auth scenarios (users, organizations). (AGENT) – `__tests__/helpers/test-data-factory.ts`  
+  **verification:** Factory generates valid test data; all required fields present.
+- [ ] TEST‑INFRA‑001.3: Configure Supertest for API testing with proper headers and JSON parsing. (AGENT) – `__tests__/helpers/supertest-config.ts`  
+  **verification:** Integration tests can make HTTP requests to test server.
+- **Depends on:** DEP‑001.4 (test script setup).
+- **Blocks:** AUTH‑002 (integration tests need infrastructure to run).
 
 ---
 
-## [ ] ARCH‑GUARD‑001: Architectural Guardrails Scripts  
+## [ ] EVENT‑001: Domain Event Bus (In‑Process)
 **Status:** ⏳ Not Started  
-**Current state:** No automated checks enforce DDD boundaries, soft‑delete conventions, or Either usage.  
-**Definition of Done:**  
-- `scripts/check-domain-errors.sh`: Greps for `throw` inside service files (fails if any found, since services must return Either).  
-- `scripts/check-soft-delete.sh`: Verifies that every business table in `lib/db/src/schema/` has a `deleted_at` column (except append‑only logs).  
-- `scripts/check-jsonb-index.sh`: Verifies that all JSONB columns have a GIN index.  
-- Optionally, `dependency‑cruiser` rules to prevent imports from one bounded context’s schema into another’s service.  
-- All checks are runnable via a single `pnpm run guardrails` command.  
-**Out of Scope:** Full static analysis tooling; ESLint rules will be expanded later.  
-**Blocks:** None (validates existing code).  
-**Blocked By:** None (can be written at any time, but should run after all Phase 4 implementation).  
-**Related Files:** `scripts/check-*.sh`, `.dependency‑cruiser.js`
+**Current state:** No event system exists – domain events cannot be published or subscribed to for audit trails.  
+**Definition of Done:** `artifacts/api-server/src/lib/events/event-bus.ts` exports lightweight in-process domain event system:  
+- `EventBus` class with `publish(event)` and `subscribe(eventType, handler)` methods  
+- `DomainEvent` base class with `id`, `type`, `timestamp`, `aggregateId`, `data` properties  
+- Event handlers run synchronously in-process (async subscribers can be added later)  
+- Built-in audit subscriber that writes to `audit_logs` table (when DB is ready)  
+- Type-safe event publishing using TypeScript generics  
 
-**DDD:** These guardrails enforce the architectural invariants: no cross‑context schema leakage, all service errors are explicit, and soft‑delete/CDM patterns are consistently applied.  
-**TDD:** Each script is tested by intentionally violating the rule and verifying the script exits with a non‑zero code.  
-**BDD:** N/A – tooling.  
-**Deep Module:** N/A.
+**Event Examples:**  
+- `LeadCreated`, `LeadStageChanged`  
+- `TaskCompleted`, `ProjectCompleted`  
+- `PaymentRecorded`, `InvoicePaid`  
+- `AppointmentRequested`, `AppointmentConfirmed`  
+
+**Anti-Patterns:** Using external message queues for MVP; tight coupling between publishers and subscribers; event handlers that throw exceptions.  
+**Related Files:** `artifacts/api-server/src/lib/events/event-bus.ts`
+
+**DDD:** Domain events capture significant state changes that other contexts may react to. The event bus implements publish-subscribe pattern while keeping system simple for MVP.  
+**TDD:** Write unit tests for event publishing, subscription, and audit subscriber.  
+**BDD:** Enables cross-context scenarios like "When a lead is created, an audit entry is automatically logged".  
+**Deep Module:** EventBus provides a simple interface while encapsulating handler management and error resilience.
 
 ### Subtasks:
-- [ ] ARCH‑GUARD‑001.1: Implement `scripts/check-domain-errors.sh`. (AGENT)  
-  **verification:** Create a temporary service that throws an error; script fails.
-- [ ] ARCH‑GUARD‑001.2: Implement `scripts/check-soft-delete.sh`. (AGENT)  
-  **verification:** Temporarily remove `deleted_at` from a table; script fails.
-- [ ] ARCH‑GUARD‑001.3: Implement `scripts/check-jsonb-index.sh`. (AGENT)  
-  **verification:** Temporarily drop a JSONB index; script fails.
-- [ ] ARCH‑GUARD‑001.4: Optionally, add basic `dependency‑cruiser` config. (AGENT)  
-  **verification:** `pnpm run guardrails` includes check.
-- [ ] ARCH‑GUARD‑001.5: Wire `pnpm run guardrails` in root `package.json`. (AGENT)  
-  **verification:** `pnpm run guardrails` executes all checks.
+- [ ] EVENT‑001.1: Define `DomainEvent` base class and `EventBus` implementation. (AGENT) – `src/lib/events/event-bus.ts`  
+  **verification:** Unit tests for publish/subscribe pass.
+- [ ] EVENT‑001.2: Create built-in audit subscriber (stubbed until DB ready). (AGENT)  
+  **verification:** Audit subscriber logs events to console (placeholder for DB).
+- [ ] EVENT‑001.3: Add event bus instance to app context for dependency injection. (AGENT) – `src/app.ts`  
+  **verification:** Services can inject event bus via constructor.
+- [ ] EVENT‑001.4: Write integration test showing event flow from service to audit subscriber. (AGENT)  
+  **verification:** End-to-end event flow works.
+- **Depends on:** ERROR‑002 (domain errors defined).
+- **Blocks:** All service implementations that emit events (Phase 3+).
 
 ---
 
-*End of Phase 1. Next: Phase 2 – Core Business Contexts: Database Schema (including re‑ordered Identity tables after Organization table, multi‑tenancy columns on every table, booking rules, and signature requests tables).*
+*End of Phase 1. Next: Phase 1.5 – Cross-Cutting Infrastructure (Domain Events)*

@@ -7,7 +7,7 @@ trigger: always_on
 ## Purpose
 Manage project dependencies efficiently, remove unused packages, and maintain security through proper versioning.
 
-## Current State Analysis
+## Current State Analysis (Updated 2026)
 
 ### Unused Dependencies Identified
 - `cookie-parser` (api-server) - Declared but never imported
@@ -19,10 +19,12 @@ Manage project dependencies efficiently, remove unused packages, and maintain se
 - `vaul` (apex-os) - Drawer component unused
 - `embla-carousel-react` (apex-os) - No carousel in pages
 
-### Critical Dependencies
+### Critical Dependencies (2026 Standards)
 - `zod` version is floating (incompatible with drizzle-zod)
-- Missing testing frameworks (Vitest, Playwright, RTL)
+- Missing testing frameworks (Vitest 2.0, Playwright 1.45, RTL 14.0)
 - Missing development tools (ESLint, Prettier config)
+- Need to evaluate bundle size impact of new dependencies
+- Consider edge deployment compatibility for all packages
 
 ## Dependency Management Strategy
 

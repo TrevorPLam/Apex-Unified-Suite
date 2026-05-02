@@ -159,8 +159,8 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 **Definition of Done:** One `.feature` file per context in `docs/features/`, covering primary user goals **and corresponding error/negative scenarios** for each feature.  
 **Out of Scope:** Exhaustive edge‑case scenarios.  
 **Blocks:** All implementation phases (Phase 1–5)  
-**Blocked By:** DOMAIN-001, DOMAIN-002, ARCH-002, ARCH-003  
-**Depends on:** DOMAIN-001, DOMAIN-002, ARCH-002, ARCH-003  
+**Blocked By:** DOMAIN-001, DOMAIN-002, ARCH-002  
+**Depends on:** DOMAIN-001, DOMAIN-002, ARCH-002  
 **Related Files:** `docs/features/auth.feature`, `docs/features/crm.feature`, `docs/features/projects.feature`, `docs/features/finance.feature`, `docs/features/documents.feature`, `docs/features/assets.feature`, `docs/features/portal.feature`, `docs/features/analytics.feature`, `docs/features/settings.feature`, `docs/features/appointments.feature`  
 **Advanced Code Patterns:** Gherkin with ubiquitous language; later automated as executable specifications.  
 **Anti-Patterns:** Writing features in technical jargon or skipping BDD entirely.  
@@ -170,37 +170,45 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 - Positive and negative paths must be covered (e.g., successful flow and invalid input/domain rule violation).  
 - Each feature file must contain at least the minimum scenario count specified in the subtasks.
 
-**DDD:** BDD features map directly to domain scenarios. They validate that the domain model satisfies stakeholder needs.  
-**TDD:** These scenarios will drive the integration and E2E tests later (Phase 5).  
-**BDD:** The primary technique here; we are defining the behaviour before any code. Negative scenarios are mandatory—they directly express domain error rules and will later be formalized as domain error types (see ERROR‑002).  
-**Deep Module:** N/A.
-
 ### Subtasks:
-- [ ] DOMAIN-003.1: Write feature file for Identity & Access (`docs/features/auth.feature`) with **≥4 scenarios**: register (success + duplicate), login (success + invalid), logout, token refresh, plus negative cases (weak password, expired token, unauthorized access). (AGENT)  
+- [ ] DOMAIN-003.1: Write feature file for Identity & Access (`docs/features/auth.feature`) with **≥4 scenarios**: register (success + duplicate), login (success + invalid), logout, token refresh, plus negative cases (weak password, expired token, unauthorized access). (AGENT) – `docs/features/auth.feature`
   **Verification:** `docs/features/auth.feature` contains ≥4 scenarios, includes positive and negative paths, and uses glossary terms.
-- [ ] DOMAIN-003.2: Write feature file for CRM (`docs/features/crm.feature`) with **≥5 scenarios**: process lead through pipeline, invalid stage transition, duplicate lead, lead not found, unauthorized access, and activity logging. (AGENT)  
+- [ ] DOMAIN-003.2: Write feature file for CRM (`docs/features/crm.feature`) with **≥5 scenarios**: process lead through pipeline, invalid stage transition, duplicate lead, lead not found, unauthorized access, and activity logging. (AGENT) – `docs/features/crm.feature`
   **Verification:** `docs/features/crm.feature` contains ≥5 scenarios with negative cases.
-- [ ] DOMAIN-003.3: Write feature file for Projects (`docs/features/projects.feature`) with **≥4 scenarios**: create project, complete task (progress update), attempt to complete already‑completed project, milestone completion. (AGENT)  
   **Verification:** `docs/features/projects.feature` contains ≥4 scenarios.
-- [ ] DOMAIN-003.4: Write feature file for Finance (`docs/features/finance.feature`) with **≥4 scenarios**: create invoice, pay invoice (idempotency), attempt overpayment, budget threshold alert. (AGENT)  
+- [ ] DOMAIN-003.4: Write feature file for Finance (`docs/features/finance.feature`) with **≥4 scenarios**: create invoice, pay invoice (idempotency), attempt overpayment, budget threshold alert. (AGENT) – `docs/features/finance.feature`
   **Verification:** `docs/features/finance.feature` contains ≥4 scenarios.
-- [ ] DOMAIN-003.5: Write feature files for remaining contexts: Documents (≥4, including E‑Sign), Assets (≥4), Portal (≥4, including permission checks), Analytics (≥3), Settings (≥3). (AGENT)  
-  **Verification:** Each file meets the minimum scenario count and includes negative paths.
-- [ ] DOMAIN-003.5a: For every feature file, verify that all negative scenarios align with domain error types to be defined in ERROR‑002. Add a cross‑reference comment in the feature file. (AGENT)  
-  **Verification:** All negative scenarios list the expected domain error code (e.g., `InvalidStageTransition`, `DuplicateEmail`).
-- [ ] DOMAIN-003.6 (HUMAN): Review and approve all feature files for alignment with stakeholder goals.  
-  **Verification:** All feature files approved.  
+- [ ] DOMAIN-003.5: Write feature files for remaining contexts: Documents (≥4, including E‑Sign), Assets (≥4), Portal (≥4, including permission checks), Analytics (≥3), Settings (≥3). (AGENT)
+  **Verification:** Each file meets minimum scenario count and includes negative paths.
+- [ ] ARCH-003: E-Sign Scope Decision (V1) – **MOVED AFTER DOMAIN-003.5** (see below)
+- [ ] DOMAIN-003.5a: For every feature file, verify that all negative scenarios align with domain error types to be defined in ERROR‑002. Add a cross‑reference comment in the feature file. (AGENT)
+  **Verification:** All negative scenarios list expected domain error code (e.g., `InvalidStageTransition`, `DuplicateEmail`).
+- [ ] DOMAIN-003.6 (HUMAN): Review and approve all feature files for alignment with stakeholder goals.
+  **Verification:** All feature files approved.
   **Blocks:** All implementation phases.
+  **Note:** Future phases will wire these feature files to Playwright+Cucumber for automated acceptance tests, creating executable specifications that validate the system against business requirements.
+- [ ] ARCH-003: E-Sign Scope Decision (V1)
+  **Status:** ⏳ Not Started
+  **Current state:** E‑Sign scope undefined – unclear if native implementation or third‑party integration.
+  **Definition of Done:** E‑Sign scope confirmed as third‑party integration (SignWell/DocuSign) within Documents context, bounded contexts doc updated, `documents.feature` updated with E‑Sign scenarios.
+  **Blocks:** DB-ESIGN-001
+  **Blocked By:** none
+  **Depends on:** DOMAIN-003.4
+  **Related Files:** `docs/bounded-contexts.md`, `docs/features/documents.feature`  
 
----
+  **DDD:** E‑Sign V1 is implemented as an integration adapter within the Documents bounded context, not a standalone context. Delegates to third‑party provider (SignWell).
+  **TDD:** N/A – scope decision.
+  **BDD:** E‑Sign scenarios added to `documents.feature`.
+  **Deep Module:** N/A – integration adapter pattern.  
+-----
 
 ## [ ] ARCH-003: E-Sign Scope Decision (V1)  
 **Status:** ⏳ Not Started  
 **Current state:** E‑Sign scope undefined – unclear if native implementation or third‑party integration.  
 **Definition of Done:** E‑Sign scope confirmed as third‑party integration (SignWell/DocuSign) within Documents context, bounded contexts doc updated, `documents.feature` updated with E‑Sign scenarios.  
 **Blocks:** DB-ESIGN-001  
-**Blocked By:** DOMAIN-003  
-**Depends on:** DOMAIN-003  
+**Blocked By:** none  
+**Depends on:** DOMAIN-003.4  
 **Related Files:** `docs/bounded-contexts.md`, `docs/features/documents.feature`  
 
 **DDD:** E‑Sign V1 is implemented as an integration adapter within the Documents bounded context, not a standalone context. Delegates to third‑party provider (SignWell).  
@@ -219,6 +227,27 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   - Scenario: "Signature status is reflected in the document list"  
   - Scenario: "I cannot send a document for signature if no signers are defined"  
   **Verification:** `docs/features/documents.feature` contains at least 3 E‑Sign scenarios.
+
+---
+
+## [ ] ARCH-004: Mockup Sandbox Deprecation Decision  
+**Status:** ⏳ Not Started  
+**Current state:** The 67‑file design tool `mockup-sandbox` is never mentioned again in any phase or task.  
+**Definition of Done:** Decision made on mockup‑sandbox fate: deprecate, move to legacy folder, or assign maintenance. Documentation updated.  
+**Out of Scope:** Complete rewrite or removal of existing functionality.  
+**Blocks:** N/A – cleanup task.  
+**Related Files:** `artifacts/mockup-sandbox/`, optional `legacy/` folder.  
+
+**DDD:** N/A – tooling decision.  
+**TDD:** N/A.  
+**BDD:** N/A.  
+**Deep Module:** N/A.
+
+### Subtasks:
+- [ ] ARCH-004.1 (NEW/HUMAN): Decide fate of mockup-sandbox: deprecate, move to legacy/, or maintain with assigned owner.  
+  **Verification:** Decision documented in `docs/tooling-decisions.md`.  
+- [ ] ARCH-004.2 (NEW/AGENT): Implement decision: if deprecating, add deprecation notice to README and move to `legacy/mockup-sandbox/`.  
+  **Verification:** Mockup sandbox moved; README updated with deprecation notice.
 
 ---
 
@@ -244,8 +273,8 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 ### Subtasks:
 - [ ] TOOLING-001.1: Write `README.md` with project overview, quick start, architecture summary, and link to bounded contexts. (AGENT) – `README.md`  
   **Verification:** `README.md` exists and covers all required sections.
-- [ ] TOOLING-001.2: Create `.env.example` listing `DATABASE_URL`, `JWT_SECRET`, `PORT`, `PORTAL_JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `ESIGN_PROVIDER_API_KEY`, `ESIGN_PROVIDER_BASE_URL`, `MAGIC_LINK_EXPIRY_MINUTES`, `PORTAL_JWT_EXPIRY_HOURS`, etc. (AGENT) – `.env.example`  
-  **Verification:** `.env.example` lists all required variables with descriptions.
+- [ ] TOOLING-001.2: Create `.env.example` and environment variable validation. Create Zod schema for `process.env` and validate at server startup. List all required variables: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `PORTAL_JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `ESIGN_PROVIDER_API_KEY`, `ESIGN_PROVIDER_BASE_URL`, `MAGIC_LINK_EXPIRY_MINUTES`, `PORTAL_JWT_EXPIRY_HOURS`, etc. (AGENT) – `.env.example`, `src/lib/env-validation.ts`  
+  **Verification:** `.env.example` lists all required variables with descriptions; server fails fast with clear error messages for missing/invalid variables.
 - [ ] TOOLING-001.3: Add `.prettierrc` with project‑wide rules (semi: true, singleQuote: true, trailingComma: 'all'). (AGENT) – `.prettierrc`  
   **Verification:** `pnpm prettier --check src/` runs without errors after configuration.
 
@@ -315,7 +344,7 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 - Compatibility test passes: `drizzle-zod 0.8.3` works with catalog Zod `3.25.76`.  
 - A minimal Drizzle schema + `drizzle‑zod` test exists, proving `createSelectSchema` and `createInsertSchema` work correctly and pass `pnpm typecheck`.  
 - Documentation updated to reflect actual compatibility status (compatible or pinned).  
-**Out of Scope:** Upgrading drizzle‑zod; only verifying current versions are compatible.  
+**Out of Scope:** Full ESLint integration.  
 **Blocks:** All database schema tasks  
 **Blocked By:** DEP-001.4  
 **Related Files:** `package.json` (root and relevant workspaces), `lib/db/src/__tests__/zod-compat.test.ts`  
@@ -366,7 +395,7 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 - [ ] ARCH-001.1 (NEW/AGENT): Create `docs/adr/001-multi-tenancy.md` with the following content:  
   - Status: Accepted  
   - Decision: Shared‑schema with `organization_id` column on every business table  
-  - Rationale: Drizzle ORM compatibility, simpler migrations, single PostgreSQL database, PostgreSQL RLS provides defense‑in‑depth  
+  - Rationale: Drizzle ORM compatibility, simpler migrations, single PostgreSQL database, PostgreSQL RLS provides defense‑in‑depth (Note: RLS is deferred post‑MVP; isolation is handled by BaseRepository automatic tenant filtering)  
   - Convention: Column named `organization_id` (UUID, NOT NULL, FK to `organizations` table) on: **users, roles, user_roles**, leads, contacts, companies, deals, activities, projects, tasks, milestones, invoices, payments, cards, budgets, folders, documents, assets, asset_checkouts, maintenance_logs, portal_clients, analytics reports, settings, audit_logs  
   - Repository filter pattern: automatic injection (see ARCH‑001.2)  
   **Verification:** ADR file exists and lists all tables, including identity tables.
@@ -390,4 +419,35 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 
 ---
 
-*End of Phase 0. Next: Phase 1 – Identity & Access (Authentication & Users) — re‑ordered so that identity DB tables are defined after the Organization table in Phase 2, while Phase 1 focuses on the OpenAPI, services, and middleware using the yet‑to‑be‑created tables (with test doubles).*
+## [ ] REPO-001: Create BaseRepository Class (MOVED TO PHASE 2)  
+**Status:** ⏳ Not Started  
+**Current state:** No repository pattern exists – database access will be inconsistent across contexts.  
+**Definition of Done:** `lib/db/src/repositories/base-repository.ts` exports generic `BaseRepository<T>` class with:  
+- Generic CRUD methods: `create`, `findById`, `findAll`, `update`, `softDelete`  
+- Soft delete filtering (automatic `deleted_at IS NULL` filtering, `includeDeleted` option)  
+- Pagination support (`page`, `limit`, `total`, `totalPages`)  
+- Organization scoping (automatic `organization_id` filtering)  
+- Transaction support via Drizzle `db.transaction()`  
+- Type safety with Drizzle table schemas  
+**Anti-Patterns:** Raw SQL queries in services; inconsistent pagination; missing soft delete handling.  
+**Related Files:** `lib/db/src/repositories/base-repository.ts`  
+**Note:** This task moved to Phase 2 after DB-ORG-001 since BaseRepository requires the organizations table to exist first.
+
+**DDD:** BaseRepository provides a consistent data access pattern across all bounded contexts while encapsulating common concerns (soft delete, multi-tenancy, pagination).  
+**TDD:** Write unit tests for BaseRepository against a test database – verify soft delete filtering, pagination, organization scoping, and transaction handling.  
+**BDD:** N/A – infrastructure component.  
+**Deep Module:** BaseRepository is a shallow module that provides a clean interface while hiding database complexity.
+
+### Subtasks:
+- [ ] REPO-001.1: Write unit tests for BaseRepository (CRUD, soft delete, pagination, organization scoping). (AGENT) – `lib/db/src/__tests__/base-repository.test.ts`  
+  **verification:** Tests fail (repository not yet implemented), then pass after implementation.
+- [ ] REPO-001.2: Implement BaseRepository class with generic type safety and Drizzle integration. (AGENT) – `lib/db/src/repositories/base-repository.ts`  
+  **verification:** All unit tests pass; `pnpm typecheck` clean.
+- [ ] REPO-001.3: Add comprehensive TypeScript types for repository methods and pagination responses. (AGENT)  
+  **verification:** Type checking passes; IntelliSense works correctly.
+- **Depends on:** DEP-001 (neverthrow for Either pattern), DB-ORG-001 (table structure pattern).  
+- **Blocks:** All repository implementations in Phase 3 (CRM, Projects, Finance).
+
+---
+
+*End of Phase 0. Next: Phase 1 – Identity & Access (Authentication & Users) — re‑ordered so that identity DB tables are defined after the Organization table in Phase 2, while Phase 1 focuses on OpenAPI, services, and middleware using test doubles.*

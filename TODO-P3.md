@@ -133,7 +133,7 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 
 ### API‑CRM‑003: Leads – Service & Repository (Deep Module)
 **Status:** ⏳ Not Started  
-**Depends on:** API‑CRM‑002 (tests define contract), DB‑MIGRATE‑ALL (DB exists), ERROR‑002 (domain errors defined), ARCH‑001.2 (BaseRepository).  
+**Depends on:** API‑CRM‑002 (tests define contract), DB‑MIGRATE‑ALL (DB exists), ERROR‑002 (domain errors defined), ARCH‑001.2 (BaseRepository), EVENT‑001 (domain event bus).  
 **Definition of Done:**  
 - `lib/db/src/repositories/crm/leads.ts` exports `LeadRepository` extending `BaseRepository<Lead>` with methods: `create`, `findById`, `findAll`, `update`, `softDelete`. Queries automatically exclude `deleted_at IS NOT NULL` rows; `includeDeleted` option overrides.  
 - `artifacts/api‑server/src/services/crm/lead‑service.ts` exports `LeadService` with methods: `createLead(dto)`, `getLead(id)`, `listLeads(params)`, `updateLead(id, dto)`, `deleteLead(id)`.  
@@ -147,7 +147,7 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 **TDD:** Write unit tests for `LeadService` with a mocked repository – verify stage transitions, soft delete behavior, Either return types, and event emission. Write unit tests for `LeadRepository` against a test database – verify soft delete filtering, `includeDeleted`, CRUD.  
 **BDD:** The service encapsulates “move lead through stages” workflow.  
 **Deep Module:** The service interface is simple (5 methods) while hiding stage machine logic, validation, soft delete filtering, and persistence.  
-**Depth refactor check:** After implementation, verify public methods ≤ 5, internal logic ≥150 lines (total), no thrown errors.
+**Depth refactor check:** After implementation, verify public methods ≤ 5, service encapsulates at least three non‑trivial concerns (e.g., validation, persistence, event publication) behind ≤5 public methods.
 
 **Subtasks:**
 - [ ] API‑CRM‑003.1: Implement `LeadRepository` extending `BaseRepository` with soft delete support and `includeDeleted` option. (AGENT) – `lib/db/src/repositories/crm/leads.ts`  
@@ -158,7 +158,7 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
   **verification:** Unit tests for service (with mocked repo) pass.
 - [ ] API‑CRM‑003.4: Write unit tests for `LeadService` (success + failure paths, stage transition rules, event emission). (AGENT)  
   **verification:** Green.
-- [ ] API‑CRM‑003.5: Depth refactor check: method count ≤ 5, ≥150 lines, no `throw`. (AGENT)  
+- [ ] API‑CRM‑003.5: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
   **verification:** Manual inspection + `pnpm typecheck`.
 - **Blocks:** API‑CRM‑004.
 
@@ -431,7 +431,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ### API‑PROJ‑003: Projects – Service & Repository (Deep Module)
 **Status:** ⏳ Not Started  
-**Depends on:** DB‑MIGRATE‑ALL, ARCH‑001.2 (BaseRepository), ERROR‑002 (Projects errors).  
+**Depends on:** DB‑MIGRATE‑ALL, ARCH‑001.2 (BaseRepository), ERROR‑002 (Projects errors), EVENT‑001 (domain event bus).  
 **Definition of Done:**
 - `lib/db/src/repositories/projects.ts` exports `ProjectRepository` extending `BaseRepository<Project>`, supporting soft delete with `includeDeleted`.
 - `artifacts/api‑server/src/services/projects/project‑service.ts` exports `ProjectService` with methods: `create`, `get`, `list`, `update`, `softDelete`, `updateProjectProgress(projectId)`.
@@ -451,7 +451,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
   **verification:** Green.
 - [ ] API‑PROJ‑003.4: Implement automatic progress update: subscribe to `TaskCompleted` event, call `updateProjectProgress`. (AGENT)  
   **verification:** Unit test with mock event bus.
-- [ ] API‑PROJ‑003.5: Depth refactor check: method count ≤ 5, ≥150 lines, no `throw`. (AGENT)  
+- [ ] API‑PROJ‑003.5: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
   **verification:** Manual + `pnpm typecheck`.
 
 ---
@@ -542,6 +542,28 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ---
 
+## Cross-Cutting: Integration Event Schemas
+
+### EVENT-INT-001: Integration Event Schemas
+**Status:** ⏳ Not Started  
+**Depends on:** EVENT-001 (domain event bus), all Phase 3 service tasks (for event sources).  
+**Definition of Done:** Create a shared integration event catalog that separates internal domain events from cross-context messages:
+- `lib/events/integration-schemas.ts` defines JSON schemas for cross-context events like `LeadConvertedToDeal`, `InvoicePaid`, `ProjectCompleted`, etc.
+- Each schema includes event metadata: `eventId`, `timestamp`, `sourceContext`, `targetContext`, `payload`.
+- Event versioning strategy: include `version` field for breaking changes.
+- Documentation of which domain events map to which integration events.
+**Anti-Patterns:** Direct domain event exposure without transformation; missing versioning.  
+**Related Files:** `lib/events/integration-schemas.ts`
+
+**Subtasks:**
+- [ ] EVENT-INT-001.1: Define integration event schemas and mapping from domain events. (AGENT)  
+  **verification:** Schemas compile, mappings documented.
+- [ ] EVENT-INT-001.2: Add event transformation utilities in services where needed. (AGENT)  
+  **verification:** Unit tests for transformation pass.
+- **Blocks:** Used by Phase 4+ cross-context features.
+
+---
+
 ## Finance Context Task Index
 
 - [ ] API‑FIN‑001 – Invoices – Expand OpenAPI Spec
@@ -588,7 +610,17 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 ### API‑FIN‑003: Invoices – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
 **Definition of Done:** `InvoiceRepository` and `InvoiceService` with type‑dependent validation, status machine, no direct over‑payment detection (that's in payments). Either returns.  
-**Depth refactor check.**
+**Deep Module:** Encapsulates invoice type validation and status transitions.
+
+**Subtasks:**
+- [ ] API‑FIN‑003.1: Implement `InvoiceRepository` extending `BaseRepository` with soft delete. (AGENT)  
+  **verification:** Unit tests for repository pass.
+- [ ] API‑FIN‑003.2: Implement `InvoiceService` with type validation and status machine. (AGENT)  
+  **verification:** Unit tests with mocked repo pass.
+- [ ] API‑FIN‑003.3: Write unit tests for service (type validation, status transitions). (AGENT)  
+  **verification:** Green.
+- [ ] API‑FIN‑003.4: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
+  **verification:** Manual inspection + `pnpm typecheck`.
 
 ---
 
@@ -617,9 +649,9 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 ---
 
 ### API‑FIN‑007: Payments – Service & Repository
-**Depends on:** DB‑MIGRATE‑ALL.  
+**Depends on:** DB‑MIGRATE‑ALL, EVENT‑001 (domain event bus).  
 **Definition of Done:** `PaymentRepository` (append‑only, supports `findByIdempotencyKey`). `PaymentService` validates balance, emits `PaymentRecorded` (and `InvoicePaid` if fully paid), handles idempotency (check key, catch DB unique violation). Either returns.  
-**Depth refactor check.**
+**Deep Module:** Encapsulates payment validation, idempotency handling, and event publishing.
 
 **Subtasks:**
 - [ ] API‑FIN‑007.1: Implement repository with idempotency key lookup. (AGENT)  
@@ -628,6 +660,8 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
   **verification:** Unit tests with mocked repo pass.
 - [ ] API‑FIN‑007.3: Write test for duplicate idempotency key: two calls, only one row, same response. (AGENT)  
   **verification:** Green.
+- [ ] API‑FIN‑007.4: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
+  **verification:** Manual inspection + `pnpm typecheck`.
 
 ---
 
