@@ -22,6 +22,10 @@ Key improvements integrated:
 
 ## Phase 3 Task Index
 
+**Cross‑Cutting Infrastructure**  
+• RBAC‑001 – Role‑Based Access Control Middleware  
+• API‑SPEC‑001 – OpenAPI Spec Modularisation  
+
 **Leads**  
 • API‑CRM‑001 – Expand OpenAPI Spec  
 • API‑CRM‑002 – Integration Tests (TDD Red)  
@@ -55,6 +59,98 @@ Key improvements integrated:
 
 **Cross‑Cutting**  
 • API‑CRM‑022 – CRM Domain Events Verification  
+
+---
+
+## Cross‑Cutting Infrastructure
+
+### RBAC‑001: Role‑Based Access Control Middleware
+**Status:** ⏳ Not Started  
+**Depends on:** AUTH‑008 (auth middleware), DB‑IDENTITY‑005 (users, roles, user_roles tables).  
+**Blocks:** All CRM route implementations (API‑CRM‑004, API‑CRM‑009, API‑CRM‑013, API‑CRM‑017, API‑CRM‑021).  
+**Definition of Done:** `artifacts/api-server/src/middlewares/rbac.ts` exports RBAC middleware that enforces role-based permissions on protected routes.  
+- Middleware reads JWT token from `req.user` (set by AUTH‑008)  
+- Queries user's roles for the current organization from `user_roles` and `roles` tables  
+- Supports permission checking by resource and action (e.g., `crm:leads:create`, `crm:leads:read`, `crm:leads:update`)  
+- Returns 403 `InsufficientPermissions` when user lacks required permission  
+- Includes caching of user permissions for performance (5-minute cache)  
+- Configurable permission matrix for different user roles (admin, manager, user)  
+
+**Permission Matrix Examples:**
+- **Admin**: All permissions (`*:*`)
+- **Manager**: `crm:*:read`, `crm:*:create`, `crm:*:update` (no delete)
+- **User**: `crm:*:read` (read-only access)
+
+**Related Files:** `artifacts/api-server/src/middlewares/rbac.ts`
+
+**DDD:** RBAC enforces bounded context access rules at the infrastructure layer, preserving domain integrity.  
+**TDD:** Write unit tests for permission checking logic and caching behavior.  
+**BDD:** Enables "Only users with appropriate roles can access CRM features" scenarios.  
+**Deep Module:** Middleware hides complex permission logic behind simple interface.
+
+### Subtasks:
+- [ ] RBAC‑001.1: Define permission matrix and role constants. (AGENT) – `src/lib/permissions/permissions.ts`  
+  **verification:** Permission matrix compiles; role constants defined.
+- [ ] RBAC‑001.2: Implement RBAC middleware with user role lookup and permission checking. (AGENT) – `middlewares/rbac.ts`  
+  **verification:** Middleware unit tests pass.
+- [ ] RBAC‑001.3: Add permission caching with TTL (5 minutes). (AGENT)  
+  **verification:** Cache tests pass; performance measured.
+- [ ] RBAC‑001.4: Write unit tests for permission matrix, role lookup, and caching. (AGENT)  
+  **verification:** All tests green.
+- [ ] RBAC‑001.5: Integration test with CRM routes (mocked). (AGENT)  
+  **verification:** Middleware correctly blocks unauthorized requests.
+
+---
+
+### API‑SPEC‑001: OpenAPI Spec Modularisation
+**Status:** ⏳ Not Started  
+**Depends on:** None (infrastructure task).  
+**Blocks:** All subsequent API expansion tasks (when spec exceeds ~500 lines).  
+**Definition of Done:** When the OpenAPI spec exceeds ~500 lines, split into per‑context files under `lib/api-spec/contexts/` and use `$ref` to maintain a single coherent API specification.
+
+**Modularisation Structure:**
+- Main spec: `lib/api-spec/openapi.yaml` (contains common types, servers, and `$ref` imports)
+- Context specs: `lib/api-spec/contexts/{context}.yaml` (e.g., `crm.yaml`, `auth.yaml`, `projects.yaml`)
+- Each context spec contains its own paths, components, and tags
+- Main spec imports all context specs using `$ref` pointers
+
+**Implementation Pattern:**
+```yaml
+# In main openapi.yaml
+paths:
+  /crm/leads:
+    $ref: './contexts/crm.yaml#/paths/~1crm~1leads'
+  /auth/register:
+    $ref: './contexts/auth.yaml#/paths/~1auth~1register'
+
+components:
+  schemas:
+    Lead:
+      $ref: './contexts/crm.yaml#/components/schemas/Lead'
+    User:
+      $ref: './contexts/auth.yaml#/components/schemas/User'
+```
+
+**Anti-Patterns:** Duplicating schemas across files; circular references; breaking existing client generation.  
+**Related Files:** `lib/api-spec/openapi.yaml`, `lib/api-spec/contexts/`
+
+**DDD:** Each bounded context maintains its own API specification while preserving a unified contract.  
+**TDD:** Verify that `pnpm codegen` continues to work after modularisation.  
+**BDD:** N/A – infrastructure concern.  
+**Deep Module:** N/A – specification organization.
+
+### Subtasks:
+- [ ] API‑SPEC‑001.1: Monitor OpenAPI spec size. When it exceeds 500 lines, create `lib/api-spec/contexts/` directory. (AGENT)  
+  **verification:** Directory created when needed.
+- [ ] API‑SPEC‑001.2: Extract CRM paths and schemas into `contexts/crm.yaml`. (AGENT)  
+  **verification:** Main spec uses `$ref` to CRM context; `pnpm codegen` still works.
+- [ ] API‑SPEC‑001.3: Extract Auth paths and schemas into `contexts/auth.yaml`. (AGENT)  
+  **verification:** Auth endpoints still generate correctly.
+- [ ] API‑SPEC‑001.4: Update Orval configuration to handle modular specs. (AGENT) – `lib/api-spec/orval.config.ts`  
+  **verification:** Code generation produces same output as before.
+- [ ] API‑SPEC‑001.5: Run `pnpm codegen` and verify all generated clients work. (HUMAN)  
+  **verification:** `pnpm typecheck` passes; generated hooks unchanged.
+- **Blocks:** Future API expansion tasks (Phase 4+).
 
 ---
 
@@ -138,13 +234,13 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 - `lib/db/src/repositories/crm/leads.ts` exports `LeadRepository` extending `BaseRepository<Lead>` with methods: `create`, `findById`, `findAll`, `update`, `softDelete`. Queries automatically exclude `deleted_at IS NOT NULL` rows; `includeDeleted` option overrides.  
 - `artifacts/api‑server/src/services/crm/lead‑service.ts` exports `LeadService` with methods: `createLead(dto)`, `getLead(id)`, `listLeads(params)`, `updateLead(id, dto)`, `deleteLead(id)`.  
 - Service enforces stage transitions (new → contacted → qualified → lost) and validates `assigned_to` exists.  
-- All service methods return `Either<DomainError, Result>` using `neverthrow`.  
+- All service methods return `Result<T, DomainError>` using `neverthrow`.  
 - Emit `LeadCreated` domain event in `createLead`.  
 **Anti-Patterns:** Business logic in route handlers; exposing raw SQL.  
 **Related Files:** `lib/db/src/repositories/crm/leads.ts`, `artifacts/api‑server/src/services/crm/lead‑service.ts`
 
 **DDD:** The `LeadService` is the entry point into the CRM context. Stage machine and soft delete are domain rules.  
-**TDD:** Write unit tests for `LeadService` with a mocked repository – verify stage transitions, soft delete behavior, Either return types, and event emission. Write unit tests for `LeadRepository` against a test database – verify soft delete filtering, `includeDeleted`, CRUD.  
+**TDD:** Write unit tests for `LeadService` with a mocked repository – verify stage transitions, soft delete behavior, Result<T, DomainError> return types, and event emission. Write unit tests for `LeadRepository` against a test database – verify soft delete filtering, `includeDeleted`, CRUD.  
 **BDD:** The service encapsulates “move lead through stages” workflow.  
 **Deep Module:** The service interface is simple (5 methods) while hiding stage machine logic, validation, soft delete filtering, and persistence.  
 **Depth refactor check:** After implementation, verify public methods ≤ 5, service encapsulates at least three non‑trivial concerns (e.g., validation, persistence, event publication) behind ≤5 public methods.
@@ -154,12 +250,12 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
   **verification:** Unit test for repository against test DB passes.
 - [ ] API‑CRM‑003.2: Write unit tests for `LeadRepository` (soft delete filter, `includeDeleted`, CRUD). (AGENT)  
   **verification:** Green.
-- [ ] API‑CRM‑003.3: Implement `LeadService` with stage machine, Either returns, and event emission. (AGENT) – `artifacts/api‑server/src/services/crm/lead‑service.ts`  
+- [ ] API‑CRM‑003.3: Implement `LeadService` with stage machine, Result<T, DomainError> returns, and event emission. (AGENT) – `artifacts/api‑server/src/services/crm/lead‑service.ts`  
   **verification:** Unit tests for service (with mocked repo) pass.
 - [ ] API‑CRM‑003.4: Write unit tests for `LeadService` (success + failure paths, stage transition rules, event emission). (AGENT)  
   **verification:** Green.
 - [ ] API‑CRM‑003.5: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
-  **verification:** Manual inspection + `pnpm typecheck`.
+  **verification:** `grep -c "export.*function\|export.*class\|export.*async" artifacts/api-server/src/services/crm/lead-service.ts | grep -E "^[1-5]$" && grep -q "throw\|Throw" artifacts/api-server/src/services/crm/lead-service.ts || echo "No throws found" && pnpm typecheck`.
 - **Blocks:** API‑CRM‑004.
 
 ---
@@ -387,13 +483,13 @@ Key improvements integrated:
 
 ### API‑PROJ‑001: Projects – Expand OpenAPI Spec
 **Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑001 (schema), DOMAIN‑003 (feature files).  
-**Definition of Done:** OpenAPI spec adds `projects` tag and paths:
-- `GET /projects` – list with pagination (`page`, `limit`), filter by `status`. Response envelope standard.
-- `POST /projects` – create (auth, validates `client_id` exists). Returns 201 with `Location` header.
-- `GET /projects/{projectId}` – get by ID, includes derived `progress_percent`, `task_count`, `completed_task_count`.
-- `PATCH /projects/{projectId}` – update name, status, etc. Progress columns are **not** writable; any attempt to set them returns 400 `ProgressIsReadOnly`.
-- `DELETE /projects/{projectId}` – soft delete, 204.
+**Depends on:** DB‑PROJ‑001 (schema), DOMAIN‑003 (feature files), ARCH‑005 (API versioning).  
+**Definition of Done:** OpenAPI spec adds `projects` tag and paths with `/api/v1/` prefix:
+- `GET /api/v1/projects` – list with pagination (`page`, `limit`), filter by `status`. Response envelope standard.
+- `POST /api/v1/projects` – create (auth, validates `client_id` exists). Returns 201 with `Location` header.
+- `GET /api/v1/projects/{projectId}` – get by ID, includes derived `progress_percent`, `task_count`, `completed_task_count`.
+- `PATCH /api/v1/projects/{projectId}` – update name, status, etc. Progress columns are **not** writable; any attempt to set them returns 400 `ProgressIsReadOnly`.
+- `DELETE /api/v1/projects/{projectId}` – soft delete, 204.
 Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.  
 **Anti-Patterns:** Allowing direct progress field mutation.  
 **Related Files:** `lib/api‑spec/openapi.yaml`
@@ -439,7 +535,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 - `update` rejects any direct write to `progress_percent`, `task_count`, or `completed_task_count`; only the service’s internal method updates them.
 - `updateProjectProgress` queries all active tasks for the project, computes ratio, and atomically updates the progress columns.
 - Emits `ProjectCompleted` when status transitions to `completed`.
-- All methods return `Either<DomainError, Result>`.
+- All methods return `Result<T, DomainError>`.
 **Deep Module:** Encapsulates status machine, progress derivation, and event publishing.
 
 **Subtasks:**
@@ -488,7 +584,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ### API‑PROJ‑007: Tasks – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
-**Definition of Done:** `TaskRepository` (soft delete) and `TaskService` (enforces parent‑child completion rules, validates project exists, emits `TaskCompleted` on status move to `done`). Either returns.  
+**Definition of Done:** `TaskRepository` (soft delete) and `TaskService` (enforces parent‑child completion rules, validates project exists, emits `TaskCompleted` on status move to `done`). Result<T, DomainError> returns.  
 **Depth refactor check** added.
 
 ---
@@ -519,7 +615,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ### API‑PROJ‑011: Milestones – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL.  
-**Definition of Done:** `MilestoneRepository` and `MilestoneService` (complete only once, emits `MilestoneCompleted` event). Either returns.  
+**Definition of Done:** `MilestoneRepository` and `MilestoneService` (complete only once, emits `MilestoneCompleted` event). Result<T, DomainError> returns.  
 **Depth refactor check.**
 
 ---
@@ -609,7 +705,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ### API‑FIN‑003: Invoices – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
-**Definition of Done:** `InvoiceRepository` and `InvoiceService` with type‑dependent validation, status machine, no direct over‑payment detection (that's in payments). Either returns.  
+**Definition of Done:** `InvoiceRepository` and `InvoiceService` with type‑dependent validation, status machine, no direct over‑payment detection (that's in payments). Result<T, DomainError> returns.  
 **Deep Module:** Encapsulates invoice type validation and status transitions.
 
 **Subtasks:**
@@ -620,7 +716,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 - [ ] API‑FIN‑003.3: Write unit tests for service (type validation, status transitions). (AGENT)  
   **verification:** Green.
 - [ ] API‑FIN‑003.4: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
-  **verification:** Manual inspection + `pnpm typecheck`.
+  **verification:** `grep -c "export.*function\|export.*class\|export.*async" artifacts/api-server/src/services/finance/invoice-service.ts | grep -E "^[1-5]$" && grep -q "throw\|Throw" artifacts/api-server/src/services/finance/invoice-service.ts || echo "No throws found" && pnpm typecheck`.
 
 ---
 
@@ -650,7 +746,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 
 ### API‑FIN‑007: Payments – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, EVENT‑001 (domain event bus).  
-**Definition of Done:** `PaymentRepository` (append‑only, supports `findByIdempotencyKey`). `PaymentService` validates balance, emits `PaymentRecorded` (and `InvoicePaid` if fully paid), handles idempotency (check key, catch DB unique violation). Either returns.  
+**Definition of Done:** `PaymentRepository` (append‑only, supports `findByIdempotencyKey`). `PaymentService` validates balance, emits `PaymentRecorded` (and `InvoicePaid` if fully paid), handles idempotency (check key, catch DB unique violation). Result<T, DomainError> returns.  
 **Deep Module:** Encapsulates payment validation, idempotency handling, and event publishing.
 
 **Subtasks:**
@@ -661,7 +757,7 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 - [ ] API‑FIN‑007.3: Write test for duplicate idempotency key: two calls, only one row, same response. (AGENT)  
   **verification:** Green.
 - [ ] API‑FIN‑007.4: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
-  **verification:** Manual inspection + `pnpm typecheck`.
+  **verification:** `grep -c "export.*function\|export.*class\|export.*async" artifacts/api-server/src/services/finance/payment-service.ts | grep -E "^[1-5]$" && grep -q "throw\|Throw" artifacts/api-server/src/services/finance/payment-service.ts || echo "No throws found" && pnpm typecheck`.
 
 ---
 
@@ -705,6 +801,245 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
   **verification:** Unit tests.
 - [ ] API‑FIN‑EVENTS‑001.2: Integration test: pay invoice fully → check audit log for `InvoicePaid`. (AGENT)  
   **verification:** Test green.
+
+---
+
+## Accounts Payable Context
+
+### API‑AP‑001: Vendors – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AP‑001 (vendors schema), DB‑FIN‑005 (bank accounts).  
+**Definition of Done:** OpenAPI spec adds `vendors` tag and paths:
+- `GET /finance/vendors` – list with pagination, search (`search`), filter (`is_1099_eligible`). Response envelope standard.
+- `POST /finance/vendors` – create vendor (auth required). Returns 201 with `Location` header.
+- `GET /finance/vendors/{vendorId}` – get by ID, includes payment methods.
+- `PATCH /finance/vendors/{vendorId}` – update fields, payment terms, 1099 eligibility.
+- `DELETE /finance/vendors/{vendorId}` – soft delete, 204.
+- `POST /finance/vendors/{vendorId}/payment-methods` – add payment method (ACH/check/wire).
+Schemas: `Vendor`, `VendorCreate`, `VendorUpdate`, `PaymentMethod`. Examples required.
+
+**Subtasks:**
+- [ ] API‑AP‑001.1: Add vendor paths and schemas to OpenAPI. (AGENT) – `lib/api‑spec/openapi.yaml`  
+  **verification:** Spec contains paths with correct operationIds.
+- [ ] API‑AP‑001.2: Define payment method endpoints. (AGENT)  
+  **verification:** Generated client includes typed payment method operations.
+- [ ] API‑AP‑001.3: Run `pnpm codegen` and `pnpm typecheck`. (HUMAN/AGENT)  
+  **verification:** No type errors.
+
+### API‑AP‑002: Vendors – Integration Tests (Red)
+**Depends on:** API‑AP‑001, TEST‑INFRA‑001.  
+**Definition of Done:** Failing tests for vendor CRUD, duplicate tax ID conflict, soft delete, payment method CRUD, unauthorized access.
+
+**Subtasks:**
+- [ ] API‑AP‑002.1: Write vendor CRUD tests. (AGENT) – `__tests__/api/ap/vendors.test.ts`  
+  **verification:** Tests fail with 404 (no routes yet).
+
+### API‑AP‑003: Vendors – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, ERROR‑002.  
+**Definition of Done:** `VendorRepository` extending `BaseRepository` with soft delete. `VendorService` with methods: `create`, `get`, `list`, `update`, `softDelete`, `addPaymentMethod`, `removePaymentMethod`. Enforces unique tax ID per organization. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates vendor deduplication and payment method management.
+
+### API‑AP‑004: Vendors – Routes & Green Tests
+**Depends on:** API‑AP‑003, AUTH‑008, ERROR‑001.  
+**Subtasks:** routes, integration tests green.
+
+### API‑AP‑005: Bills – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AP‑002 (bills schema), API‑AP‑001 (vendors).  
+**Definition of Done:** OpenAPI spec adds `bills` tag and paths:
+- `GET /finance/bills` – list with pagination, filter by `status` (draft/pending_approval/approved/paid/overdue), `vendor_id`, `due_date` range.
+- `POST /finance/bills` – create bill with line items (auto-calculates total). Returns 201.
+- `GET /finance/bills/{billId}` – get by ID, includes vendor, line items, attachments, approval status.
+- `PATCH /finance/bills/{billId}` – update line items, memo, attachments (only if status is draft or pending_approval).
+- `POST /finance/bills/{billId}/submit-for-approval` – transition to pending_approval, triggers workflow.
+- `DELETE /finance/bills/{billId}` – soft delete (only if not paid), 204.
+- `POST /finance/bills/{billId}/approve` – approve bill (requires approval permission).
+- `POST /finance/bills/{billId}/reject` – reject bill with reason.
+Schemas: `Bill`, `BillCreate`, `BillUpdate`, `BillLineItem`, `BillApproval`. Examples required.
+
+**Subtasks:**
+- [ ] API‑AP‑005.1: Add bill paths and schemas. (AGENT)  
+  **verification:** Spec validates with examples.
+- [ ] API‑AP‑005.2: Define approval workflow endpoints. (AGENT)  
+  **verification:** Status transitions documented.
+- [ ] API‑AP‑005.3: Run `pnpm codegen` and `pnpm typecheck`. (HUMAN/AGENT)  
+  **verification:** Clean generation.
+
+### API‑AP‑006: Bills – Integration Tests (Red)
+**Depends on:** API‑AP‑005, TEST‑INFRA‑001.  
+**Definition of Done:** Failing tests for bill CRUD, status transitions (draft → pending → approved → paid), approval workflow triggers, unauthorized rejection, soft delete restrictions.
+
+**Subtasks:**
+- [ ] API‑AP‑006.1: Write bill lifecycle tests. (AGENT) – `__tests__/api/ap/bills.test.ts`  
+  **verification:** Red tests for all transitions.
+
+### API‑AP‑007: Bills – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, EVENT‑001, ERROR‑002.  
+**Definition of Done:** `BillRepository` with soft delete and status filtering. `BillService` with methods: `createBill`, `getBill`, `listBills`, `updateBill`, `submitForApproval`, `approveBill`, `rejectBill`, `softDeleteBill`. Enforces status machine (draft → pending → approved → paid). Auto-calculates total from line items. Emits `BillCreated`, `BillSubmittedForApproval`, `BillApproved`, `BillRejected` events. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates bill lifecycle, approval workflow integration, and line item calculations.
+
+### API‑AP‑008: Bills – Routes & Green Tests
+**Depends on:** API‑AP‑007, AUTH‑008, RBAC‑001 (for approval permissions), ERROR‑001.  
+**Subtasks:** routes, integration tests green.
+
+### API‑AP‑009: Approval Workflows – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AP‑003 (approval workflows schema).  
+**Definition of Done:** OpenAPI spec for approval workflow management:
+- `GET /finance/approval-workflows` – list active workflows.
+- `POST /finance/approval-workflows` – create workflow with steps and thresholds.
+- `GET /finance/approval-workflows/{workflowId}` – get workflow details.
+- `PATCH /finance/approval-workflows/{workflowId}` – update steps, thresholds, active status.
+- `DELETE /finance/approval-workflows/{workflowId}` – soft delete.
+Schemas: `ApprovalWorkflow`, `ApprovalWorkflowCreate`, `ApprovalStep`. Examples.
+
+### API‑AP‑010: Approval Workflows – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
+**Definition of Done:** `ApprovalWorkflowRepository` and `ApprovalWorkflowService` for managing multi-step approval rules with threshold amounts.
+
+### API‑AP‑011: Purchase Orders – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AP‑004 (purchase orders schema).  
+**Definition of Done:** PO endpoints for 3-way matching:
+- `GET /finance/purchase-orders` – list POs by status.
+- `POST /finance/purchase-orders` – create PO with line items.
+- `GET /finance/purchase-orders/{poId}` – get PO with receipt status.
+- `PATCH /finance/purchase-orders/{poId}` – update, mark as received.
+- `POST /finance/purchase-orders/{poId}/receive` – record partial or full receipt.
+Schemas: `PurchaseOrder`, `PurchaseOrderLineItem`, `POReceipt`. Examples.
+
+### API‑AP‑012: Purchase Orders – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
+**Definition of Done:** `PurchaseOrderRepository` and `PurchaseOrderService` with receipt tracking for 3-way matching (PO → Bill → Receipt).
+
+### API‑AP‑013: Bill Payments – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AP‑005 (bill payments schema), API‑AP‑008 (bills).  
+**Definition of Done:** Payment execution endpoints:
+- `POST /finance/bills/{billId}/payments` – create payment (ACH/check/wire), supports `Idempotency-Key` header.
+- `GET /finance/bills/{billId}/payments` – list payments for bill.
+- `GET /finance/payments/{paymentId}` – get payment status.
+- `POST /finance/payments/{paymentId}/void` – void payment (if not yet processed).
+Schemas: `BillPayment`, `BillPaymentCreate`. Examples.
+
+### API‑AP‑014: Bill Payments – Service & Repository
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, ERROR‑002.  
+**Definition of Done:** `BillPaymentRepository` (append-only). `BillPaymentService` with methods: `createPayment`, `getPayment`, `listPaymentsForBill`, `voidPayment`. Validates bill is approved before payment. Integrates with payment processor (Stripe/Plaid - stubbed). Emits `BillPaymentInitiated`, `BillPaymentCompleted`, `BillPaymentFailed` events. Handles idempotency. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates payment validation, processor integration, and idempotency.
+
+### API‑AP‑015: 3-Way Matching Service
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑007, API‑AP‑012.  
+**Definition of Done:** `ThreeWayMatchingService` that validates bills against purchase orders and receipts:
+- `validateMatch(billId, poId)` – checks line items match PO, quantities match receipts.
+- `getMatchStatus(billId)` – returns matching status (matched/partial/unmatched).
+- Enforces business rule: cannot approve bill without match validation (configurable).
+**Deep Module:** Encapsulates complex matching logic across POs, bills, and receipts.
+
+---
+
+## Accounts Receivable Context
+
+### API‑AR‑001: Customers – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AR‑001 (customers schema), DB‑FIN‑005 (bank accounts).  
+**Definition of Done:** OpenAPI spec adds `customers` tag and paths:
+- `GET /finance/customers` – list with pagination, search, filter by `portal_access_enabled`.
+- `POST /finance/customers` – create customer. Returns 201.
+- `GET /finance/customers/{customerId}` – get by ID, includes credit limit, open balance.
+- `PATCH /finance/customers/{customerId}` – update credit limit, payment terms, portal access.
+- `DELETE /finance/customers/{customerId}` – soft delete, 204.
+- `POST /finance/customers/{customerId}/payment-methods` – add customer payment method.
+- `GET /finance/customers/{customerId}/open-invoices` – list unpaid invoices.
+Schemas: `Customer`, `CustomerCreate`, `CustomerUpdate`. Examples required.
+
+### API‑AR‑002: Customers – Integration Tests (Red)
+**Depends on:** API‑AR‑001, TEST‑INFRA‑001.  
+**Definition of Done:** Failing tests for customer CRUD, duplicate email conflict, soft delete, credit limit enforcement, portal access toggle.
+
+### API‑AR‑003: Customers – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, ERROR‑002.  
+**Definition of Done:** `CustomerRepository` extending `BaseRepository`. `CustomerService` with methods: `create`, `get`, `list`, `update`, `softDelete`, `addPaymentMethod`, `getOpenBalance`. Calculates open balance from unpaid invoices. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates customer balance calculations and credit limit tracking.
+
+### API‑AR‑004: Customers – Routes & Green Tests
+**Depends on:** API‑AR‑003, AUTH‑008, ERROR‑001.  
+**Subtasks:** routes, integration tests green.
+
+### API‑AR‑005: AR Invoices – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AR‑002 (AR invoices schema), API‑AR‑001 (customers).  
+**Definition of Done:** OpenAPI spec for AR invoice lifecycle:
+- `GET /finance/ar-invoices` – list with pagination, filter by `status`, `customer_id`, `overdue` flag.
+- `POST /finance/ar-invoices` – create invoice with line items, auto-generates invoice number. Returns 201.
+- `GET /finance/ar-invoices/{invoiceId}` – get by ID, includes customer, line items, balance, payment history.
+- `PATCH /finance/ar-invoices/{invoiceId}` – update line items (only if draft or sent).
+- `POST /finance/ar-invoices/{invoiceId}/send` – mark as sent, triggers email delivery (via email service).
+- `POST /finance/ar-invoices/{invoiceId}/void` – void invoice (if not fully paid).
+- `DELETE /finance/ar-invoices/{invoiceId}` – soft delete, 204.
+Schemas: `ARInvoice`, `ARInvoiceCreate`, `ARInvoiceLineItem`, `ARInvoiceSend`. Examples.
+
+### API‑AR‑006: AR Invoices – Integration Tests (Red)
+**Depends on:** API‑AR‑005, TEST‑INFRA‑001.  
+**Definition of Done:** Failing tests for invoice CRUD, status transitions (draft → sent → partially_paid → paid), overdue detection, void restrictions, soft delete.
+
+### API‑AR‑007: AR Invoices – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, EVENT‑001, EMAIL‑SERVICE‑001, ERROR‑002.  
+**Definition of Done:** `ARInvoiceRepository` with soft delete and balance tracking. `ARInvoiceService` with methods: `createInvoice`, `getInvoice`, `listInvoices`, `updateInvoice`, `sendInvoice`, `voidInvoice`, `updateBalance`. Auto-generates unique invoice numbers per organization. Auto-calculates balance from payments. Emits `ARInvoiceCreated`, `ARInvoiceSent`, `ARInvoicePaid`, `ARInvoiceVoided` events. Integrates with email service for delivery. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates invoice lifecycle, number generation, balance calculations, and delivery.
+
+### API‑AR‑008: AR Invoices – Routes & Green Tests
+**Depends on:** API‑AR‑007, AUTH‑008, ERROR‑001.  
+**Subtasks:** routes, integration tests green.
+
+### API‑AR‑009: Recurring Invoices – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AR‑003 (recurring templates schema).  
+**Definition of Done:** Recurring billing endpoints:
+- `GET /finance/recurring-templates` – list active templates.
+- `POST /finance/recurring-templates` – create template with frequency, start/end dates.
+- `GET /finance/recurring-templates/{templateId}` – get template details.
+- `PATCH /finance/recurring-templates/{templateId}` – update frequency, line items, active status.
+- `DELETE /finance/recurring-templates/{templateId}` – soft delete.
+- `POST /finance/recurring-templates/{templateId}/generate` – manually trigger invoice generation.
+Schemas: `RecurringTemplate`, `RecurringTemplateCreate`. Examples.
+
+### API‑AR‑010: Recurring Invoices – Service & Repository
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
+**Definition of Done:** `RecurringTemplateRepository` and `RecurringInvoiceService`. `generateInvoiceFromTemplate(templateId)` creates new AR invoice from template, updates `next_invoice_date`. Background job support (stubbed for P5).
+
+### API‑AR‑011: Customer Payments – Expand OpenAPI Spec
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑AR‑005 (customer payments schema), API‑AR‑007.  
+**Definition of Done:** Payment application endpoints:
+- `POST /finance/customers/{customerId}/payments` – record payment (ACH/card/check/cash/wire), supports `Idempotency-Key`.
+- `GET /finance/customers/{customerId}/payments` – list customer payments.
+- `GET /finance/payments/{paymentId}` – get payment details.
+- `POST /finance/payments/{paymentId}/apply` – apply unapplied payment to specific invoice(s).
+- `POST /finance/payments/{paymentId}/unapply` – unapply payment from invoice(s).
+Schemas: `CustomerPayment`, `CustomerPaymentCreate`, `PaymentApplication`. Examples.
+
+### API‑AR‑012: Customer Payments – Service & Repository
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑MIGRATE‑ALL, BaseRepository, ERROR‑002.  
+**Definition of Done:** `CustomerPaymentRepository` (append-only). `CustomerPaymentService` with methods: `createPayment`, `getPayment`, `listPayments`, `applyPayment`, `unapplyPayment`. Handles unapplied payments (on-account). Auto-updates invoice balance when payment applied. Emits `CustomerPaymentReceived`, `PaymentApplied`, `PaymentUnapplied` events. Handles idempotency. Returns `Result<T, DomainError>`.
+**Deep Module:** Encapsulates payment application logic and invoice balance updates.
+
+### API‑AR‑013: Reminder Automation – Service
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑007, EMAIL‑SERVICE‑001.  
+**Definition of Done:** `ReminderService` for automated dunning:
+- `scheduleReminders(invoiceId)` – schedules reminders based on reminder schedules.
+- `sendReminder(invoiceId, reminderType)` – sends email reminder via email service.
+- `getOverdueInvoices()` – returns invoices past due date with reminder count.
+- Updates `reminder_count` and `last_reminder_at` on invoices.
+Emits `ReminderSent` event. Background job support (stubbed for P5).
+
+### API‑AR‑EVENTS‑001: AR Domain Events Verification
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑007, API‑AR‑012.  
+**Definition of Done:** Events `ARInvoiceCreated`, `ARInvoiceSent`, `ARInvoicePaid`, `CustomerPaymentReceived`, `PaymentApplied`, `ReminderSent` are emitted and recorded in audit logs.
 
 ---
 

@@ -64,6 +64,10 @@ Key improvements integrated:
 • API‑ANALYTICS‑003 – Analytics – Service & Repository  
 • API‑ANALYTICS‑004 – Analytics – Routes & Green Tests  
 
+**Dashboard Aggregation**  
+• API‑DASH‑001 – Dashboard Aggregation Endpoint  
+• FRONT‑DASH‑001 – Dashboard Frontend Strategy  
+
 **System Configuration & Cross‑Cutting**  
 • API‑SETTINGS‑001 – System Settings – Expand OpenAPI Spec  
 • API‑SETTINGS‑002 – System Settings – Integration Tests (Red)  
@@ -197,13 +201,13 @@ Key improvements integrated:
 ### API‑DOCS‑001: Documents – Expand OpenAPI Spec (Amended)
 **Status:** ⏳ Not Started  
 **Depends on:** DB‑DOCS‑002, DOC‑STORAGE‑001 (for interface knowledge).  
-**Definition of Done:** OpenAPI spec adds `documents` tag and paths:  
-- `GET /documents` – list with pagination, folder filter, search.  
-- `POST /documents` – create metadata record (without file content).  
-- `GET /documents/{documentId}` – metadata + `signed_download_url` (presigned, 15‑minute expiry).  
-- `POST /documents/upload` – multipart/form‑data upload (file + metadata). Returns document metadata with `signed_download_url`.  
-- `PATCH /documents/{documentId}` – update name, folder, version bumps on content change.  
-- `DELETE /documents/{documentId}` – soft delete (also deletes from storage).  
+**Definition of Done:** OpenAPI spec adds `documents` tag and paths with `/api/v1/` prefix:  
+- `GET /api/v1/documents` – list with pagination, folder filter, search.  
+- `POST /api/v1/documents` – create metadata record (without file content).  
+- `GET /api/v1/documents/{documentId}` – metadata + `signed_download_url` (presigned, 15‑minute expiry).  
+- `POST /api/v1/documents/upload` – multipart/form‑data upload (file + metadata). Returns document metadata with `signed_download_url`.  
+- `PATCH /api/v1/documents/{documentId}` – update name, folder, version bumps on content change.  
+- `DELETE /api/v1/documents/{documentId}` – soft delete (also deletes from storage).  
 Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 
 **Subtasks:** spec, codegen, typecheck.
@@ -274,7 +278,7 @@ Examples included.
 - HMAC signature verification using `ESIGN_WEBHOOK_SECRET` environment variable.  
 - Webhook payload processing: updates signature request status based on SignWell events (`signed`, `declined`, `expired`).  
 - Emits `DocumentSigned` or `SignatureDeclined` domain events.  
-- Idempotency: processes each webhook ID only once (store processed webhook IDs).  
+- Idempotency: processes each webhook ID only once by checking `processed_webhooks` table before processing (see DB‑ESIGN‑002).  
 - Returns 200 for successful processing, 400 for invalid signatures, 500 for processing errors.  
 - Unit tests for webhook signature verification and payload processing.  
 - Integration test with simulated SignWell webhook payload.
@@ -338,11 +342,11 @@ Examples included.
 **Depends on:** DB‑PORTAL‑002 (has `magic_link_hash`), EMAIL‑SERVICE‑001.  
 **Blocks:** API‑PORTAL‑001 (client‑side routes).  
 **Definition of Done:**  
-- `POST /portal/auth/request‑link` – accepts email, generates random token, stores `magic_link_hash` with expiry, sends email via `EmailServicePort`. Returns success (no token).  
-- `POST /portal/auth/verify‑link` – accepts raw token, hashes it, compares with stored hash, validates expiry, generates portal JWT (separate secret `PORTAL_JWT_SECRET`), marks session active. Returns `{ accessToken, client }`.  
-- `POST /portal/auth/logout` – invalidates session.  
+- `POST /api/v1/portal/auth/request‑link` – accepts email, generates random token, stores `magic_link_hash` with expiry, sends email via `EmailServicePort`. Returns success (no token). **Per‑email rate limiting: 3 requests per 15 minutes per email address.**  
+- `POST /api/v1/portal/auth/verify‑link` – accepts raw token, hashes it, compares with stored hash, validates expiry, generates portal JWT (separate secret `PORTAL_JWT_SECRET`), marks session active. Returns `{ accessToken, client }`.  
+- `POST /api/v1/portal/auth/logout` – invalidates session.  
 - `portalAuthMiddleware` implemented: reads `Authorization: Bearer <portal‑jwt>`, verifies with portal secret, checks `is_active` and expiry, sets `req.portalClient`.  
-- Integration tests: request link, verify link with valid token → 200 + JWT; verify with invalid token → 401 `InvalidMagicLink`; expired token → 401 `PortalSessionExpired`.  
+- Integration tests: request link, verify link with valid token → 200 + JWT; verify with invalid token → 401 `InvalidMagicLink`; expired token → 401 `PortalSessionExpired`; **rate limit exceeded → 429 `TooManyRequests`**.  
 **DDD:** Portal identity is separate from firm identity, with its own JWT secret and session lifecycle.
 
 **Subtasks:**
@@ -352,31 +356,33 @@ Examples included.
   **verification:** Tests fail.
 - [ ] PORTAL‑AUTH‑001.3: Implement `PortalAuthService` with hashing and email sending. (AGENT)  
   **verification:** Unit tests.
-- [ ] PORTAL‑AUTH‑001.4: Implement `portalAuthMiddleware`. (AGENT) – `middlewares/portal‑auth.ts`  
+- [ ] PORTAL‑AUTH‑001.4: Implement per‑email rate limiting on magic link requests. (AGENT) – `middlewares/portal‑rate‑limit.ts`  
+  **verification:** Unit test shows 4th request within 15 minutes returns 429; requests after 15 minutes reset limit.
+- [ ] PORTAL‑AUTH‑001.5: Implement `portalAuthMiddleware`. (AGENT) – `middlewares/portal‑auth.ts`  
   **verification:** Middleware unit test.
-- [ ] PORTAL‑AUTH‑001.5: Run integration tests to green. (AGENT)  
-  **verification:** Full flow passes.
+- [ ] PORTAL‑AUTH‑001.6: Run integration tests to green. (AGENT)  
+  **verification:** Full flow passes including rate limit test.
 
 ---
 
 ### API‑PORTAL‑001: Portal – Expand OpenAPI Spec
 **Depends on:** PORTAL‑AUTH‑001, DB‑PORTAL‑001.  
-**Definition of Done:** Two sets of routes:  
+**Definition of Done:** Two sets of routes with `/api/v1/` prefix:  
 **Firm‑side** (auth: firm JWT):  
-- `GET /portal/clients` – list portal clients  
-- `POST /portal/clients` – enable portal for a company  
-- `PATCH /portal/clients/{clientId}` – update branding config  
-- `POST /portal/clients/{clientId}/permissions` – grant resource access  
-- `GET /portal/clients/{clientId}/messages` – firm reads messages  
-- `POST /portal/clients/{clientId}/messages` – firm sends message  
+- `GET /api/v1/portal/clients` – list portal clients  
+- `POST /api/v1/portal/clients` – enable portal for a company  
+- `PATCH /api/v1/portal/clients/{clientId}` – update branding config  
+- `POST /api/v1/portal/clients/{clientId}/permissions` – grant resource access  
+- `GET /api/v1/portal/clients/{clientId}/messages` – firm reads messages  
+- `POST /api/v1/portal/clients/{clientId}/messages` – firm sends message  
 
 **Client‑side** (auth: portal JWT, via `portalAuthMiddleware`):  
-- `GET /portal/me` – profile  
-- `GET /portal/me/projects` – accessible projects  
-- `GET /portal/me/invoices` – accessible invoices  
-- `GET /portal/me/documents` – accessible documents  
-- `GET /portal/me/messages` – messages  
-- `POST /portal/me/messages` – client sends message  
+- `GET /api/v1/portal/me` – profile  
+- `GET /api/v1/portal/me/projects` – accessible projects  
+- `GET /api/v1/portal/me/invoices` – accessible invoices  
+- `GET /api/v1/portal/me/documents` – accessible documents  
+- `GET /api/v1/portal/me/messages` – messages  
+- `POST /api/v1/portal/me/messages` – client sends message  
 
 All schemas, pagination, examples.
 
@@ -425,16 +431,13 @@ All schemas, pagination, examples.
 - Unit tests for cleanup logic with expired and non‑expired links.  
 - Integration test with real database cleanup.
 
-**Implementation Options:**
-- **Option A:** Scheduled job using node-cron (runs every 6 hours).  
-- **Option B:** Manual CLI command `pnpm cleanup:portal-sessions`.  
-- **Option C:** Database trigger/function for automatic cleanup.
+**Implementation Decision:** Use scheduled job with node-cron (runs every 6 hours).
 
 **Subtasks:**
-- [ ] PORTAL‑CLEANUP‑001.1: Choose implementation approach and create cleanup service. (AGENT) – `services/portal/session-cleanup.ts`  
+- [ ] PORTAL‑CLEANUP‑001.1: Create cleanup service using node-cron scheduler. (AGENT) – `services/portal/session-cleanup.ts`  
   **verification:** Service logic unit tests pass.
-- [ ] PORTAL‑CLEANUP‑001.2: Implement scheduled job or CLI command. (AGENT)  
-  **verification:** Cleanup runs successfully.
+- [ ] PORTAL‑CLEANUP‑001.2: Implement scheduled job with node-cron (runs every 6 hours). (AGENT)  
+  **verification:** Cleanup runs successfully via cron schedule.
 - [ ] PORTAL‑CLEANUP‑001.3: Add cleanup configuration and logging. (AGENT)  
   **verification:** Configurable cleanup window works.
 - [ ] PORTAL‑CLEANUP‑001.4: Write unit and integration tests. (AGENT)  
@@ -444,36 +447,78 @@ All schemas, pagination, examples.
 
 ---
 
-## Analytics Context
+## Dashboard Aggregation Context
 
-### API‑ANALYTICS‑001 through API‑ANALYTICS‑004: Deferred to Phase 4b
-**Reason:** These tasks currently lack sufficient detail (subtasks, verification commands, file paths). Will be fully specified in Phase 4b with proper task breakdown including:
-- OpenAPI spec expansion with comprehensive analytics schemas
-- Integration test coverage for complex query scenarios
-- Service implementation with data aggregation logic
-- Route implementation with proper admin authentication
-- Performance considerations for large dataset queries
+### API‑DASH‑001: Dashboard Aggregation Endpoint
+**Status:** ⏳ Not Started  
+**Depends on:** All Phase 3 API implementations (CRM, Projects, Finance) for data aggregation.  
+**Definition of Done:** `GET /api/v1/dashboard/aggregate` endpoint that returns aggregated metrics across all bounded contexts for the dashboard:  
+- **CRM metrics:** total leads, leads by stage, conversion rate, active deals count, total deal value  
+- **Projects metrics:** active projects, overall completion percentage, overdue tasks count  
+- **Finance metrics:** total unpaid invoices, monthly revenue, budget utilization percentage  
+- **Appointments metrics:** upcoming appointments, availability utilization rate  
+- **Document metrics:** total documents, pending signature requests  
+- **Portal metrics:** active portal clients, recent activity count  
+- **Time range filtering:** support `period` parameter (7d, 30d, 90d, 1y)  
+- **Organization scoping:** all metrics filtered by authenticated user's organization  
+- **Caching:** 5-minute cache for performance using organization_id + period as cache key  
+**Response format:** `{ crm: {...}, projects: {...}, finance: {...}, appointments: {...}, documents: {...}, portal: {...}, lastUpdated: ISO timestamp }`  
+**Related Files:** `artifacts/api-server/src/services/dashboard/dashboard-service.ts`, `routes/dashboard.ts`  
+
+**Subtasks:**
+- [ ] API‑DASH‑001.1: Add dashboard aggregation endpoint to OpenAPI spec with comprehensive response schema. (AGENT) – `lib/api‑spec/openapi.yaml`  
+  **verification:** Spec validates; generated types include all metric fields.
+- [ ] API‑DASH‑001.2: Write integration tests for aggregation endpoint (TDD Red). (AGENT) – `__tests__/api/dashboard.test.ts`  
+  **verification:** Tests fail with 404 (no route).
+- [ ] API‑DASH‑001.3: Implement `DashboardService` with aggregation queries across all contexts. (AGENT) – `services/dashboard/dashboard-service.ts`  
+  **verification:** Unit tests with mocked repositories pass.
+- [ ] API‑DASH‑001.4: Implement caching layer with organization_id + period cache key. (AGENT)  
+  **verification:** Cache tests pass; second request within cache window returns cached data.
+- [ ] API‑DASH‑001.5: Create route and wire to service. (AGENT) – `routes/dashboard.ts`  
+  **verification:** Integration tests go green.
+- [ ] API‑DASH‑001.6: Add endpoint to main router with auth middleware. (AGENT) – `routes/index.ts`  
+  **verification:** `pnpm typecheck` passes.
+
+### FRONT‑DASH‑001: Dashboard Frontend Strategy
+**Status:** ⏳ Not Started  
+**Depends on:** API‑DASH‑001 (backend aggregation endpoint).  
+**Definition of Done:** Frontend dashboard implementation strategy established with:  
+- **Client-side hooks approach:** Use React Query hooks to call API‑DASH‑001 endpoint until real-time updates are needed  
+- **Component structure:** `components/dashboard/` with modular metric cards (CRMCard, ProjectsCard, FinanceCard, etc.)  
+- **Real-time strategy:** Future Phase 5+ will add WebSocket updates; current Phase 4 uses polling (30-second refresh)  
+- **Loading states:** Skeleton loaders for each metric card during initial load and refresh  
+- **Error handling:** Graceful degradation showing last successful data with error banner  
+- **Responsive layout:** Bento grid layout that adapts to mobile/tablet/desktop viewports  
+**Implementation decision:** Use client-side hooks approach for Phase 4, defer real-time WebSocket updates to Phase 5+ when infrastructure is ready.  
+**Interim strategy:** Until API‑DASH‑001 exists, use client-side hooks with mock data that matches the expected API response structure for seamless migration.  
+**Related Files:** `artifacts/apex-os/src/components/dashboard/`, `src/hooks/useDashboard.ts`  
+
+**Subtasks:**
+- [ ] FRONT‑DASH‑001.1: Create dashboard component structure with metric cards. (AGENT) – `components/dashboard/`  
+  **verification:** Components render with mock data.
+- [ ] FRONT‑DASH‑001.2: Implement `useDashboard` hook using React Query to call API‑DASH‑001. (AGENT) – `src/hooks/useDashboard.ts`  
+  **verification:** Hook fetches data successfully; includes loading/error states.
+- [ ] FRONT‑DASH‑001.3: Add skeleton loaders and error handling to dashboard components. (AGENT)  
+  **verification:** Loading states display properly; error banner appears on API failure.
+- [ ] FRONT‑DASH‑001.4: Implement responsive bento grid layout for dashboard. (AGENT) – `components/dashboard/Dashboard.tsx`  
+  **verification:** Layout adapts correctly to different viewport sizes.
+- [ ] FRONT‑DASH‑001.5: Add 30-second polling refresh with user control to pause/resume. (AGENT)  
+  **verification:** Data refreshes automatically; pause/resume controls work.
+- [ ] FRONT‑DASH‑001.6: Update main dashboard page to use new aggregation endpoint. (AGENT) – `src/pages/Dashboard.tsx`  
+  **verification:** Dashboard displays real aggregated data from API.
 
 ---
 
-## System Configuration & Cross‑Cutting
+## Analytics & Settings Context
 
-### API‑SETTINGS‑001 through API‑SETTINGS‑004: Deferred to Phase 4b
-**Reason:** Key‑value settings tasks need detailed specification including:
-- Settings schema validation and type safety
-- Caching strategy for frequently accessed settings
-- Audit logging for configuration changes
-- Environment-specific settings management
-- Rollback capabilities for critical setting changes
+### Analytics and Settings APIs: Moved to Phase 4b
+**Reference:** See `TODO-P4b.md` for complete Analytics and System Settings API implementation.  
+**Reason:** These contexts require detailed specification with comprehensive subtasks, verification commands, and performance considerations that are fully documented in the dedicated Phase 4b file.
 
-### API‑AUDIT‑001 through API‑AUDIT‑004: Deferred to Phase 4b
-**Reason:** Audit log query tasks require comprehensive specification covering:
-- Complex filtering and pagination strategies
-- Performance optimization for large audit datasets
-- Data retention policies and archival procedures
-- Export functionality (CSV, JSON)
-- Real-time audit streaming capabilities
-- Cross‑context event correlation
+Phase 4b includes:
+- **Analytics Context**: API‑ANALYTICS‑001 through API‑ANALYTICS‑004
+- **System Configuration Context**: API‑SETTINGS‑001 through API‑SETTINGS‑004  
+- **Cross-Cutting Audit & Monitoring**: API‑AUDIT‑001 through API‑AUDIT‑004
 
 ---
 
@@ -625,6 +670,227 @@ All request/response schemas (`Appointment`, `AppointmentCreate`, `AvailabilityW
 - [ ] API‑APPT‑005.3: Write unit test verifying that only specified fields are included and no write methods exist. (AGENT)  
   **verification:** Green.
 
+### API‑APPT‑006: Calendar Integration Service
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑APPT‑005, ERROR‑002 (Integration errors), REPO‑001.  
+**Definition of Done:**
+- `artifacts/api-server/src/services/appointments/calendar-integration-service.ts` exports `CalendarIntegrationService`.
+- Supports Google Calendar, Microsoft Graph, and Apple Calendar APIs.
+- Methods:
+  - `connectCalendar(userId, provider, authCode)`: OAuth flow, stores encrypted tokens.
+  - `syncCalendar(connectionId)`: Two-way sync, respects conflict resolution rules.
+  - `getExternalEvents(connectionId, dateRange)`: Fetches external calendar events.
+  - `pushAppointmentToCalendar(connectionId, appointment)`: Creates external event.
+  - `disconnectCalendar(connectionId)`: Revokes tokens, deletes connection.
+- **Conflict Resolution**: When external events conflict with appointments, system preserves appointments and marks external as conflicting.
+- **Security**: All tokens encrypted at rest, OAuth flows use PKCE.
+- **Error Handling**: Handles API rate limits, token refresh, permission errors.
+
+**Subtasks:**
+- [ ] API-APPT-006.1: Implement OAuth flow utilities for all providers. (AGENT) – `services/appointments/oauth-flows.ts`  
+  **verification:** Unit tests for token exchange and refresh.
+- [ ] API-APPT-006.2: Implement calendar sync service with conflict resolution. (AGENT) – `services/appointments/calendar-integration-service.ts`  
+  **verification:** Integration tests with mock calendar APIs pass.
+- [ ] API-APPT-006.3: Add rate limiting and error handling for external APIs. (AGENT)  
+  **verification:** Error scenarios handled gracefully.
+- [ ] API-APPT-006.4: Write unit tests for sync logic and conflict resolution. (AGENT)  
+  **verification:** Green.
+- **Depends on:** DB-APPT-005.
+- **Blocks:** API-APPT-006 routes.
+
+### API‑APPT‑007: Video Conferencing Integration Service
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑APPT‑006, ERROR‑002 (Integration errors).  
+**Definition of Done:**
+- `artifacts/api-server/src/services/appointments/video-integration-service.ts` exports `VideoIntegrationService`.
+- Supports Zoom, Microsoft Teams, and Google Meet APIs.
+- Methods:
+  - `createMeeting(appointmentId, provider, settings)`: Creates external meeting, returns join URL.
+  - `updateMeeting(meetingId, settings)`: Updates meeting details.
+  - `cancelMeeting(meetingId)`: Cancels external meeting.
+  - `getMeetingRecording(meetingId)`: Fetches recording URL when available.
+  - `getProviderCapabilities(provider)`: Returns supported features per provider.
+- **Meeting Lifecycle**: Automatically creates meetings when appointments are confirmed, cancels when appointments are cancelled.
+- **Settings Management**: Handles meeting passwords, waiting rooms, recording permissions.
+- **Webhook Support**: Processes status updates from video providers.
+
+**Subtasks:**
+- [ ] API-APPT-007.1: Implement provider adapters for Zoom, Teams, Meet. (AGENT) – `services/appointments/video-providers/`  
+  **verification:** Unit tests for each provider API client.
+- [ ] API-APPT-007.2: Implement main video integration service with lifecycle management. (AGENT) – `services/appointments/video-integration-service.ts`  
+  **verification:** Integration tests with mock video APIs pass.
+- [ ] API-APPT-007.3: Add webhook handlers for meeting status updates. (AGENT) – `services/appointments/video-webhooks.ts`  
+  **verification:** Webhook processing works correctly.
+- [ ] API-APPT-007.4: Write unit tests for meeting lifecycle and error handling. (AGENT)  
+  **verification:** Green.
+- **Depends on:** DB-APPT-006.
+- **Blocks:** API-APPT-007 routes.
+
+### API‑APPT‑008: Payment Processing Service
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑APPT-007, ERROR-002 (Payment errors), REPO-001.  
+**Definition of Done:**
+- `artifacts/api-server/src/services/appointments/payment-service.ts` exports `PaymentService`.
+- Stripe integration for appointment payments.
+- Methods:
+  - `createPaymentIntent(appointmentId, amount, currency)`: Creates Stripe payment intent.
+  - `confirmPayment(paymentIntentId)`: Confirms payment, updates appointment status.
+  - `processRefund(transactionId, amount, reason)`: Processes partial/full refunds.
+  - `getPaymentStatus(appointmentId)`: Returns payment status and transaction history.
+- **Payment Flow**: Requires payment before appointment confirmation for paid appointment types.
+- **Refund Policy**: Enforces organization refund rules from booking_rules table.
+- **Webhook Processing**: Handles Stripe webhook events for payment completion/failure.
+- **Security**: PCI compliance through Stripe, no card data stored locally.
+
+**Subtasks:**
+- [ ] API-APPT-008.1: Implement Stripe client with webhook handling. (AGENT) – `services/appointments/stripe-client.ts`  
+  **verification:** Stripe API integration works, webhooks processed.
+- [ ] API-APPT-008.2: Implement payment service with refund logic. (AGENT) – `services/appointments/payment-service.ts`  
+  **verification:** Payment flow works end-to-end with test mode.
+- [ ] API-APPT-008.3: Add payment status synchronization with appointments. (AGENT)  
+  **verification:** Payment status updates trigger appointment status changes.
+- [ ] API-APPT-008.4: Write unit tests for payment processing and error handling. (AGENT)  
+  **verification:** Green.
+- **Depends on:** DB-APPT-007.
+- **Blocks:** API-APPT-008 routes.
+
+### API‑APPT‑009: Meeting Polls Service
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑APPT‑008, ERROR-002 (Poll errors), EMAIL-SERVICE-001.  
+**Definition of Done:**
+- `artifacts/api-server/src/services/appointments/meeting-polls-service.ts` exports `MeetingPollsService`.
+- Group scheduling with time voting capabilities.
+- Methods:
+  - `createPoll(creatorId, title, description, options)`: Creates meeting poll with time options.
+  - `addVoter(pollId, voterEmail, voterId?)`: Adds voter to poll (public or authenticated).
+  - `castVote(pollId, optionId, voterId)`: Records vote, prevents duplicate voting.
+  - `closePoll(pollId, selectedOptionId)`: Closes poll, optionally creates appointment from winning option.
+  - `getPollResults(pollId)`: Returns vote counts and winner.
+- **Voting Rules**: One vote per voter, email verification for public polls.
+- **Poll Lifecycle**: Automatic deadline enforcement, reminder emails before deadline.
+- **Appointment Creation**: Option to automatically create appointment when poll closes.
+
+**Subtasks:**
+- [ ] API-APPT-009.1: Implement poll creation and voting logic. (AGENT) – `services/appointments/meeting-polls-service.ts`  
+  **verification:** Unit tests for voting rules and vote counting.
+- [ ] API-APPT-009.2: Add email notifications for poll invites and reminders. (AGENT)  
+  **verification:** Email templates work for poll lifecycle.
+- [ ] API-APPT-009.3: Implement poll-to-appointment conversion. (AGENT)  
+  **verification:** Winning option creates valid appointment.
+- [ ] API-APPT-009.4: Write unit tests for edge cases (deadlines, ties, conflicts). (AGENT)  
+  **verification:** Green.
+- **Depends on:** DB-APPT-008.
+- **Blocks:** API-APPT-009 routes.
+
+### API‑APPT‑010: Team Scheduling Service
+**Status:** ⏳ Not Started  
+**Depends on:** DB-APPT-001, DB-IDENTITY-001, ERROR-002 (Team errors).  
+**Definition of Done:**
+- `artifacts/api-server/src/services/appointments/team-scheduling-service.ts` exports `TeamSchedulingService`.
+- Multi-provider scheduling with intelligent assignment.
+- Methods:
+  - `getTeamAvailability(teamId, dateRange)`: Aggregates availability across team members.
+  - `assignAppointment(appointmentRequest, teamId, strategy)`: Assigns to provider based on strategy.
+  - `roundRobinAssignment(teamId, timeSlot)`: Simple round-robin assignment.
+  - `loadBalancedAssignment(teamId, timeSlot)**: Assigns to provider with lowest current load.
+  - `skillBasedAssignment(teamId, timeSlot, requiredSkills)`: Assigns based on provider skills.
+- **Assignment Strategies**: Configurable per organization (round-robin, load-balanced, skill-based).
+- **Team Management**: Supports provider teams with roles and permissions.
+- **Conflict Resolution**: Handles provider conflicts and availability constraints.
+
+**Subtasks:**
+- [ ] API-APPT-010.1: Implement team availability aggregation. (AGENT) – `services/appointments/team-availability.ts`  
+  **verification:** Team availability correctly aggregates individual schedules.
+- [ ] API-APPT-010.2: Implement assignment strategies (round-robin, load-balanced). (AGENT) – `services/appointments/team-scheduling-service.ts`  
+  **verification:** Assignment algorithms work correctly under various loads.
+- [ ] API-APPT-010.3: Add skill-based assignment with provider matching. (AGENT)  
+  **verification:** Skills and requirements match appropriately.
+- [ ] API-APPT-010.4: Write unit tests for team scheduling edge cases. (AGENT)  
+  **verification:** Green.
+- **Depends on:** DB-APPT-001, DB-IDENTITY-001.
+- **Blocks:** API-APPT-010 routes.
+
 ---
 
-*End of Phase 4. Next: Phase 4.5 – Appointments API (Scheduling context) and Phase 5 – Frontend Data Integration.*
+## AP/AR Core Features
+
+*This section implements the core Bill.com-style AP/AR functionality: document management, payment execution, and reporting.*
+
+### DOC‑AP‑001: Document Storage Service
+**Status:** ⏳ Not Started  
+**Depends on:** STORAGE‑001 (file storage adapter), DB‑AP‑002 (bills with attachments).  
+**Definition of Done:** `artifacts/api-server/src/services/ap/document-storage-service.ts` exports `DocumentStorageService` for AP/AR document management:
+- `uploadDocument(fileBuffer, filename, metadata)` – stores invoice/bill documents to Cloudflare R2.
+- `getDocumentUrl(documentId, expirySeconds)` – generates presigned URL for document access.
+- `deleteDocument(documentId)` – soft deletes document.
+- `extractInvoiceData(documentId)` – calls OCR service to extract invoice fields (stubbed for P6 AI features).
+- Links documents to bills, invoices, and payments via `attachments` arrays.
+
+**Subtasks:**
+- [ ] DOC‑AP‑001.1: Implement document upload with R2 storage. (AGENT)  
+  **verification:** Documents upload successfully, URLs generated.
+- [ ] DOC‑AP‑001.2: Implement document linking to bills and invoices. (AGENT)  
+  **verification:** Documents appear in bill/invoice details.
+- [ ] DOC‑AP‑001.3: Add document retrieval with access control. (AGENT)  
+  **verification:** Only authorized users can access documents.
+
+### OCR‑AP‑001: Invoice OCR Service (Stub)
+**Status:** ⏳ Not Started  
+**Depends on:** DOC‑AP‑001.  
+**Definition of Done:** `artifacts/api-server/src/services/ap/ocr-service.ts` exports `OCRService` with stubbed invoice data extraction:
+- `extractInvoiceData(imageBuffer)` – returns mock extracted fields (vendor, amount, due date).
+- `validateExtractedData(extractedData)` – validates confidence scores (stubbed).
+- **Note:** Full AI-powered OCR deferred to P6. This stub provides the interface for P4 document workflows.
+
+### PAY‑EXEC‑001: Payment Processor Integration (Stub)
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑014 (bill payments service), DB‑FIN‑005 (bank accounts).  
+**Definition of Done:** `artifacts/api-server/src/services/ap/payment-processor-service.ts` exports `PaymentProcessorService` with stubbed ACH/check/wire processing:
+- `initiateACHPayment(bankAccountId, amount, recipient)` – logs payment request, returns mock reference.
+- `initiateWirePayment(bankAccountId, amount, recipient, swiftCode)` – logs wire request.
+- `generateCheckDocument(payee, amount, memo)` – generates check PDF for printing.
+- `getPaymentStatus(paymentReference)` – returns mock status (pending → completed).
+- **Note:** Real Stripe/Plaid integration in P7. This stub enables P4 payment workflow testing.
+
+**Subtasks:**
+- [ ] PAY‑EXEC‑001.1: Implement ACH/wire stub with status tracking. (AGENT)  
+  **verification:** Payment records created with references.
+- [ ] PAY‑EXEC‑001.2: Implement check PDF generation. (AGENT)  
+  **verification:** Check PDFs generate with correct fields.
+
+### REPORT‑FIN‑001: AP Aging Report Service
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑008 (bills), API‑AP‑014 (bill payments).  
+**Definition of Done:** `artifacts/api-server/src/services/finance/ap-aging-service.ts` exports `APAgingService`:
+- `getAgingReport(asOfDate, vendorId?)` – returns bills grouped by aging buckets (current, 1-30, 31-60, 61-90, 90+ days).
+- `getVendorSummary(vendorId)` – returns total outstanding, overdue amount for vendor.
+- `getOverdueBills()` – returns all bills past due date with days overdue.
+- Used by reporting endpoints for AP dashboard.
+
+**Subtasks:**
+- [ ] REPORT‑FIN‑001.1: Implement aging bucket calculations. (AGENT)  
+  **verification:** Aging report shows correct buckets.
+- [ ] REPORT‑FIN‑001.2: Implement vendor summary aggregation. (AGENT)  
+  **verification:** Vendor totals calculate correctly.
+
+### REPORT‑FIN‑002: AR Aging Report Service
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑008 (AR invoices), API‑AR‑012 (customer payments).  
+**Definition of Done:** `artifacts/api-server/src/services/finance/ar-aging-service.ts` exports `ARAgingService`:
+- `getAgingReport(asOfDate, customerId?)` – returns invoices grouped by aging buckets.
+- `getCustomerSummary(customerId)` – returns total open balance, credit available, past due.
+- `getOverdueInvoices()` – returns all invoices past due with days overdue and reminder count.
+- `getDaysSalesOutstanding()` – calculates DSO metric for organization.
+
+### REPORT‑FIN‑003: Cash Flow Forecast Service
+**Status:** ⏳ Not Started  
+**Depends on:** REPORT‑FIN‑001, REPORT‑FIN‑002.  
+**Definition of Done:** `artifacts/api-server/src/services/finance/cash-flow-service.ts` exports `CashFlowService`:
+- `getCashFlowForecast(startDate, endDate)` – projects cash inflows (expected AR payments) and outflows (upcoming AP bills).
+- `getProjectedBalance(date)` – calculates expected bank balance on given date.
+- `getUpcomingPayments(days)` – returns bills due within N days.
+- `getExpectedReceipts(days)` – returns invoices expected to be paid within N days.
+
+---
+
+*End of Phase 4. Next: Phase 5 – Frontend Integration*ts API (Scheduling context) and Phase 5 – Frontend Data Integration.

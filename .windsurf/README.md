@@ -23,11 +23,11 @@ The Apex Unified Suite is a comprehensive enterprise SaaS application built with
 
 ---
 
-## 🎯 Skills (15 Available)
+## 🎯 Skills (29 Available)
 
 Skills are multi-step procedures that Cascade can invoke automatically or manually with `@skill-name`. Each skill includes comprehensive instructions, templates, and supporting files.
 
-### Development Skills
+### Core Development Skills
 
 | Skill | Description | Use Case |
 |-------|-------------|----------|
@@ -36,15 +36,43 @@ Skills are multi-step procedures that Cascade can invoke automatically or manual
 | **[@database-schema-development](skills/database-schema-development/)** | Complete Drizzle ORM schema implementation using 2026 best practices | Creating database tables with type-safe enum patterns |
 | **[@testing-infrastructure](skills/testing-infrastructure/)** | Complete testing setup with Vitest 2.0, React Testing Library, Playwright 1.45 | Implementing comprehensive test coverage across the suite |
 
-### Frontend Skills
+### Frontend & UI Skills
 
 | Skill | Description | Use Case |
 |-------|-------------|----------|
 | **[@create-react-component](skills/create-react-component/)** | Create React components with TypeScript, Tailwind CSS v4, and shadcn/ui | Building UI components following visual identity and accessibility standards |
 | **[@create-layout-component](skills/create-layout-component/)** | Guides creation of layout components including Sidebar, CommandPalette, StatusBar | Creating complex layout components with proper state management |
 | **[@create-mock-data](skills/create-mock-data/)** | Create realistic mock data files for the AI command center | Generating placeholder data that matches TypeScript interfaces |
+| **[@error-handling-validation](skills/error-handling-validation/)** | Implement comprehensive error handling, form validation, and loading states | Adding robust error management across the suite |
+| **[@form-validation-system](skills/form-validation-system/)** | Implement form validation with React Hook Form and Zod | Creating reusable validation schemas and error handling |
 
-### Workflow Skills
+### Architecture & Domain Skills
+
+| Skill | Description | Use Case |
+|-------|-------------|----------|
+| **[@bdd-feature-development](skills/bdd-feature-development/)** | Write and manage Gherkin feature files for Behavior-Driven Development | Implementing features with ubiquitous language from domain glossary |
+| **[@bounded-context-mapping](skills/bounded-context-mapping/)** | Draw and maintain bounded context maps for Domain-Driven Design | Defining context boundaries and relationships for Apex Unified Suite |
+| **[@domain-event-bus](skills/domain-event-bus/)** | Implement in-process domain event bus for decoupled communication | Creating type-safe event publishing and subscription |
+| **[@domain-glossary-management](skills/domain-glossary-management/)** | Create and maintain domain glossary with ubiquitous language | Supporting Domain-Driven Design implementation |
+| **[@multi-tenancy-strategy](skills/multi-tenancy-strategy/)** | Implement multi-tenancy architecture patterns for SaaS platform | Building hybrid tenancy models with tenant isolation |
+
+### Database & Data Skills
+
+| Skill | Description | Use Case |
+|-------|-------------|----------|
+| **[@database-migration-management](skills/database-migration-management/)** | Implement database migration system with Drizzle Kit | Managing schema versioning and deployment workflows |
+| **[@repository-pattern-implementation](skills/repository-pattern-implementation/)** | Implement base repository with multi-tenancy and soft delete patterns | Creating type-safe queries using Drizzle ORM |
+| **[@seed-data-management](skills/seed-data-management/)** | Implement database seeding system for development and testing | Generating realistic mock data for all environments |
+
+### Security & Authentication Skills
+
+| Skill | Description | Use Case |
+|-------|-------------|----------|
+| **[@jwt-service-implementation](skills/jwt-service-implementation/)** | Implement JWT token service with access/refresh token rotation | Building secure authentication with 2026 security best practices |
+| **[@password-security-implementation](skills/password-security-implementation/)** | Implement password hashing with Argon2id | Creating secure password handling and migration strategies |
+| **[@security-hardening](skills/security-hardening/)** | Implement 2026 security best practices including headers and rate limiting | Securing the application against modern threats |
+
+### Workflow & Integration Skills
 
 | Skill | Description | Use Case |
 |-------|-------------|----------|
@@ -52,18 +80,25 @@ Skills are multi-step procedures that Cascade can invoke automatically or manual
 | **[@frontend-api-integration](skills/frontend-api-integration/)** | Replace static mock data with React Query hooks across all 10 business pages | Connecting frontend to real backend APIs |
 | **[@monorepo-structure](skills/monorepo-structure/)** | Guide for understanding and working with YDM's pnpm workspace monorepo | Managing the complex monorepo architecture |
 
-### Optimization Skills
+### Optimization & Quality Skills
 
 | Skill | Description | Use Case |
 |-------|-------------|----------|
 | **[@performance-optimization](skills/performance-optimization/)** | Optimize bundle size, implement caching strategies, and monitor Core Web Vitals | Improving application performance and user experience |
-| **[@security-hardening](skills/security-hardening/)** | Implement 2026 security best practices including headers, rate limiting, OWASP ZAP | Securing the application against modern threats |
+| **[@dependency-auditing](skills/dependency-auditing/)** | Audit and clean up unused dependencies and maintain secure dependency tree | Managing package security and bundle optimization |
+| **[@typescript-strict-configuration](skills/typescript-strict-configuration/)** | Enable and manage strict TypeScript compiler flags for production-grade type safety | Ensuring code quality across the workspace |
+
+### Backend & API Skills
+
+| Skill | Description | Use Case |
+|-------|-------------|----------|
+| **[@error-handler-middleware](skills/error-handler-middleware/)** | Implement global Express error handling middleware with DomainError mapping | Creating consistent HTTP response formatting |
+| **[@ydm-api-development](skills/ydm-api-development/)** | Complete guide for implementing API-first development from scratch | Starting new API development in the YDM monorepo |
 
 ### Project-Specific Skills
 
 | Skill | Description | Use Case |
 |-------|-------------|----------|
-| **[@ydm-api-development](skills/ydm-api-development/)** | Complete guide for implementing API-first development from scratch | Starting new API development in the YDM monorepo |
 | **[@ydm-mockup-development](skills/ydm-mockup-development/)** | Guide for developing components in the YDM mockup sandbox with hot reload | Creating and previewing components in isolation |
 
 ---
@@ -246,22 +281,23 @@ Workflows are manual-only prompt templates for repeatable tasks. Invoke them wit
 - Drizzle ORM configuration (no schemas yet)
 - OpenAPI spec with minimal endpoints
 - Replit deployment configuration
+- Comprehensive Windsurf configuration (29 skills, 33 rules, 4 workflows)
 
 ### 🚧 In Progress
-- Database schema implementation
-- Business API endpoints (80-120 endpoints needed)
-- Frontend API integration
-- Authentication system
-- Testing infrastructure
+- Phase 0: Domain foundation & tooling (glossary, bounded contexts, BDD features)
+- Phase 1: Identity & Access (authentication API, JWT services, auth middleware)
+- Database schema with multi-tenancy support
+- Domain-driven design implementation
+- Comprehensive testing infrastructure
 
-### 📋 Priority Areas
-1. Database schema development
-2. API business endpoints implementation
-3. Frontend integration with real APIs
-4. Authentication and authorization
-5. Comprehensive testing setup
-6. Performance optimization
-7. Security hardening
+### 📋 Priority Areas (based on TODO files)
+1. **P0**: Domain foundation - glossary, bounded contexts, BDD features, project scaffolding
+2. **P1**: Identity & Access - authentication system, JWT services, API endpoints with test doubles
+3. **P2**: Database schema - organization, user, role, permission tables with multi-tenancy
+4. **P3**: Business module implementation (CRM, Projects, Finance, etc.)
+5. **P4**: Testing infrastructure and comprehensive test coverage
+6. **P5**: Frontend integration with real APIs and authentication
+7. **P6**: Performance optimization and security hardening
 
 ---
 

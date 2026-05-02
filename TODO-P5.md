@@ -21,6 +21,7 @@ Key improvements applied:
 ### Frontend Infrastructure
 - [ ] FRONT‑INFRA‑001 – Configure React Query Client & Error Boundaries  
 - [ ] FRONT‑INFRA‑002 – Add Loading Skeleton Usage Across Pages  
+- [ ] FRONT‑INFRA‑003 – Set Up Mock Service Worker (MSW) for Frontend Testing  
 
 ### Frontend Authentication
 - [ ] FRONT‑AUTH‑001 – Build Login / Register Pages (Firm)  
@@ -49,6 +50,9 @@ Key improvements applied:
 
 ### Documents
 - [ ] FRONT‑DOCS‑001 – Documents & Folders – Replace Mock Data  
+- [ ] FRONT‑DOCS‑002 – File Upload Component Enhancement  
+- [ ] FRONT‑DOCS‑003 – Advanced Search & Filtering Interface  
+- [ ] FRONT‑DOCS‑004 – Folder Management UI  
 - [ ] FRONT‑INT‑DOCS – Documents Interactive Features Wiring (upload, preview, delete)  
 
 ### Assets
@@ -92,7 +96,7 @@ Key improvements applied:
 - [ ] API‑SPEC‑STRUCTURE – OpenAPI Modularization Note *(When spec exceeds ~500 lines, split into per‑context files under `lib/api-spec/contexts/` and use `$ref`)*
 
 ### Code Quality & Architecture
-- [ ] ESLINT‑001 – ESLint Cross‑Context Import Guard *(Configure `no-restricted-imports` to prevent, e.g., Finance importing CRM internals)*  
+- [x] ESLINT‑001 – ESLint Cross‑Context Import Guard *(Configure `no-restricted-imports` to prevent, e.g., Finance importing CRM internals)*  
 
 ---
 
@@ -130,6 +134,36 @@ Key improvements applied:
   **verification:** Visual test (Storybook or manual).
 - [ ] FRONT‑INFRA‑002.2: Apply loader to top‑level page layout using a wrapper that checks `isLoading` from the primary query. (AGENT)  
   **verification:** During API call, skeleton appears; disappears on success.
+
+---
+
+### FRONT‑INFRA‑003: Set Up Mock Service Worker (MSW) for Frontend Testing
+**Status:** ⏳ Not Started  
+**Depends on:** DEP‑001 (MSW dependency added to catalog).  
+**Definition of Done:**
+- MSW is configured in the frontend test environment with mock API handlers
+- Service worker is properly registered for development and test modes
+- Mock handlers cover critical API endpoints used in Phase 5 integration tests
+- Test setup includes MSW browser and node configurations
+- Component tests can run without real backend dependencies
+
+**Related Files:** `artifacts/apex-os/src/mocks/handlers.ts`, `artifacts/apex-os/src/mocks/server.ts`, `artifacts/apex-os/src/setupTests.ts`
+
+**DDD:** N/A – testing infrastructure prerequisite.  
+**TDD:** MSW enables isolated component testing with realistic API responses.  
+**BDD:** Supports executable specifications by mocking API contracts.  
+**Deep Module:** N/A.
+
+**Subtasks:**
+- [ ] FRONT‑INFRA‑003.1: Create MSW handlers for auth endpoints (register, login, refresh, logout). (AGENT) – `src/mocks/handlers.ts`  
+  **verification:** Handlers return proper mock responses matching OpenAPI schema.
+- [ ] FRONT‑INFRA‑003.2: Set up MSW server configuration for browser and node environments. (AGENT) – `src/mocks/server.ts`  
+  **verification:** Server starts and stops correctly in test setup.
+- [ ] FRONT‑INFRA‑003.3: Configure MSW in test setup file (setupTests.ts). (AGENT)  
+  **verification:** Component tests can run with mocked API responses.
+- [ ] FRONT‑INFRA‑003.4: Add mock handlers for key business endpoints (CRM leads, projects, etc.). (AGENT)  
+  **verification:** Integration tests with MSW pass without real backend.
+- **Blocks:** All Phase 5 integration testing tasks (FRONT‑INT‑* series).
 
 ---
 
@@ -264,6 +298,42 @@ Use `useMilestoneList`, wire calendar to real milestones and deadlines.
 
 ### FRONT‑DOCS‑001: Documents & Folders – Replace Mock Data
 
+### FRONT‑DOCS‑002: File Upload Component Enhancement
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑DOCS‑001, API‑DOCS‑004.  
+**Definition of Done:** Enhanced file upload interface with:
+- Drag-and-drop file upload zone with visual feedback
+- Progress indicators for large files with pause/resume capability
+- Multiple file selection with batch upload queue management
+- File type validation and size limits with clear error messages
+- Upload queue management with retry logic and error handling
+- Responsive design optimized for mobile and desktop
+**Related Files:** `artifacts/apex-os/src/components/documents/FileUpload.tsx`, `FileUploadQueue.tsx`
+
+### FRONT‑DOCS‑003: Advanced Search & Filtering Interface
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑DOCS‑001.  
+**Definition of Done:** Advanced search capabilities:
+- Full-text search across document names and content metadata
+- Filter by file type, date range, folder, size with multi-select
+- Advanced sorting options (name, date, size, type) with direction toggle
+- Search result highlighting and snippet preview
+- Saved search filters with quick access shortcuts
+- Real-time search suggestions and auto-complete
+**Related Files:** `artifacts/apex-os/src/components/documents/DocumentSearch.tsx`, `SearchFilters.tsx`
+
+### FRONT‑DOCS‑004: Folder Management UI
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑DOCS‑001, API‑DOCS‑008.  
+**Definition of Done:** Enhanced folder operations:
+- Create/rename/delete folders with modal dialogs and validation
+- Drag-and-drop file organization between folders with visual feedback
+- Folder breadcrumb navigation with dropdown shortcuts
+- Folder tree view with expand/collapse and lazy loading
+- Bulk move operations with multi-select and progress tracking
+- Folder permission indicators and sharing status badges
+**Related Files:** `artifacts/apex-os/src/components/documents/FolderManager.tsx`, `FolderTree.tsx`
+
 ### FRONT‑INT‑DOCS: Documents Interactive Features Wiring
 **Depends on:** FRONT‑DOCS‑001.  
 **Wiring:** file upload (multipart, progress), download via signed URL, soft delete, folder create/rename. Use mutation hooks.
@@ -310,6 +380,236 @@ Uses client‑side hooks under portal auth guard. Pages: portal dashboard, proje
   **verification:** Test with portal auth mock.
 - [ ] FRONT‑APPT‑001.3: Wire mutations with toast feedback. (AGENT)  
   **verification:** End‑to‑end manual test.
+
+### FRONT‑APPT‑002: Calendar Connection Management UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT‑006 (calendar integration), FRONT‑AUTH‑002 (firm auth).  
+**Definition of Done:**
+- Calendar connections page in Settings allows users to connect Google, Outlook, and Apple calendars.
+- OAuth flow integration with popup/redirect handling.
+- Connection status display (active, paused, error) with last sync timestamp.
+- Sync controls (manual sync, pause/resume, disconnect).
+- Conflict resolution settings (appointments vs external events priority).
+- Connection management UI shows all connected calendars per user.
+
+**Subtasks:**
+- [ ] FRONT-APPT-002.1: Implement OAuth flow components for calendar providers. (AGENT) – `src/components/appointments/CalendarOAuth.tsx`  
+  **verification:** OAuth flow works for all providers in development.
+- [ ] FRONT-APPT-002.2: Create calendar connections management interface. (AGENT) – `src/pages/settings/CalendarConnections.tsx`  
+  **verification:** Connection status, sync controls, and disconnect work.
+- [ ] FRONT-APPT-002.3: Add conflict resolution settings UI. (AGENT)  
+  **verification:** Settings properly control sync behavior.
+- [ ] FRONT-APPT-002.4: Wire with React Query hooks for calendar operations. (AGENT)  
+  **verification:** Real-time status updates and error handling work.
+- **Depends on:** API-APPT-006.
+- **Blocks:** FRONT-APPT-003.
+
+### FRONT‑APPT‑003: Video Meeting Integration UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT‑007 (video integration), FRONT‑APPT‑001.  
+**Definition of Done:**
+- Video meeting settings in appointment creation/edit forms.
+- Provider selection (Zoom, Teams, Meet) with capability display.
+- Meeting settings configuration (password, waiting room, recording).
+- Join URL display in appointment details with one-click join.
+- Meeting status indicators (scheduled, started, ended, recording available).
+- Recording management UI for completed meetings.
+
+**Subtasks:**
+- [ ] FRONT-APPT-003.1: Add video provider selection to appointment forms. (AGENT) – `src/components/appointments/VideoSettings.tsx`  
+  **verification:** Provider selection and settings work correctly.
+- [ ] FRONT-APPT-003.2: Create meeting join interface in appointment details. (AGENT) – `src/components/appointments/MeetingJoin.tsx`  
+  **verification:** Join buttons open correct meeting URLs.
+- [ ] FRONT-APPT-003.3: Add recording management UI for completed meetings. (AGENT)  
+  **verification:** Recording links display and download work.
+- [ ] FRONT-APPT-003.4: Wire with video integration React Query hooks. (AGENT)  
+  **verification:** Meeting status updates in real-time.
+- **Depends on:** API-APPT-007.
+- **Blocks:** FRONT-APPT-004.
+
+### FRONT‑APPT‑004: Payment Collection UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT-008 (payment processing), FRONT-APPT-001.  
+**Definition of Done:**
+- Payment collection flow in client booking process.
+- Stripe Elements integration for secure card entry.
+- Payment status display (pending, succeeded, failed, refunded).
+- Refund management interface for firm users.
+- Payment history view per appointment and client.
+- Appointment type pricing configuration for paid appointments.
+
+**Subtasks:**
+- [ ] FRONT-APPT-004.1: Integrate Stripe Elements in booking flow. (AGENT) – `src/components/appointments/PaymentForm.tsx`  
+  **verification:** Payment form processes test payments correctly.
+- [ ] FRONT-APPT-004.2: Create payment status and history UI. (AGENT) – `src/components/appointments/PaymentStatus.tsx`  
+  **verification:** Payment status updates display correctly.
+- [ ] FRONT-APPT-004.3: Add refund management interface for firm users. (AGENT) – `src/components/appointments/RefundManager.tsx`  
+  **verification:** Refund processing works with proper approvals.
+- [ ] FRONT-APPT-004.4: Wire with payment processing React Query hooks. (AGENT)  
+  **verification:** Payment workflows complete end-to-end.
+- **Depends on:** API-APPT-008.
+- **Blocks:** FRONT-APPT-005.
+
+### FRONT‑APPT‑005: Meeting Polls Interface
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT-009 (meeting polls), FRONT‑AUTH‑003 (portal auth).  
+**Definition of Done:**
+- Meeting poll creation interface with time options.
+- Public poll sharing via link and email invitations.
+- Voting interface with real-time results display.
+- Poll management dashboard (close poll, select winner, create appointment).
+- Email notification templates for poll invites and reminders.
+- Mobile-responsive poll voting interface.
+
+**Subtasks:**
+- [ ] FRONT-APPT-005.1: Create poll creation and time options interface. (AGENT) – `src/components/appointments/PollCreator.tsx`  
+  **verification:** Poll creation saves correctly with all options.
+- [ ] FRONT-APPT-005.2: Implement voting interface with real-time results. (AGENT) – `src/components/appointments/PollVoter.tsx`  
+  **verification:** Voting updates results in real-time.
+- [ ] FRONT-APPT-005.3: Add poll management dashboard for organizers. (AGENT) – `src/components/appointments/PollManager.tsx`  
+  **verification:** Poll closing and winner selection work.
+- [ ] FRONT-APPT-005.4: Wire with meeting polls React Query hooks and real-time updates. (AGENT)  
+  **verification:** Poll interactions work smoothly for all users.
+- **Depends on:** API-APPT-009.
+- **Blocks:** FRONT-APPT-006.
+
+### FRONT‑APPT‑006: Team Scheduling Interface
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT-010 (team scheduling), FRONT‑AUTH‑002 (firm auth).  
+**Definition of Done:**
+- Team management interface for creating and managing provider teams.
+- Assignment strategy configuration (round-robin, load-balanced, skill-based).
+- Team availability calendar showing aggregated availability.
+- Appointment assignment interface with strategy selection.
+- Team performance metrics and scheduling analytics.
+- Provider skill management and matching interface.
+
+**Subtasks:**
+- [ ] FRONT-APPT-006.1: Create team management and configuration interface. (AGENT) – `src/components/appointments/TeamManager.tsx`  
+  **verification:** Team creation and member management work.
+- [ ] FRONT-APPT-006.2: Implement team availability calendar view. (AGENT) – `src/components/appointments/TeamCalendar.tsx`  
+  **verification:** Aggregated availability displays correctly.
+- [ ] FRONT-APPT-006.3: Add appointment assignment interface with strategy selection. (AGENT) – `src/components/appointments/AssignmentPanel.tsx`  
+  **verification:** Assignment algorithms work as expected.
+- [ ] FRONT-APPT-006.4: Wire with team scheduling React Query hooks and real-time updates. (AGENT)  
+  **verification:** Team scheduling operations work smoothly.
+- **Depends on:** API-APPT-010.
+- **Blocks:** None.
+
+---
+
+## AP/AR Data Integration
+
+### FRONT‑AP‑001: AP Workflow UI – Bills & Approvals
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑008 (bills API), FRONT‑AUTH‑002 (firm auth).  
+**Definition of Done:**
+- Bills list page with status filters (draft/pending/approved/paid/overdue), vendor filter, due date range.
+- Bill detail view showing line items, approval status, payment history, attachments.
+- Create bill form with line item entry, vendor selection, document upload.
+- Approval workflow UI: submit for approval, approve/reject buttons with comments, approval history timeline.
+- Bill payment UI: select payment method, schedule payment, view payment status.
+- Uses React Query hooks: `useBillList`, `useBill`, `useCreateBill`, `useUpdateBill`, `useApproveBill`, `useRejectBill`, `useCreateBillPayment`.
+
+**Subtasks:**
+- [ ] FRONT‑AP‑001.1: Implement bills list with filters and pagination. (AGENT) – `src/pages/finance/BillsList.tsx`  
+  **verification:** Bills load, filters work, pagination functional.
+- [ ] FRONT‑AP‑001.2: Create bill detail view with approval timeline. (AGENT) – `src/pages/finance/BillDetail.tsx`  
+  **verification:** Bill details display, approval history visible.
+- [ ] FRONT‑AP‑001.3: Build bill creation/editing form with line items. (AGENT) – `src/components/finance/BillForm.tsx`  
+  **verification:** Form validates, line items calculate total.
+- [ ] FRONT‑AP‑001.4: Implement approval workflow actions. (AGENT) – `src/components/finance/ApprovalActions.tsx`  
+  **verification:** Approve/reject workflow functional.
+- [ ] FRONT‑AP‑001.5: Add bill payment interface. (AGENT) – `src/components/finance/BillPayment.tsx`  
+  **verification:** Payment creation works with method selection.
+
+### FRONT‑AP‑002: Vendor Management UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑004 (vendors API).  
+**Definition of Done:**
+- Vendor list page with search, 1099 eligibility filter.
+- Vendor detail showing contact info, payment terms, payment methods, bill history.
+- Create/edit vendor form with address, tax ID, payment terms.
+- Payment method management: add/edit ACH, check, wire defaults.
+- 1099 tracking indicator for eligible vendors.
+- Uses hooks: `useVendorList`, `useVendor`, `useCreateVendor`, `useUpdateVendor`, `useVendorPaymentMethods`.
+
+### FRONT‑AP‑003: Purchase Order UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑012 (purchase orders API).  
+**Definition of Done:**
+- PO list with status filters (draft/sent/acknowledged/partially_received/received/closed).
+- PO creation form with line items, vendor selection, expected delivery date.
+- PO receipt interface: record partial or full receipts, update inventory (if applicable).
+- 3-way matching indicator showing PO → Bill → Receipt status.
+- Uses hooks: `usePurchaseOrderList`, `usePurchaseOrder`, `useCreatePO`, `useReceivePO`.
+
+### FRONT‑AR‑001: AR Workflow UI – Invoices & Payments
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑008 (AR invoices API), FRONT‑AUTH‑002.  
+**Definition of Done:**
+- AR invoices list with status filters (draft/sent/partially_paid/paid/overdue), customer filter, overdue indicator.
+- Invoice detail view showing line items, payment history, reminder status, customer info.
+- Create invoice form with line items, customer selection, terms, auto-numbering preview.
+- Send invoice action with email template preview.
+- Record payment interface: apply payment to invoice(s), handle unapplied payments.
+- Void invoice functionality with reason.
+- Uses hooks: `useARInvoiceList`, `useARInvoice`, `useCreateARInvoice`, `useSendInvoice`, `useVoidInvoice`, `useRecordPayment`.
+
+**Subtasks:**
+- [ ] FRONT‑AR‑001.1: Implement AR invoices list with status and overdue indicators. (AGENT) – `src/pages/finance/ARInvoicesList.tsx`  
+  **verification:** Invoices load, overdue badges show correctly.
+- [ ] FRONT‑AR‑001.2: Create invoice detail with payment history. (AGENT) – `src/pages/finance/ARInvoiceDetail.tsx`  
+  **verification:** Invoice details and payments display.
+- [ ] FRONT‑AR‑001.3: Build invoice creation form with auto-numbering. (AGENT) – `src/components/finance/ARInvoiceForm.tsx`  
+  **verification:** Form validates, invoice number generates.
+- [ ] FRONT‑AR‑001.4: Implement send invoice with email preview. (AGENT) – `src/components/finance/SendInvoice.tsx`  
+  **verification:** Email preview works, send action functional.
+- [ ] FRONT‑AR‑001.5: Add payment recording interface. (AGENT) – `src/components/finance/RecordPayment.tsx`  
+  **verification:** Payment applies correctly to invoices.
+
+### FRONT‑AR‑002: Customer Management UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑004 (customers API).  
+**Definition of Done:**
+- Customer list with search, credit limit indicators, portal access toggle.
+- Customer detail showing contact info, credit limit, open balance, payment terms, invoice history.
+- Create/edit customer form with credit limit, payment terms, portal access settings.
+- Customer payment method management.
+- Open invoices view per customer with quick payment option.
+- Uses hooks: `useCustomerList`, `useCustomer`, `useCreateCustomer`, `useUpdateCustomer`, `useCustomerInvoices`.
+
+### FRONT‑AR‑003: Recurring Invoices UI
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑010 (recurring templates API).  
+**Definition of Done:**
+- Recurring templates list with active/inactive status, next invoice date.
+- Template creation form with frequency (weekly/monthly/quarterly/annually), start/end dates, line items.
+- Template detail showing generation history, upcoming dates.
+- Manual trigger button to generate invoice immediately from template.
+- Uses hooks: `useRecurringTemplateList`, `useRecurringTemplate`, `useCreateTemplate`, `useGenerateInvoice`.
+
+### FRONT‑FIN‑001: Aging Reports & Dashboard
+**Status:** ⏳ Not Started  
+**Depends on:** REPORT‑FIN‑001, REPORT‑FIN‑002, FRONT‑AUTH‑002.  
+**Definition of Done:**
+- AP Aging report page with buckets (current, 1-30, 31-60, 61-90, 90+ days), vendor breakdown.
+- AR Aging report page with buckets, customer breakdown.
+- Visual charts (bar/ pie) showing aging distribution.
+- Drill-down from aging bucket to detailed bill/invoice list.
+- Export to CSV/PDF (stubbed for P8).
+- Cash flow forecast widget showing upcoming payments and receipts.
+- Uses hooks: `useAPAgingReport`, `useARAgingReport`, `useCashFlowForecast`.
+
+### FRONT‑FIN‑002: Bank Account & Payment Method Management
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑FIN‑005, DB‑FIN‑006 APIs.  
+**Definition of Done:**
+- Bank accounts list showing balances, account types, default indicators.
+- Add bank account form (stubbed for Plaid integration in P7).
+- Payment methods management for vendors and customers.
+- Bank reconciliation interface (stubbed for bank feed integration in P7).
+- Uses hooks: `useBankAccountList`, `usePaymentMethodList`.
 
 ---
 
@@ -478,19 +778,27 @@ Use `useSettings`, `useAuditLogList`, role management forms.
 
 ## Consumer‑Driven Contracts
 
-### INTEGRATE‑001: Define Consumer‑Driven Contracts Between Contexts
+### INTEGRATE‑001: Define Consumer‑Driven Contracts Between Contexts  
 **Status:** ⏳ Not Started  
-**Depends on:** All API contexts are implemented.  
-**Definition of Done:**
-- Use file‑based contracts (JSON files in `contracts/`).
-- Define at least the CRM‑Projects boundary: contract specifies the shape of `GET /crm/companies/{id}` response consumed by Projects.
-- Consumer test (Projects service) verifies it expects `{ id, name, domain }`.
-- Provider verification (CRM endpoint) runs against a running server and checks that the response matches the contract.
-- Script `pnpm run contracts:verify` runs both sides.
-
-**Subtasks:**
-- [ ] INTEGRATE‑001.1: Create contract file for CRM‑Projects. (AGENT)  
-  **verification:** File valid.
+**Depends on:** EVENT‑001 (domain event bus), all Phase 3 service tasks (for event sources).  
+**Definition of Done:** Replace file-based CDC with Pact for consumer‑driven contract testing between bounded contexts:  
+- Install Pact JS/TS packages for contract testing  
+- Define consumer contracts for each context (CRM, Projects, Finance, etc.)  
+- Create provider tests that verify API endpoints meet consumer expectations  
+- Set up Pact broker (or local file storage) for contract publishing  
+- Integrate contract verification into CI pipeline  
+- **Note:** File-based CDC approach replaced with Pact for proper contract testing  
+**Anti-Patterns:** Using file-based change data capture without proper contract verification; missing consumer expectations.  
+**Related Files:** `pacts/`, contract test files, CI configuration  
+**Subtasks:**  
+- [ ] INTEGRATE‑001.1: Install and configure Pact packages. (AGENT)  
+  **verification:** Pact packages installed and basic configuration works.  
+- [ ] INTEGRATE‑001.2: Define consumer contracts for each bounded context. (AGENT)  
+  **verification:** Consumer contracts generated and can be published.  
+- [ ] INTEGRATE‑001.3: Create provider tests for API contract verification. (AGENT)  
+  **verification:** Provider tests pass against current API implementation.  
+- [ ] INTEGRATE‑001.4: Integrate contract verification into CI pipeline. (AGENT)  
+  **verification:** CI fails when contracts are broken.
 - [ ] INTEGRATE‑001.2: Write consumer test (Projects side). (AGENT)  
   **verification:** Test fails until provider verification passes.
 - [ ] INTEGRATE‑001.3: Write provider verification test. (AGENT)  

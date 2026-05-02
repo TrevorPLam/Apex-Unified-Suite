@@ -27,7 +27,7 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 
 ## [ ] DEP-001: Add Missing Core Dependencies  
 **Status:** ⏳ Not Started  
-**Current state:** Critical dependencies missing from workspace catalog: `neverthrow`, `vitest`, `bcrypt`. These are required for authentication, error handling, and testing tasks.  
+**Current state:** Critical dependencies missing from workspace catalog: `neverthrow`, `vitest`, `argon2`. These are required for authentication, error handling, and testing tasks.  
 **Definition of Done:** All missing dependencies added to `pnpm-workspace.yaml` catalog and test script added to root package.json.  
 **Out of Scope:** Upgrading existing dependencies or adding non-essential packages.  
 **Blocks:** DOMAIN-001, TOOLING-002, TOOLING-004, all testing and authentication tasks  
@@ -50,12 +50,14 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   **verification:** `pnpm install --frozen-lockfile` succeeds; neverthrow available in workspace.
 - [ ] DEP-001.2: Add `vitest: ^2.0.0` and `@vitest/ui: ^2.0.0` to workspace catalog for testing framework. (AGENT) – `pnpm-workspace.yaml`  
   **verification:** Vitest installs successfully; `pnpm vitest --version` works.
-- [ ] DEP-001.3: Add `bcrypt: ^5.1.1` to workspace catalog for password hashing in authentication. (AGENT) – `pnpm-workspace.yaml`  
-  **verification:** Bcrypt installs successfully; available for import.
+- [ ] DEP-001.3: Add `argon2: ^0.40.1` to workspace catalog for password hashing in authentication. (AGENT) – `pnpm-workspace.yaml`  
+  **verification:** Argon2 installs successfully; available for import.
 - [ ] DEP-001.4: Add test script to root package.json. (AGENT) – `package.json`  
   **verification:** `"test": "vitest"` script added; `pnpm run test --version` works.
 - [ ] DEP-001.5: Verify all dependencies install correctly together. (AGENT)  
   **verification:** `pnpm install --frozen-lockfile` succeeds; no conflicts.
+- [ ] DEP-001.6: Add frontend test framework packages to workspace catalog. (AGENT) – `pnpm-workspace.yaml`  
+  **verification:** `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `@vitest/coverage-v8`, and `jsdom` added to catalog; `pnpm install --frozen-lockfile` succeeds.
 
 ---
 
@@ -81,7 +83,7 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 **Deep Module:** N/A – a glossary is a lightweight, public interface to the entire domain.
 
 ### Subtasks:
-- [ ] DOMAIN-001.1: Draft glossary from existing mock data and module names, including: Organization, Appointment, AvailabilityWindow, BookingRule, TimeSlot, PortalClient, MagicLink, PortalSession, SignatureRequest, Signer, StorageAdapter, IdempotencyKey, ProjectScheduleView. (AGENT) – `docs/glossary.md`  
+- [ ] DOMAIN-001.1: Draft glossary from existing mock data and module names, including: Organization, Appointment, AvailabilityWindow, BookingRule, TimeSlot, PortalClient, MagicLink, PortalSession, SignatureRequest, Signer, ProjectScheduleView. (AGENT) – `docs/glossary.md`  
   **Verification:** `docs/glossary.md` file exists and contains all listed terms with business definitions; no technical synonyms.
 - [ ] DOMAIN-001.1a: Ensure that the glossary is referenced by every feature file; add a validation rule: any term appearing in a Gherkin scenario must exist in the glossary (to be enforced manually during feature review). (AGENT)  
   **Verification:** Cross‑check final feature files (DOMAIN‑003) against glossary; all terms present.
@@ -151,6 +153,30 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   **Verification:** Confirmed.  
   **Blocks:** DB-APPT-*, API-APPT-* tasks.
 
+### DOMAIN-004: Define External Integration Architecture
+**Status:** ⏳ Not Started  
+**Current state:** External integration patterns undefined – calendar, video conferencing, and payment integrations lack architectural boundaries.  
+**Definition of Done:** Architecture document updated with integration service boundaries, adapter patterns, and anti-corruption layers for external APIs.  
+**Out of Scope:** Specific implementation details of third-party APIs.  
+**Blocks:** API-APPT-006 through API-APPT-010 (integration services).  
+**Blocked By:** DOMAIN-002, ARCH-002.  
+**Depends on:** DOMAIN-002, ARCH-002.  
+**Related Files:** `docs/integration-architecture.md`, `docs/bounded-contexts.md`.  
+
+**DDD:** External integrations form separate adapter contexts with well-defined ports.  
+**TDD:** N/A – documentation task.  
+**Deep Module:** Integration adapters hide external API complexity behind stable interfaces.
+
+### Subtasks:
+- [ ] DOMAIN-004.1: Define integration adapter pattern for external APIs. (AGENT) – `docs/integration-architecture.md`  
+  **Verification:** Architecture document defines adapter pattern with clear interfaces.
+- [ ] DOMAIN-004.2: Document anti-corruption layers for calendar, video, and payment integrations. (AGENT)  
+  **Verification:** Each integration has defined boundary and error handling strategy.
+- [ ] DOMAIN-004.3: Update bounded contexts map to include integration contexts. (AGENT) – `docs/bounded-contexts.md`  
+  **Verification:** Integration contexts properly separated from core business contexts.
+- [ ] DOMAIN-004.4: Define integration error handling and retry patterns. (AGENT)  
+  **Verification:** Error handling patterns documented for external API failures.
+
 ---
 
 ## [ ] DOMAIN-003: Write High‑Level BDD Features  
@@ -175,7 +201,8 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   **Verification:** `docs/features/auth.feature` contains ≥4 scenarios, includes positive and negative paths, and uses glossary terms.
 - [ ] DOMAIN-003.2: Write feature file for CRM (`docs/features/crm.feature`) with **≥5 scenarios**: process lead through pipeline, invalid stage transition, duplicate lead, lead not found, unauthorized access, and activity logging. (AGENT) – `docs/features/crm.feature`
   **Verification:** `docs/features/crm.feature` contains ≥5 scenarios with negative cases.
-  **Verification:** `docs/features/projects.feature` contains ≥4 scenarios.
+- [ ] DOMAIN-003.3: Write feature file for Projects (`docs/features/projects.feature`) with **≥4 scenarios**: create project with tasks, update project status, mark task complete (progress updates), attempt to set progress directly (rejected). (AGENT) – `docs/features/projects.feature`
+  **Verification:** `docs/features/projects.feature` contains ≥4 scenarios with negative paths.
 - [ ] DOMAIN-003.4: Write feature file for Finance (`docs/features/finance.feature`) with **≥4 scenarios**: create invoice, pay invoice (idempotency), attempt overpayment, budget threshold alert. (AGENT) – `docs/features/finance.feature`
   **Verification:** `docs/features/finance.feature` contains ≥4 scenarios.
 - [ ] DOMAIN-003.5: Write feature files for remaining contexts: Documents (≥4, including E‑Sign), Assets (≥4), Portal (≥4, including permission checks), Analytics (≥3), Settings (≥3). (AGENT)
@@ -376,6 +403,31 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
 
 ---
 
+## [ ] ARCH-005: Define API Versioning Strategy  
+**Status:** ⏳ Not Started  
+**Current state:** No API versioning strategy defined – endpoints will conflict when evolving.  
+**Definition of Done:** ADR accepted establishing `/api/v1/` prefix for all API endpoints from Phase 3 onward, with clear versioning policy and migration path.  
+**Out of Scope:** Implementation of multiple concurrent versions (deferred to Phase 6+).  
+**Blocks:** All Phase 3+ API implementation tasks  
+**Blocked By:** DOMAIN-002 (context map established)  
+**Related Files:** `docs/adr/005-api-versioning.md`  
+
+**DDD:** API versioning is a cross-cutting concern that enables bounded context evolution without breaking contracts.  
+**TDD:** N/A – architectural decision.  
+**BDD:** N/A – infrastructure concern.  
+**Deep Module:** N/A.
+
+### Subtasks:
+- [ ] ARCH-005.1: Create API versioning ADR with `/api/v1/` prefix policy. (AGENT) – `docs/adr/005-api-versioning.md`  
+  **verification:** ADR file exists and defines versioning strategy.
+- [ ] ARCH-005.2: Update Phase 3+ task descriptions to reference `/api/v1/` prefix requirement. (AGENT) – TODO-P3.md, TODO-P4.md, TODO-P5.md  
+  **verification:** All API endpoint paths in Phase 3+ include `/api/v1/` prefix.
+- [ ] ARCH-005.3: Review and approve ADR. (HUMAN)  
+  **verification:** ADR approved.
+- **Blocks:** All Phase 3+ API development tasks.
+
+---
+
 ## [ ] ARCH-001: Define Multi-Tenancy Strategy (BLOCKING)  
 **Status:** ⏳ Not Started  
 **Current state:** No multi‑tenancy strategy defined – database schema lacks tenant isolation.  
@@ -397,16 +449,9 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   - Decision: Shared‑schema with `organization_id` column on every business table  
   - Rationale: Drizzle ORM compatibility, simpler migrations, single PostgreSQL database, PostgreSQL RLS provides defense‑in‑depth (Note: RLS is deferred post‑MVP; isolation is handled by BaseRepository automatic tenant filtering)  
   - Convention: Column named `organization_id` (UUID, NOT NULL, FK to `organizations` table) on: **users, roles, user_roles**, leads, contacts, companies, deals, activities, projects, tasks, milestones, invoices, payments, cards, budgets, folders, documents, assets, asset_checkouts, maintenance_logs, portal_clients, analytics reports, settings, audit_logs  
-  - Repository filter pattern: automatic injection (see ARCH‑001.2)  
+  - Repository filter pattern: automatic injection via BaseRepository (see ARCH‑001.2 in Phase 2)  
   **Verification:** ADR file exists and lists all tables, including identity tables.
-- [ ] ARCH-001.2 (NEW/AGENT): Create `lib/db/src/repositories/base-repository.ts` implementing abstract `BaseRepository<T>` class with:  
-  - Constructor receives `(db: DrizzleDB, organizationId: string)`  
-  - Protected `withTenant(query)` method that appends `.where(eq(table.organization_id, this.organizationId))`  
-  - `create(data)` — auto‑injects `organization_id`  
-  - `findById(id)` — scoped to tenant  
-  - `findMany(filter?)` — scoped to tenant  
-  All concrete repositories (LeadRepository, ContactRepository, etc.) extend this class.  
-  **Verification:** Unit test for BaseRepository scoping a dummy table passes; `pnpm typecheck` passes.
+- [ ] ARCH-001.2 (NEW/AGENT): This subtask moved to Phase 2 as ARCH‑001.2 — see TODO‑P2.md after DB‑ORG‑001.2.
 - [ ] ARCH-001.3 (NEW/AGENT): Add `organizations` table to Phase 2 schema (insert as DB‑ORG‑001):  
   - `id` (uuid PK), `name` (text), `slug` (unique), `plan_type` (enum: free/pro/enterprise), `settings` (JSONB default {}), `created_at`, `updated_at`  
   - This is the anchor table for all `organization_id` foreign keys.  
@@ -415,38 +460,7 @@ Every task below closes exactly these gaps, with **DDD, TDD, BDD, and Deep Modul
   **Verification:** All Phase 2 schema tests verify the column.
 - [ ] ARCH-001.5 (NEW/HUMAN): Review ADR and confirm the strategy before any Phase 2 work begins.  
   **Verification:** ADR approved.  
-  **Blocks:** DB-ORG-001, all DB‑* tasks.
-
----
-
-## [ ] REPO-001: Create BaseRepository Class (MOVED TO PHASE 2)  
-**Status:** ⏳ Not Started  
-**Current state:** No repository pattern exists – database access will be inconsistent across contexts.  
-**Definition of Done:** `lib/db/src/repositories/base-repository.ts` exports generic `BaseRepository<T>` class with:  
-- Generic CRUD methods: `create`, `findById`, `findAll`, `update`, `softDelete`  
-- Soft delete filtering (automatic `deleted_at IS NULL` filtering, `includeDeleted` option)  
-- Pagination support (`page`, `limit`, `total`, `totalPages`)  
-- Organization scoping (automatic `organization_id` filtering)  
-- Transaction support via Drizzle `db.transaction()`  
-- Type safety with Drizzle table schemas  
-**Anti-Patterns:** Raw SQL queries in services; inconsistent pagination; missing soft delete handling.  
-**Related Files:** `lib/db/src/repositories/base-repository.ts`  
-**Note:** This task moved to Phase 2 after DB-ORG-001 since BaseRepository requires the organizations table to exist first.
-
-**DDD:** BaseRepository provides a consistent data access pattern across all bounded contexts while encapsulating common concerns (soft delete, multi-tenancy, pagination).  
-**TDD:** Write unit tests for BaseRepository against a test database – verify soft delete filtering, pagination, organization scoping, and transaction handling.  
-**BDD:** N/A – infrastructure component.  
-**Deep Module:** BaseRepository is a shallow module that provides a clean interface while hiding database complexity.
-
-### Subtasks:
-- [ ] REPO-001.1: Write unit tests for BaseRepository (CRUD, soft delete, pagination, organization scoping). (AGENT) – `lib/db/src/__tests__/base-repository.test.ts`  
-  **verification:** Tests fail (repository not yet implemented), then pass after implementation.
-- [ ] REPO-001.2: Implement BaseRepository class with generic type safety and Drizzle integration. (AGENT) – `lib/db/src/repositories/base-repository.ts`  
-  **verification:** All unit tests pass; `pnpm typecheck` clean.
-- [ ] REPO-001.3: Add comprehensive TypeScript types for repository methods and pagination responses. (AGENT)  
-  **verification:** Type checking passes; IntelliSense works correctly.
-- **Depends on:** DEP-001 (neverthrow for Either pattern), DB-ORG-001 (table structure pattern).  
-- **Blocks:** All repository implementations in Phase 3 (CRM, Projects, Finance).
+  **Blocks:** DB-ORG-001, all DB‑* tasks, TOOLING-004.
 
 ---
 

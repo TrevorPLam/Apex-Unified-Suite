@@ -36,8 +36,6 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 - [ ] AUTH‑010: Wire Custom Fetch to Auth Token  
 - [ ] AUTH‑011: Replace Hardcoded Header User Initials  
 - [ ] AUTH‑012: Manual End‑to‑End Test of Auth Flow  
-- [ ] TEST‑INFRA‑001: Test Infrastructure Setup (DB‑agnostic)  
-- [ ] EVENT‑001: Domain Event Bus (In‑Process)  
 
 ---
 
@@ -97,6 +95,7 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 **Subtasks:**
 - [ ] AUTH‑002.1: Write test cases for register, login, refresh, logout, and seeded admin login. (AGENT) – `artifacts/api‑server/__tests__/api/auth.test.ts`  
   **verification:** `pnpm vitest run auth.test.ts` reports all tests failing (red).  
+  **Note:** The seeded-admin test specifically stays red until Phase 2 (DB‑IDENTITY‑005) when the admin user is created in the database.  
 **Blocks:** AUTH‑007 (run to green)  
 **Depends on:** AUTH‑001 (for generated types), DEP-001.4 (test script setup), DB‑IDENTITY‑005 (seeded admin user) – tests will remain red until DB‑IDENTITY‑005 is done in Phase 2.
 
@@ -143,14 +142,15 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 ### AUTH‑005: Implement Auth Service (Deep Module)
 **Status:** ⏳ Not Started  
 **Current state:** `services/` directory does not exist.  
-**Definition of Done:** `artifacts/api‑server/src/services/auth.ts` exposes `register`, `login`, `refresh`, `logout` methods that coordinate hashing, token generation, and persistence (stubbed until DB exists).  
+**Definition of Done:** `artifacts/api-server/src/services/auth.ts` exposes `register`, `login`, `refresh`, `logout` methods that coordinate hashing, token generation, and persistence (stubbed until DB exists).  
+- `TokenRefreshPort` interface defined in `src/lib/auth/token-refresh-port.ts` with methods: `storeRefreshToken(userId, token)`, `getRefreshToken(tokenHash)`, `invalidateRefreshToken(tokenHash)`, `invalidateAllUserTokens(userId)`.  
 - `register(email, password, fullName, organizationId)`: validate organization exists (via OrganizationRepository stubbed), hash password, create user with `organization_id`, return `Right<User>`.  
 - `login(email, password, organizationId)`: find user by email AND organization, verify password, generate tokens, return `Right<{ accessToken, refreshToken, user }>`.  
-- `refresh(token)`: verify, rotate, return new tokens.  
-- `logout(token)`: invalidate refresh token (stubbed).  
+- `refresh(token)`: verify, rotate, return new tokens using `TokenRefreshPort`.  
+- `logout(token)`: invalidate refresh token using `TokenRefreshPort` (stubbed).  
 - All methods return `Either<DomainError, Result>` using `neverthrow`.  
 - Organization existence check is a stub that will be replaced in Phase 2 when OrganizationRepository is ready.  
-**Related Files:** `artifacts/api‑server/src/services/auth.ts`
+**Related Files:** `artifacts/api-server/src/services/auth.ts`
 **Depends on:** DEP-001.1 (neverthrow dependency for Either pattern)
 
 **DDD:** AuthService is the core of the Identity context. It enforces registration rules and ties users to organizations.  
@@ -366,8 +366,8 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
   **verification:** Base class compiles; Either type works correctly.
 - [ ] ERROR‑002.2: Implement all Identity & Access error classes (8 errors). (AGENT)  
   **verification:** Unit tests for each error class pass.
-- [ ] ERROR‑002.3: Implement all CRM error classes (9 errors). (AGENT)  
-  **verification:** Unit tests pass; error codes match feature file expectations.
+- [ ] ERROR‑002.3: Implement all CRM error classes (9 errors). **Note:** Cross-reference error codes with integration test expectations - ensure all negative scenarios in feature files map to specific error codes. (AGENT)  
+  **verification:** Unit tests pass; error codes match feature file expectations and integration test assertions.
 - [ ] ERROR‑002.4: Implement Projects, Finance, Documents, Assets, Portal, Analytics error classes (25+ errors). (AGENT)  
   **verification:** All 40+ error classes implemented and tested.
 - [ ] ERROR‑002.5: Create error factory functions for consistent error creation patterns. (AGENT)  
@@ -415,70 +415,4 @@ Phase 1 builds the entire authentication service, JWT and password hashing, Op
 
 ---
 
-## [ ] TEST‑INFRA‑001: Test Infrastructure Setup (DB‑agnostic)
-**Status:** ⏳ Not Started  
-**Current state:** No test infrastructure exists – integration tests cannot run reliably.  
-**Definition of Done:** Test infrastructure with DB‑agnostic setup for Phase 1 integration tests:  
-- Test database configuration using `TEST_DATABASE_URL` environment variable  
-- Test data factory with realistic mock data for auth scenarios  
-- Test harness setup/teardown scripts for isolated test runs  
-- Supertest configuration for API endpoint testing  
-- **Note:** DB‑specific parts (migration scripts, seed data) remain in Phase 2  
-
-**Related Files:** `artifacts/api-server/__tests__/setup.ts`, `artifacts/api-server/__tests__/helpers/test-data-factory.ts`
-
-**DDD:** Test infrastructure provides reliable environment for testing domain behavior without coupling to specific database implementation.  
-**TDD:** Infrastructure enables red‑green‑refactor cycle for integration tests.  
-**BDD:** Supports executable scenarios from feature files.  
-
-### Subtasks:
-- [ ] TEST‑INFRA‑001.1: Create test database configuration and setup/teardown helpers. (AGENT) – `__tests__/setup.ts`  
-  **verification:** Test setup runs without errors; database is isolated between tests.
-- [ ] TEST‑INFRA‑001.2: Build test data factory for auth scenarios (users, organizations). (AGENT) – `__tests__/helpers/test-data-factory.ts`  
-  **verification:** Factory generates valid test data; all required fields present.
-- [ ] TEST‑INFRA‑001.3: Configure Supertest for API testing with proper headers and JSON parsing. (AGENT) – `__tests__/helpers/supertest-config.ts`  
-  **verification:** Integration tests can make HTTP requests to test server.
-- **Depends on:** DEP‑001.4 (test script setup).
-- **Blocks:** AUTH‑002 (integration tests need infrastructure to run).
-
----
-
-## [ ] EVENT‑001: Domain Event Bus (In‑Process)
-**Status:** ⏳ Not Started  
-**Current state:** No event system exists – domain events cannot be published or subscribed to for audit trails.  
-**Definition of Done:** `artifacts/api-server/src/lib/events/event-bus.ts` exports lightweight in-process domain event system:  
-- `EventBus` class with `publish(event)` and `subscribe(eventType, handler)` methods  
-- `DomainEvent` base class with `id`, `type`, `timestamp`, `aggregateId`, `data` properties  
-- Event handlers run synchronously in-process (async subscribers can be added later)  
-- Built-in audit subscriber that writes to `audit_logs` table (when DB is ready)  
-- Type-safe event publishing using TypeScript generics  
-
-**Event Examples:**  
-- `LeadCreated`, `LeadStageChanged`  
-- `TaskCompleted`, `ProjectCompleted`  
-- `PaymentRecorded`, `InvoicePaid`  
-- `AppointmentRequested`, `AppointmentConfirmed`  
-
-**Anti-Patterns:** Using external message queues for MVP; tight coupling between publishers and subscribers; event handlers that throw exceptions.  
-**Related Files:** `artifacts/api-server/src/lib/events/event-bus.ts`
-
-**DDD:** Domain events capture significant state changes that other contexts may react to. The event bus implements publish-subscribe pattern while keeping system simple for MVP.  
-**TDD:** Write unit tests for event publishing, subscription, and audit subscriber.  
-**BDD:** Enables cross-context scenarios like "When a lead is created, an audit entry is automatically logged".  
-**Deep Module:** EventBus provides a simple interface while encapsulating handler management and error resilience.
-
-### Subtasks:
-- [ ] EVENT‑001.1: Define `DomainEvent` base class and `EventBus` implementation. (AGENT) – `src/lib/events/event-bus.ts`  
-  **verification:** Unit tests for publish/subscribe pass.
-- [ ] EVENT‑001.2: Create built-in audit subscriber (stubbed until DB ready). (AGENT)  
-  **verification:** Audit subscriber logs events to console (placeholder for DB).
-- [ ] EVENT‑001.3: Add event bus instance to app context for dependency injection. (AGENT) – `src/app.ts`  
-  **verification:** Services can inject event bus via constructor.
-- [ ] EVENT‑001.4: Write integration test showing event flow from service to audit subscriber. (AGENT)  
-  **verification:** End-to-end event flow works.
-- **Depends on:** ERROR‑002 (domain errors defined).
-- **Blocks:** All service implementations that emit events (Phase 3+).
-
----
-
-*End of Phase 1. Next: Phase 1.5 – Cross-Cutting Infrastructure (Domain Events)*
+*End of Phase 1. Next: Phase 2 – Core Business Contexts: Database Schema*

@@ -30,7 +30,6 @@ Now producing the final phase: **Phase 6 – Production Readiness & DevOps**. 
 - [ ] SEC‑002 – Add Security Headers (Helmet) & CSP
 - [ ] SEC‑003 – Configure CORS with Allowed Origins
 - [ ] SEC‑004 – Enable Database SSL & Connection Pool Limits
-- [ ] SEC‑SCAN‑001 – Add SAST/DAST Scanning (Placeholder/Future Work)
 
 ### Database Security
 - [ ] DB‑RLS‑FIN‑001 – Re‑evaluate Row Level Security for Financial Data  
@@ -76,18 +75,17 @@ Now producing the final phase: **Phase 6 – Production Readiness & DevOps**. 
   **verification:** Second run does nothing harmful.
 - [ ] TOOLING‑005.5: Document rollback strategy in `docs/adr/002-migration-strategy.md`. (AGENT)  
   **verification:** ADR file explains irreversible vs. reversible migrations, and how to test rollbacks locally.
-- **Depends on:** DB‑MIGRATE‑ALL.
-
----
-
+- [ ] TOOLING‑005.6: Implement Expand/Contract migration pattern for safe schema changes. (AGENT) – `lib/db/migrations/`  
+  **verification:** Documentation and examples show expand (add new column/table), contract (remove old column/table), and sync (data migration) patterns; all new migrations follow this pattern.
 ## CI/CD Pipeline
 
-### CI‑001: Set Up GitHub Actions – Lint, Typecheck, Test, & Supply Chain Security
+### CI‑001: Set Up GitHub Actions – Lint, Typecheck, Test, & Supply Chain Security  
 **Status:** ⏳ Not Started  
 **Current state:** No CI exists.  
-**Definition of Done:**
+**Definition of Done:**  
 - `.github/workflows/ci.yml` triggers on push to `main` and pull requests.
 - Jobs: `lint` (ESLint – a basic config is created if missing), `typecheck` (runs `pnpm typecheck` across workspace), `test` (runs `pnpm test` for all unit/integration tests, excluding E2E), `security` (runs `pnpm audit` for supply chain scanning).
+- **Breaking change detection**: Add `oasdiff` check to compare OpenAPI spec changes and detect breaking changes between versions.
 - Workspace caching for `pnpm` store and node modules to speed up runs.
 - Dependabot or Renovate configuration for automated dependency updates.
 **Related Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml` or `renovate.json`
@@ -95,8 +93,14 @@ Now producing the final phase: **Phase 6 – Production Readiness & DevOps**. 
 **Subtasks:**
 - [ ] CI‑001.1: Create workflow file with lint, typecheck, test, and security jobs. (AGENT)  
   **verification:** Workflow runs on GitHub Actions (manual push triggers).
-- [ ] CI‑001.2: Add minimal ESLint config if missing (`.eslintrc.cjs`). (AGENT)  
-  **verification:** `pnpm lint` passes on codebase.
+- [ ] CI‑001.2: Add exact ESLint config (`.eslintrc.cjs`) with parser, plugins, and rules:  
+  - Parser: `@typescript-eslint/parser`  
+  - Plugins: `@typescript-eslint`, `react-hooks`, `import`  
+  - Extends: `eslint:recommended`, `@typescript-eslint/recommended`, `plugin:react-hooks/recommended`  
+  - Rules: `@typescript-eslint/no-unused-vars: error`, `@typescript-eslint/no-explicit-any: warn`, `import/order: error`, `react-hooks/rules-of-hooks: error`, `react-hooks/exhaustive-deps: warn`  
+  - Environment: `es2022`, `node`, `browser`  
+  (AGENT) – `.eslintrc.cjs`  
+  **verification:** `pnpm lint` passes on codebase; config file exists with exact parser, plugins, and rules specified.
 - [ ] CI‑001.3: Add supply chain security job with `pnpm audit` and Dependabot/Renovate config. (AGENT)  
   **verification:** Security job passes and dependency update PRs are created.
 - [ ] CI‑001.4: Verify that a failing test or type error breaks build. (HUMAN)  
@@ -277,6 +281,8 @@ Now producing the final phase: **Phase 6 – Production Readiness & DevOps**. 
   **verification:** Slow queries appear in structured logs.
 - [ ] MON‑001.4: Add integration tests for all health check scenarios. (AGENT)  
   **verification:** Tests cover healthy, degraded, and failed states.
+- [ ] MON‑001.5: Add R2 storage health check to monitor Cloudflare R2 connectivity and bucket access. (AGENT)  
+  **verification:** Health check includes R2 status; returns degraded status if R2 is unavailable.
 
 ---
 
@@ -316,6 +322,84 @@ Now producing the final phase: **Phase 6 – Production Readiness & DevOps**. 
   **verification:** File exists.
 - [ ] DOCS‑002.2: Configure Swagger UI route in Express. (AGENT)  
   **verification:** Visiting `/api-docs` shows the spec.
+
+---
+
+## Advanced AP/AR Features
+
+### AI‑AP‑001: Smart Invoice Coding (AI-powered)
+**Status:** ⏳ Not Started  
+**Depends on:** DOC‑AP‑001 (document storage), OCR‑AP‑001 (OCR stub).  
+**Definition of Done:** `artifacts/api-server/src/services/ap/ai-coding-service.ts` exports `AICodingService`:
+- `suggestVendor(extractedData)` – suggests vendor match based on extracted invoice data using ML/AI (integrate with OpenAI/Claude API or custom model).
+- `suggestAccountCodes(extractedData)` – suggests GL account codes based on line item descriptions.
+- `learnFromCorrection(invoiceId, correctedData)` – improves suggestions based on user corrections.
+- Confidence scores for all suggestions.
+**Note:** Can start with rule-based heuristics and evolve to ML.
+
+### AI‑AP‑002: Duplicate Detection Engine
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑007 (bills service).  
+**Definition of Done:** `artifacts/api-server/src/services/ap/duplicate-detection-service.ts` exports `DuplicateDetectionService`:
+- `findPotentialDuplicates(billData)` – checks for duplicate bills by amount, vendor, date proximity, invoice number.
+- `getDuplicateConfidence(existingBill, newBill)` – returns confidence score (0-1) of duplication.
+- Flags potential duplicates during bill creation.
+- Prevents duplicate payments by checking payment history.
+
+### ADV‑AP‑001: Early Payment Discount Management
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑014 (bill payments).  
+**Definition of Done:** `artifacts/api-server/src/services/ap/early-payment-service.ts` exports `EarlyPaymentDiscountService`:
+- `calculateDiscountAvailability(billId)` – shows available early payment discounts (e.g., 2/10 Net 30).
+- `getOptimalPaymentSchedule()` – recommends payment schedule to maximize discounts captured.
+- `projectDiscountSavings(startDate, endDate)` – calculates potential savings from early payments.
+- Integration with cash flow forecasting.
+
+### ADV‑AR‑001: Credit Management & Risk Scoring
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑003 (customers service).  
+**Definition of Done:** `artifacts/api-server/src/services/ar/credit-management-service.ts` exports `CreditManagementService`:
+- `calculateCreditScore(customerId)` – internal credit score based on payment history, days to pay, invoice amounts.
+- `recommendCreditLimit(customerId)` – suggests credit limit adjustments.
+- `getRiskAlerts()` – flags customers with deteriorating payment patterns.
+- `setCreditHold(customerId, reason)` – prevents new invoices for high-risk customers.
+
+### ADV‑AR‑002: Automated Collections Workflow
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑013 (reminder service), EMAIL‑SERVICE‑001.  
+**Definition of Done:** Collections automation beyond basic reminders:
+- Escalating dunning levels (reminder → firm reminder → final notice → collections handoff).
+- Customizable email templates per escalation level.
+- Payment plan negotiation interface (schedule partial payments over time).
+- Collections queue for staff follow-up on unresponsive accounts.
+- Integration with external collections agency API (stubbed).
+
+### ADV‑AR‑003: Usage-Based & Metered Billing
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AR‑010 (recurring invoices).  
+**Definition of Done:** Support for metered billing scenarios:
+- `recordUsage(customerId, meterName, quantity, timestamp)` – records usage data.
+- `generateInvoiceFromUsage(customerId, periodStart, periodEnd)` – creates invoice based on recorded usage.
+- Usage reporting dashboard for customers.
+- Tiered and volume pricing calculations.
+
+### MULTI‑AP‑001: Multi-Entity AP/AR (Cross-Entity Payments)
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑ORG‑001 (organizations), API‑AP‑014 (bill payments).  
+**Definition of Done:** Support for organizations with multiple subsidiaries:
+- Cross-entity bill payment (pay subsidiary's bills from parent account).
+- Inter-company transfer tracking.
+- Consolidated aging reports across entities.
+- Entity-level permission scoping for AP/AR staff.
+
+### INT‑QB‑001: QuickBooks Online Sync (Stub)
+**Status:** ⏳ Not Started  
+**Depends on:** API‑AP‑008, API‑AR‑008.  
+**Definition of Done:** Stub implementation for QuickBooks integration:
+- `pushInvoiceToQB(invoiceId)` – logs QB push request (stubbed).
+- `pullVendorsFromQB()` – returns mock QB vendor data.
+- `syncStatus(entityType, entityId)` – shows last sync status.
+- **Note:** Full QBO integration deferred to P7.
 
 ---
 
