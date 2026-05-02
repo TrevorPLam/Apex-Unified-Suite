@@ -1,0 +1,1135 @@
+{
+  "meta": {
+    "description": "All parent tasks from Master Tracker Phases 0–4. Phase 5+ tasks are referenced from separate files and not enumerated here.",
+    "totalParentTasks": 265
+  },
+  "tasks": [
+    {
+      "id": "DEP-001",
+      "phase": "P0",
+      "wave": 1,
+      "description": "Dependencies (add neverthrow, argon2id, etc.)",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "DEP-001.1 (add neverthrow)"
+    },
+    {
+      "id": "TOOLING-001",
+      "phase": "P0",
+      "wave": 1,
+      "description": "Scaffolding (README, .env.example, Prettier)",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "TOOLING-001.1 (write README)"
+    },
+    {
+      "id": "TOOLING-002",
+      "phase": "P0",
+      "wave": 1,
+      "description": "TypeScript strict mode",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "TOOLING-002.1 (enable noImplicitOverride)"
+    },
+    {
+      "id": "TOOLING-003",
+      "phase": "P0",
+      "wave": 1,
+      "description": "Dependency audit (depcheck)",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "TOOLING-003.1 (audit unused dependencies)"
+    },
+    {
+      "id": "TOOLING-004",
+      "phase": "P0",
+      "wave": 1,
+      "description": "Zod compatibility verification",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "TOOLING-004.1 (verify Zod compatibility)"
+    },
+    {
+      "id": "DOMAIN-001",
+      "phase": "P0",
+      "wave": 2,
+      "description": "Domain Glossary",
+      "dependencies": ["DEP-001"],
+      "status": "not_started",
+      "nextAction": "DOMAIN-001.1 (draft glossary)"
+    },
+    {
+      "id": "DOMAIN-002",
+      "phase": "P0",
+      "wave": 2,
+      "description": "Bounded Contexts",
+      "dependencies": ["DOMAIN-001", "DEP-001"],
+      "status": "not_started",
+      "nextAction": "DOMAIN-002.1 (draft bounded context map)"
+    },
+    {
+      "id": "ARCH-007",
+      "phase": "P0",
+      "wave": 3,
+      "description": "Appointments Boundary ADR",
+      "dependencies": ["DOMAIN-002"],
+      "status": "not_started",
+      "nextAction": "ARCH-007.1 (write ADR-007)"
+    },
+    {
+      "id": "ARCH-003",
+      "phase": "P0",
+      "wave": 3,
+      "description": "E-Sign Scope Decision",
+      "dependencies": ["DOMAIN-003"],
+      "status": "not_started",
+      "nextAction": "ARCH-003.1 (confirm e-sign scope)"
+    },
+    {
+      "id": "ARCH-004",
+      "phase": "P0",
+      "wave": 3,
+      "description": "Mockup Sandbox Decision",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "ARCH-004.1 (decide mockup sandbox fate)"
+    },
+    {
+      "id": "DOMAIN-004",
+      "phase": "P0",
+      "wave": 3,
+      "description": "Cross-Cutting ADRs (notifications, etc.)",
+      "dependencies": ["DOMAIN-002"],
+      "status": "not_started",
+      "nextAction": "DOMAIN-004.1 (create real-time notifications ADR)"
+    },
+    {
+      "id": "ARCH-005",
+      "phase": "P0",
+      "wave": 3,
+      "description": "API Versioning Strategy",
+      "dependencies": ["DOMAIN-002"],
+      "status": "not_started",
+      "nextAction": "ARCH-005.1 (define API versioning)"
+    },
+    {
+      "id": "ARCH-001",
+      "phase": "P0",
+      "wave": 3,
+      "description": "Multi-Tenancy Strategy",
+      "dependencies": ["DOMAIN-002", "TOOLING-004"],
+      "status": "not_started",
+      "nextAction": "ARCH-001.1 (write multi-tenancy ADR)"
+    },
+    {
+      "id": "DOMAIN-003",
+      "phase": "P0",
+      "wave": 4,
+      "description": "BDD Features",
+      "dependencies": ["DOMAIN-001", "DOMAIN-002"],
+      "status": "not_started",
+      "nextAction": "DOMAIN-003.1 (write auth.feature)"
+    },
+    {
+      "id": "ERROR-002-EXT",
+      "phase": "P0",
+      "wave": 4,
+      "description": "Error Catalog (extended)",
+      "dependencies": ["DOMAIN-003"],
+      "status": "not_started",
+      "nextAction": "ERROR-002-EXT.1 (extract error codes from features)"
+    },
+    {
+      "id": "ERROR-002",
+      "phase": "P1",
+      "wave": 1,
+      "description": "Domain Error Types (base DomainError)",
+      "dependencies": ["DEP-001"],
+      "status": "not_started",
+      "nextAction": "ERROR-002.1 (define base DomainError)"
+    },
+    {
+      "id": "ERROR-001",
+      "phase": "P1",
+      "wave": 1,
+      "description": "Global Error Handler middleware",
+      "dependencies": ["ERROR-002"],
+      "status": "not_started",
+      "nextAction": "ERROR-001.1 (create error handler middleware)"
+    },
+    {
+      "id": "AUTH-003",
+      "phase": "P1",
+      "wave": 2,
+      "description": "Password Hashing service",
+      "dependencies": ["DEP-001"],
+      "status": "not_started",
+      "nextAction": "AUTH-003.1 (write password hashing tests)"
+    },
+    {
+      "id": "AUTH-004",
+      "phase": "P1",
+      "wave": 2,
+      "description": "JWT Service",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "AUTH-004.1 (write JWT unit tests)"
+    },
+    {
+      "id": "AUTH-005",
+      "phase": "P1",
+      "wave": 2,
+      "description": "Auth Service (business logic)",
+      "dependencies": ["ERROR-002", "DEP-001", "AUTH-003", "AUTH-004"],
+      "status": "not_started",
+      "nextAction": "AUTH-005.1 (write auth service tests)"
+    },
+    {
+      "id": "AUTH-001",
+      "phase": "P1",
+      "wave": 3,
+      "description": "OpenAPI Spec for Auth",
+      "dependencies": ["DOMAIN-001", "DOMAIN-002"],
+      "status": "not_started",
+      "nextAction": "AUTH-001.1 (add auth paths to OpenAPI)"
+    },
+    {
+      "id": "AUTH-002",
+      "phase": "P1",
+      "wave": 3,
+      "description": "Auth Integration Tests (write to fail)",
+      "dependencies": ["AUTH-001", "DEP-001"],
+      "status": "not_started",
+      "nextAction": "AUTH-002.1 (write integration tests)"
+    },
+    {
+      "id": "AUTH-006",
+      "phase": "P1",
+      "wave": 3,
+      "description": "Auth Routes (validation, endpoints)",
+      "dependencies": ["AUTH-005", "ERROR-001"],
+      "status": "not_started",
+      "nextAction": "AUTH-006.1 (create validation middleware & routes)"
+    },
+    {
+      "id": "AUTH-007",
+      "phase": "P1",
+      "wave": 3,
+      "description": "Run Integration Tests to Green",
+      "dependencies": ["AUTH-006", "DB-IDENTITY-005"],
+      "status": "not_started",
+      "nextAction": "AUTH-007.1 (run tests after DB-IDENTITY-005)"
+    },
+    {
+      "id": "AUTH-008",
+      "phase": "P1",
+      "wave": 4,
+      "description": "Auth Middleware (protect routes)",
+      "dependencies": ["ERROR-001", "AUTH-004"],
+      "status": "not_started",
+      "nextAction": "AUTH-008.1 (write auth middleware tests)"
+    },
+    {
+      "id": "AUTH-009",
+      "phase": "P1",
+      "wave": 5,
+      "description": "Auth Context (React frontend)",
+      "dependencies": ["AUTH-001"],
+      "status": "not_started",
+      "nextAction": "AUTH-009.1 (create AuthContext)"
+    },
+    {
+      "id": "AUTH-010",
+      "phase": "P1",
+      "wave": 5,
+      "description": "Token Integration (axios/fetch)",
+      "dependencies": ["AUTH-009"],
+      "status": "not_started",
+      "nextAction": "AUTH-010.1 (wire token integration)"
+    },
+    {
+      "id": "AUTH-011",
+      "phase": "P1",
+      "wave": 5,
+      "description": "Header Integration (user menu)",
+      "dependencies": ["AUTH-009"],
+      "status": "not_started",
+      "nextAction": "AUTH-011.1 (update Header component)"
+    },
+    {
+      "id": "AUTH-012",
+      "phase": "P1",
+      "wave": 5,
+      "description": "E2E Auth Test (Cypress/Playwright)",
+      "dependencies": ["AUTH-009", "AUTH-010", "AUTH-011"],
+      "status": "not_started",
+      "nextAction": "AUTH-012.1 (write E2E test)"
+    },
+    {
+      "id": "TEST-INFRA-001",
+      "phase": "P2",
+      "wave": 1,
+      "description": "Test Infrastructure (Vitest, integration setup)",
+      "dependencies": ["DEP-001"],
+      "status": "not_started",
+      "nextAction": "TEST-INFRA-001.1 (configure Vitest)"
+    },
+    {
+      "id": "DB-LOGGER-001",
+      "phase": "P2",
+      "wave": 1,
+      "description": "Slow-Query Logger",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "DB-LOGGER-001.1 (add logger config)"
+    },
+    {
+      "id": "DB-ORG-001",
+      "phase": "P2",
+      "wave": 1,
+      "description": "Organizations Table",
+      "dependencies": ["ARCH-001"],
+      "status": "not_started",
+      "nextAction": "DB-ORG-001.1 (write schema test)"
+    },
+    {
+      "id": "DB-IDENTITY-001",
+      "phase": "P2",
+      "wave": 2,
+      "description": "Users Table",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-001.1 (write users schema test)"
+    },
+    {
+      "id": "DB-IDENTITY-002",
+      "phase": "P2",
+      "wave": 2,
+      "description": "Roles Table",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-002.1 (write roles schema test)"
+    },
+    {
+      "id": "DB-IDENTITY-003",
+      "phase": "P2",
+      "wave": 2,
+      "description": "Permissions Table",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-003.1 (write permissions schema test)"
+    },
+    {
+      "id": "DB-IDENTITY-004",
+      "phase": "P2",
+      "wave": 2,
+      "description": "User-Role Junction",
+      "dependencies": ["DB-IDENTITY-001", "DB-IDENTITY-002"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-004.1 (write junction test)"
+    },
+    {
+      "id": "DB-IDENTITY-005",
+      "phase": "P2",
+      "wave": 2,
+      "description": "Identity Migration & Seed",
+      "dependencies": ["DB-IDENTITY-001", "DB-IDENTITY-002", "DB-IDENTITY-003", "DB-IDENTITY-004"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-005.1 (generate migration)"
+    },
+    {
+      "id": "DB-IDENTITY-006",
+      "phase": "P2",
+      "wave": 2,
+      "description": "Refresh Tokens Table",
+      "dependencies": ["DB-IDENTITY-001", "DB-ORG-001"],
+      "status": "not_started",
+      "nextAction": "DB-IDENTITY-006.1 (write refresh tokens test)"
+    },
+    {
+      "id": "DB-APPT-001",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Appointments Table",
+      "dependencies": ["DB-ORG-001", "DB-IDENTITY-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-002",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Availability Windows",
+      "dependencies": ["DB-ORG-001", "DB-IDENTITY-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-003",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Booking Rules",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-004",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Client FK Migration",
+      "dependencies": ["DB-APPT-001", "DB-CRM-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-005",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Calendar Connections",
+      "dependencies": ["DB-ORG-001", "DB-IDENTITY-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-006",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Meeting Integrations",
+      "dependencies": ["DB-APPT-001", "DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-007",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Payment Transactions",
+      "dependencies": ["DB-APPT-001", "DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-008",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Meeting Polls",
+      "dependencies": ["DB-ORG-001", "DB-IDENTITY-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-009",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Event Types",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-010",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Event Type Questions",
+      "dependencies": ["DB-APPT-009"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-011",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Routing Forms",
+      "dependencies": ["DB-APPT-009"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-012",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Waitlist",
+      "dependencies": ["DB-APPT-009"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-013",
+      "phase": "P2",
+      "wave": 3,
+      "description": "No-Show Log",
+      "dependencies": ["DB-APPT-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-APPT-014",
+      "phase": "P2",
+      "wave": 3,
+      "description": "Collective Exclusions",
+      "dependencies": ["DB-APPT-009"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-001",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Invoices Table",
+      "dependencies": ["DB-AR-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-002",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Customer Payments",
+      "dependencies": ["DB-AR-001", "DB-FIN-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-003",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Payment Allocations",
+      "dependencies": ["DB-FIN-001", "DB-FIN-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-004",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Expense Categories",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-005",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Bank Accounts",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-006",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Payment Methods",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-007",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Idempotency Records",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-008",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Credit Memos",
+      "dependencies": ["DB-AR-001", "DB-FIN-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-009",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Multi-Currency Migration",
+      "dependencies": ["DB-AP-002", "DB-AR-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-010",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Payment Runs",
+      "dependencies": ["DB-AP-002", "DB-FIN-005"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-011",
+      "phase": "P2",
+      "wave": 4,
+      "description": "1099 Tracking",
+      "dependencies": ["DB-AP-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-012",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Reconciliation Entries",
+      "dependencies": ["DB-FIN-005"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-013",
+      "phase": "P2",
+      "wave": 4,
+      "description": "AP Inbox",
+      "dependencies": ["DB-AP-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-FIN-014",
+      "phase": "P2",
+      "wave": 4,
+      "description": "Collections Activity",
+      "dependencies": ["DB-AR-001", "DB-AR-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AP-001",
+      "phase": "P2",
+      "wave": 5,
+      "description": "Vendors Table",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AP-002",
+      "phase": "P2",
+      "wave": 5,
+      "description": "Bills Table",
+      "dependencies": ["DB-AP-001", "DB-AP-003"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AP-003",
+      "phase": "P2",
+      "wave": 5,
+      "description": "Approval Workflows",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AP-004",
+      "phase": "P2",
+      "wave": 5,
+      "description": "Purchase Orders",
+      "dependencies": ["DB-AP-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AR-001",
+      "phase": "P2",
+      "wave": 6,
+      "description": "Customers Table",
+      "dependencies": ["DB-ORG-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "DB-AR-002",
+      "phase": "P2",
+      "wave": 6,
+      "description": "AR Invoices (alias to DB-FIN-001)",
+      "dependencies": ["DB-FIN-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "RBAC-001",
+      "phase": "P3",
+      "wave": 1,
+      "description": "Role-Based Access Control middleware",
+      "dependencies": ["AUTH-008", "DB-IDENTITY-005"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SPEC-001",
+      "phase": "P3",
+      "wave": 1,
+      "description": "OpenAPI Modularisation",
+      "dependencies": [],
+      "status": "not_started"
+    },
+    {
+      "id": "API-NOTIF-001",
+      "phase": "P3",
+      "wave": 2,
+      "description": "In-App Notifications service",
+      "dependencies": ["DB-NOTIF-001", "AUTH-008"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SEARCH-001",
+      "phase": "P3",
+      "wave": 2,
+      "description": "Cross-Module Search",
+      "dependencies": ["DB-SEARCH-001", "AUTH-008", "ALL_CRUD_APIS"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-IMPORT-001",
+      "phase": "P3",
+      "wave": 2,
+      "description": "CSV Import/Export",
+      "dependencies": ["AUTH-008", "DOMAIN_CRUD_APIS"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-001",
+      "phase": "P3",
+      "wave": 3,
+      "description": "Leads OpenAPI",
+      "dependencies": ["DB-CRM-001", "DOMAIN-003"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-002",
+      "phase": "P3",
+      "wave": 3,
+      "description": "Leads Tests",
+      "dependencies": ["API-CRM-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-003",
+      "phase": "P3",
+      "wave": 3,
+      "description": "Leads Service",
+      "dependencies": ["DB-MIGRATE-ALL", "ERROR-002", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-004",
+      "phase": "P3",
+      "wave": 3,
+      "description": "Leads Routes",
+      "dependencies": ["API-CRM-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-029",
+      "phase": "P3",
+      "wave": 4,
+      "description": "Lead Conversion",
+      "dependencies": ["API-CRM-004"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-030",
+      "phase": "P3",
+      "wave": 4,
+      "description": "Duplicate Detection",
+      "dependencies": ["API-CRM-008"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-031",
+      "phase": "P3",
+      "wave": 4,
+      "description": "Email Integration",
+      "dependencies": ["API-CRM-012", "EMAIL-SERVICE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-CRM-032",
+      "phase": "P3",
+      "wave": 4,
+      "description": "Engagement Tracking",
+      "dependencies": ["API-CRM-016", "API-NOTIF-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-001",
+      "phase": "P3",
+      "wave": 5,
+      "description": "Projects OpenAPI",
+      "dependencies": ["DB-PROJ-001", "DOMAIN-003"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-002",
+      "phase": "P3",
+      "wave": 5,
+      "description": "Projects Tests",
+      "dependencies": ["API-PROJ-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-003",
+      "phase": "P3",
+      "wave": 5,
+      "description": "Projects Service",
+      "dependencies": ["DB-MIGRATE-ALL", "ERROR-002", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-004",
+      "phase": "P3",
+      "wave": 5,
+      "description": "Projects Routes",
+      "dependencies": ["API-PROJ-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-013",
+      "phase": "P3",
+      "wave": 6,
+      "description": "My Week Planning",
+      "dependencies": ["DB-PROJ-006", "API-PROJ-008"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-014",
+      "phase": "P3",
+      "wave": 6,
+      "description": "Board & Queue API",
+      "dependencies": ["DB-PROJ-005", "API-PROJ-008"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-015",
+      "phase": "P3",
+      "wave": 6,
+      "description": "Workspace Composite",
+      "dependencies": ["API-PROJ-004", "API-PROJ-008", "API-PROJ-012", "API-PROJ-018"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PROJ-016",
+      "phase": "P3",
+      "wave": 6,
+      "description": "Templates Management",
+      "dependencies": ["DB-PROJ-007"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-001",
+      "phase": "P3",
+      "wave": 7,
+      "description": "Invoices OpenAPI",
+      "dependencies": ["DB-FIN-001", "DOMAIN-003"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-002",
+      "phase": "P3",
+      "wave": 7,
+      "description": "Invoices Tests",
+      "dependencies": ["API-FIN-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-003",
+      "phase": "P3",
+      "wave": 7,
+      "description": "Invoices Service",
+      "dependencies": ["DB-MIGRATE-ALL", "ERROR-002", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-004",
+      "phase": "P3",
+      "wave": 7,
+      "description": "Invoices Routes",
+      "dependencies": ["API-FIN-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-024",
+      "phase": "P3",
+      "wave": 8,
+      "description": "Credit Memos",
+      "dependencies": ["API-FIN-004"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-025",
+      "phase": "P3",
+      "wave": 8,
+      "description": "Payment Runs",
+      "dependencies": ["API-FIN-008", "API-FIN-012"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-026",
+      "phase": "P3",
+      "wave": 8,
+      "description": "1099 Tracking",
+      "dependencies": ["API-FIN-004", "DB-AP-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-FIN-027",
+      "phase": "P3",
+      "wave": 8,
+      "description": "Reconciliation",
+      "dependencies": ["API-FIN-012"],
+      "status": "not_started"
+    },
+    {
+      "id": "EMAIL-SERVICE-001",
+      "phase": "P4",
+      "wave": 1,
+      "description": "Email Service interface & implementation",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "EMAIL-SERVICE-001.1 (create interface)"
+    },
+    {
+      "id": "EMAIL-TEMPLATES-001",
+      "phase": "P4",
+      "wave": 1,
+      "description": "Email Templates (Handlebars)",
+      "dependencies": ["EMAIL-SERVICE-001"],
+      "status": "not_started",
+      "nextAction": "EMAIL-TEMPLATES-001.1 (Handlebars setup)"
+    },
+    {
+      "id": "STORAGE-001",
+      "phase": "P4",
+      "wave": 1,
+      "description": "Storage Adapter interface",
+      "dependencies": [],
+      "status": "not_started",
+      "nextAction": "STORAGE-001.1 (define interface)"
+    },
+    {
+      "id": "DOC-STORAGE-001",
+      "phase": "P4",
+      "wave": 2,
+      "description": "Cloudflare R2 storage implementation",
+      "dependencies": ["STORAGE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-DOCS-001",
+      "phase": "P4",
+      "wave": 2,
+      "description": "Documents OpenAPI",
+      "dependencies": ["DB-DOCS-002", "DOC-STORAGE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-DOCS-002",
+      "phase": "P4",
+      "wave": 2,
+      "description": "Documents Tests",
+      "dependencies": ["API-DOCS-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-DOCS-003",
+      "phase": "P4",
+      "wave": 2,
+      "description": "Documents Service",
+      "dependencies": ["DB-MIGRATE-ALL", "DOC-STORAGE-001", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-DOCS-004",
+      "phase": "P4",
+      "wave": 2,
+      "description": "Documents Routes",
+      "dependencies": ["API-DOCS-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ASSETS-001",
+      "phase": "P4",
+      "wave": 3,
+      "description": "Assets OpenAPI",
+      "dependencies": ["DB-ASSETS-001", "DOC-STORAGE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ASSETS-002",
+      "phase": "P4",
+      "wave": 3,
+      "description": "Assets Tests",
+      "dependencies": ["API-ASSETS-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ASSETS-003",
+      "phase": "P4",
+      "wave": 3,
+      "description": "Assets Service",
+      "dependencies": ["DB-MIGRATE-ALL", "DOC-STORAGE-001", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ASSETS-004",
+      "phase": "P4",
+      "wave": 3,
+      "description": "Assets Routes",
+      "dependencies": ["API-ASSETS-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "PORTAL-AUTH-001",
+      "phase": "P4",
+      "wave": 4,
+      "description": "Portal Magic Link auth",
+      "dependencies": ["DB-PORTAL-002", "EMAIL-SERVICE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PORTAL-001",
+      "phase": "P4",
+      "wave": 4,
+      "description": "Portal OpenAPI",
+      "dependencies": ["PORTAL-AUTH-001", "DB-PORTAL-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PORTAL-002",
+      "phase": "P4",
+      "wave": 4,
+      "description": "Portal Tests",
+      "dependencies": ["API-PORTAL-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PORTAL-003",
+      "phase": "P4",
+      "wave": 4,
+      "description": "Portal Service",
+      "dependencies": ["DB-MIGRATE-ALL", "PORTAL-AUTH-001", "EMAIL-SERVICE-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-PORTAL-004",
+      "phase": "P4",
+      "wave": 4,
+      "description": "Portal Routes",
+      "dependencies": ["API-PORTAL-003", "AUTH-008"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-APPT-015",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Event Types Management",
+      "dependencies": ["DB-APPT-009", "API-APPT-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-APPT-016",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Routing Forms",
+      "dependencies": ["DB-APPT-011", "API-APPT-015"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-APPT-017",
+      "phase": "P4",
+      "wave": 5,
+      "description": "No-Show Management",
+      "dependencies": ["DB-APPT-013", "API-APPT-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-APPT-018",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Waitlist Management",
+      "dependencies": ["DB-APPT-012", "API-APPT-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-APPT-019",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Availability Optimization",
+      "dependencies": ["DB-APPT-002", "API-APPT-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-DASH-001",
+      "phase": "P4",
+      "wave": 6,
+      "description": "Dashboard Endpoint (aggregation)",
+      "dependencies": ["ALL_PHASE3_APIS"],
+      "status": "not_started"
+    },
+    {
+      "id": "FRONT-DASH-001",
+      "phase": "P4",
+      "wave": 6,
+      "description": "Dashboard Frontend",
+      "dependencies": ["API-DASH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ANALYTICS-001",
+      "phase": "P4",
+      "wave": 7,
+      "description": "Reports Engine",
+      "dependencies": ["ALL_PHASE3_APIS", "DB-ANALYTICS-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ANALYTICS-002",
+      "phase": "P4",
+      "wave": 7,
+      "description": "Metrics API",
+      "dependencies": ["API-ANALYTICS-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ANALYTICS-003",
+      "phase": "P4",
+      "wave": 7,
+      "description": "Caching Layer",
+      "dependencies": ["API-ANALYTICS-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-ANALYTICS-004",
+      "phase": "P4",
+      "wave": 7,
+      "description": "Export Reports",
+      "dependencies": ["API-ANALYTICS-003"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SETTINGS-001",
+      "phase": "P4",
+      "wave": 8,
+      "description": "Settings OpenAPI",
+      "dependencies": ["DB-SETTINGS-001", "DB-SETTINGS-002"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SETTINGS-002",
+      "phase": "P4",
+      "wave": 8,
+      "description": "Settings Tests",
+      "dependencies": ["API-SETTINGS-001", "TEST-INFRA-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SETTINGS-003",
+      "phase": "P4",
+      "wave": 8,
+      "description": "Settings Service",
+      "dependencies": ["DB-MIGRATE-ALL", "ERROR-002", "ARCH-001"],
+      "status": "not_started"
+    },
+    {
+      "id": "API-SETTINGS-004",
+      "phase": "P4",
+      "wave": 8,
+      "description": "Settings Routes",
+      "dependencies": ["API-SETTINGS-003", "AUTH-008"],
+      "status": "not_started"
+    }
+  ],
+  "additionalTasks": {
+    "P3_CRM_CORE": "API-CRM-005 to API-CRM-028 (23 tasks) follow pattern leads->contacts->companies->deals->activities. See TODO-P3-CRM-CORE.md",
+    "P3_PROJECTS_CORE": "API-PROJ-005 to API-PROJ-012 (10 tasks), TODO-P3-PROJECTS-CORE.md",
+    "P3_FINANCE_CORE": "API-FIN-005 to API-FIN-023 (19 tasks), TODO-P3-FINANCE-CORE.md",
+    "P3_CRM_DEPTH": "API-CRM-033 to API-CRM-042 (10 tasks), TODO-P3-CRM-DEPTH.md",
+    "P3_PROJECTS_DEPTH": "API-PROJ-017 to API-PROJ-022 (6 tasks?) plus others, TODO-P3-PROJECTS-DEPTH.md",
+    "P3_FINANCE_DEPTH": "API-FIN-028 to API-FIN-039 (12 tasks), TODO-P3-FINANCE-DEPTH.md",
+    "P4_DOCUMENTS": "API-DOCS-005 to API-DOCS-034 (30 tasks), TODO-P4-DOCUMENTS.md",
+    "P4_ASSETS": "API-ASSETS-005 to API-ASSETS-019 (15 tasks), TODO-P4-ASSETS.md",
+    "P4_PORTAL": "API-PORTAL-005 to API-PORTAL-011 (7 tasks), TODO-P4-PORTAL.md",
+    "P4_APPOINTMENTS_DEPTH": "API-APPT-020 (etc., 5 additional tasks), TODO-P4-APPOINTMENTS.md",
+    "P4_SETTINGS_AUDIT": "API-SETTINGS-005 to API-SETTINGS-008 (4 tasks), TODO-P4-SETTINGS.md"
+  },
+  "phasesAbove4": {
+    "description": "Phases 5–10 are documented in separate files (see File Index). No parent tasks were enumerated in this master tracker; only the file references and dependency gates are preserved.",
+    "phase5Requires": "Phase 4 complete",
+    "phase6Requires": "Phase 5 (frontend) complete",
+    "phase7Requires": "Phase 5 complete",
+    "phase8Requires": "Phase 7 complete",
+    "phase9Requires": "Phase 8 complete",
+    "phase10Requires": "Phase 9 complete"
+  }
+}
