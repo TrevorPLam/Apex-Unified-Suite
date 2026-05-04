@@ -56,6 +56,33 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Permission audit trails and compliance reporting.
 - Role‑based UI and feature access control.
 
+**DDD:** Expanded RBAC within the Security bounded context across all domains. Phase 8 introduces Role aggregate with Permission value objects, RoleHierarchy entity for inheritance management, and PermissionEvaluator domain service. Cross‑context permissions managed through ContextPermission entities with proper domain events for permission changes.  
+**TDD:** Integration test verifying that role permissions are properly enforced across all bounded contexts and that permission inheritance works correctly through role hierarchies.  
+**BDD:** "As an administrator, I can create custom roles with specific permissions and assign them to users across all modules."
+
+**Deep Module:** RoleManager, PermissionEngine, and AccessControlUI modules provide comprehensive RBAC functionality. RoleManager handles role creation, hierarchy, and assignment logic, PermissionEngine evaluates permissions across contexts with caching, and AccessControlUI provides role management interfaces. These modules share permission validation infrastructure and audit logging.
+
+**Advanced Code Patterns:**
+- **Aggregate Root Pattern:** Role aggregate manages permission assignments and inheritance with consistency.
+- **Specification Pattern:** Permission specifications composable for complex access control rules.
+- **Observer Pattern:** Permission changes trigger cache invalidation and audit logging.
+- **Strategy Pattern:** Different permission evaluation strategies pluggable per context.
+
+**Anti‑Patterns:**
+- **Permission Creep:** Implement regular permission audits and cleanup mechanisms.
+- **Cache Staleness:** Ensure permission cache invalidation on all role changes.
+- **Performance Impact:** Permission evaluation must not impact system response times.
+- **Inheritance Loops:** Prevent circular dependencies in role hierarchies.
+
+**Rules to Follow:**
+- All permission changes must be logged with user context and timestamps.
+- Role assignments must support time‑based restrictions and approval workflows.
+- Permission evaluation must be cached with appropriate invalidation strategies.
+- Cross‑context permissions must respect domain boundaries and data isolation.
+- Role hierarchies must prevent circular dependencies with validation checks.
+- UI components must adapt based on user permissions with graceful degradation.
+- Permission audit trails must support compliance reporting and forensic analysis.
+
 **Subtasks:**
 - [ ] ENT‑PERM‑001.1: Implement role‑based permission system covering all bounded contexts. (AGENT) – `src/auth/RBAC.tsx`  
   **verification:** RBAC system works correctly for CRM, Projects, Finance, Documents, Appointments, Portal.
@@ -77,6 +104,28 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Department hierarchy and inheritance management.
 - Department‑specific scheduling rules and constraints.
 - Department analytics and reporting permissions.
+
+**Deep Module:** DepartmentManager, CollaborationEngine, and HierarchyResolver modules provide comprehensive department-based permissions. DepartmentManager handles department creation and access control, CollaborationEngine manages cross-department sharing and workflows, and HierarchyResolver resolves permission inheritance through department structures. These modules share department validation infrastructure and access logging.
+
+**Advanced Code Patterns:**
+- **Composite Pattern:** Department hierarchy managed as composite structure with unified permission evaluation.
+- **Mediator Pattern:** Cross-department collaboration mediated through permission validation and audit.
+- **Chain of Responsibility:** Permission requests chain through department hierarchy with fallback logic.
+- **Observer Pattern:** Department structure changes trigger permission recalculation and cache invalidation.
+
+**Anti‑Patterns:**
+- **Permission Conflicts:** Resolve conflicts between department and role permissions with clear precedence rules.
+- **Hierarchy Complexity:** Limit department depth to prevent permission evaluation performance issues.
+- **Data Silos:** Balance department isolation with necessary collaboration capabilities.
+- **Cache Invalidation:** Ensure department permission changes properly invalidate all affected caches.
+
+**Rules to Follow:**
+- Department permissions must complement role permissions without creating conflicts.
+- Cross-department access must require explicit approval and audit logging.
+- Department hierarchy changes must preserve existing permissions with migration logic.
+- Department analytics must respect access boundaries and data segregation.
+- Scheduling rules must inherit from parent departments with override capabilities.
+- All department permission changes must be tracked with compliance reporting.
 
 **Subtasks:**
 - [ ] ENT‑PERM‑002.1: Implement department‑based access control. (AGENT) – `src/components/departments/DepartmentAccess.tsx`  
@@ -100,6 +149,28 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Data encryption and privacy controls.
 - Security incident detection and response.
 
+**Deep Module:** MFAManager, SessionController, and SecurityMonitor modules provide comprehensive security infrastructure. MFAManager handles multi-factor authentication with multiple methods, SessionController manages session lifecycle and security policies, and SecurityMonitor provides real-time threat detection and response. These modules share security event infrastructure and compliance logging.
+
+**Advanced Code Patterns:**
+- **Strategy Pattern:** Different MFA methods pluggable based on user preferences and security requirements.
+- **Observer Pattern:** Security events trigger automated responses and compliance notifications.
+- **Command Pattern:** Security actions encapsulated as auditable commands with rollback capability.
+- **State Machine Pattern:** Session states managed through secure transitions with timeout handling.
+
+**Anti‑Patterns:**
+- **Security Bypass:** Never allow sensitive operations without proper MFA verification.
+- **Session Hijacking:** Implement proper session validation and secure token management.
+- **Alert Fatigue:** Consolidate related security events and implement smart alerting.
+- **Performance Impact:** Security monitoring must not degrade user experience significantly.
+
+**Rules to Follow:**
+- MFA must be required for all administrative and financial operations.
+- Session tokens must implement proper expiration and refresh mechanisms.
+- Security events must be classified by severity with appropriate response protocols.
+- Data encryption must be applied at rest and in transit with proper key management.
+- Security incidents must trigger immediate containment and forensic preservation.
+- All security features must support compliance audit requirements and reporting.
+
 **Subtasks:**
 - [ ] ENT‑PERM‑003.1: Implement multi‑factor authentication. (AGENT) – `src/auth/MFA.tsx`  
   **verification:** MFA works securely and reliably.
@@ -118,15 +189,36 @@ This file contains cross-cutting enterprise features that span multiple domains 
 
 ### [ ] ENT‑ANALYTICS‑001: Advanced Scheduling Analytics
 **Status:** ⏳ Not Started  
-**Depends on:** ENT‑PERM‑003, ENT‑ANALYTICS‑002.  
+**Depends on:** ENT‑PERM‑003.  
 **Definition of Done:**
-- Comprehensive scheduling analytics and insights covering Projects, Teams, and appointments.
-- Predictive scheduling recommendations.
-- Capacity planning and utilisation optimisation.
-- Client behaviour and preference analysis.
-- Executive dashboards and strategic reporting.
+- Cross‑context scheduling analytics covering Projects, Teams, and appointments.
+- Predictive scheduling recommendations based on historical patterns.
+- Capacity planning and utilisation optimisation tools.
+- Executive dashboards with strategic reporting.
 
 **Note:** This covers broader scheduling analytics across all contexts. `ENT‑APPT‑003` (Scheduling Analytics Dashboard) is specific to the Appointments context. They co‑exist with different scopes.
+
+**Deep Module:** SchedulingAnalytics, PredictiveEngine, and CapacityPlanner modules provide comprehensive scheduling intelligence. SchedulingAnalytics aggregates data across all contexts, PredictiveEngine generates recommendations using ML models, and CapacityPlanner optimises resource allocation. These modules share data aggregation infrastructure and visualization components.
+
+**Advanced Code Patterns:**
+- **Strategy Pattern:** Different prediction algorithms pluggable based on data availability and context.
+- **Observer Pattern:** Real‑time analytics updates when scheduling data changes across contexts.
+- **Factory Pattern:** Analytics widgets created dynamically based on user permissions and context.
+- **Command Pattern:** Capacity planning actions encapsulated as executable recommendations.
+
+**Anti‑Patterns:**
+- **Data Silos:** Never limit analytics to single contexts; always provide cross‑context insights.
+- **Prediction Accuracy:** Implement confidence intervals and fallback strategies for low‑confidence predictions.
+- **Performance Impact:** Batch analytics processing to avoid real‑time system performance degradation.
+- **Dashboard Overload:** Limit executive dashboards to actionable KPIs with drill‑down capabilities.
+
+**Rules to Follow:**
+- All analytics data must be aggregated with proper tenant isolation and privacy controls.
+- Predictive recommendations must include confidence scores and explanation of factors.
+- Capacity planning must support what‑if scenarios without affecting live schedules.
+- Executive dashboards must refresh within 5 seconds with cached data.
+- Cross‑context analytics must respect user permissions and data access policies.
+- All analytics calculations must be auditable and reproducible for compliance.
 
 **Subtasks:**
 - [ ] ENT‑ANALYTICS‑001.1: Implement comprehensive scheduling analytics. (AGENT) – `src/analytics/SchedulingAnalytics.tsx`  
@@ -177,9 +269,32 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Consolidated cash flow forecasting across all entities.
 - Multi‑entity dashboard showing key metrics per entity with drill‑down.
 
-**DDD:** Multi‑entity finance management within the Finance bounded context, leveraging the existing `organization_id` multi‑tenancy pattern for entity scoping (Bill.com multi‑entity feature).  
+**DDD:** Multi‑entity finance management within the Finance bounded context, leveraging the existing `organization_id` multi‑tenancy pattern for entity scoping (Bill.com multi‑entity feature). Phase 8 extends the Finance context with Entity aggregate root and InterCompanyTransfer value objects. Entity hierarchy managed through ParentEntity relationship with proper domain events for cross‑entity transactions.  
 **TDD:** Integration test verifying that a payment from a parent entity correctly reduces a subsidiary bill balance and creates inter‑company transfer records.  
 **BDD:** "As a CFO, I can manage AP and AR across multiple subsidiaries from a single platform."
+
+**Deep Module:** EntityManager, InterCompanyTransferEngine, and ConsolidatedReporting modules provide comprehensive multi‑entity finance capabilities. EntityManager handles entity hierarchy and permission scoping, InterCompanyTransferEngine manages cross‑entity transactions with proper accounting, and ConsolidatedReporting aggregates financial data across entities. These modules share entity validation infrastructure and audit logging.
+
+**Advanced Code Patterns:**
+- **Aggregate Root Pattern:** Entity aggregate manages subsidiary relationships and cross‑entity transaction consistency.
+- **Domain Event Pattern:** CrossEntityPayment events trigger automated inter‑company transfer creation.
+- **Specification Pattern:** EntityAccessSpecification enforces permission scoping across all finance operations.
+- **Strategy Pattern:** Different consolidation algorithms pluggable based on entity structure and reporting requirements.
+
+**Anti‑Patterns:**
+- **Data Leakage:** Never allow cross‑entity data access without proper permission validation.
+- **Accounting Imbalance:** Ensure all cross‑entity transactions maintain balanced double‑entry accounting.
+- **Performance Issues:** Implement efficient queries for consolidated reporting across large datasets.
+- **Permission Bypass:** Entity restrictions must apply to all API endpoints and background processes.
+
+**Rules to Follow (Enterprise):**
+- All cross‑entity transactions must create corresponding inter‑company transfer records with proper accounting.
+- Entity permissions must be enforced at database row level using RLS policies.
+- Consolidated reports must support drill‑down to individual entity transactions.
+- Cash flow forecasting must include inter‑entity transfer impacts and timing.
+- Multi‑entity dashboards must respect user entity access permissions.
+- All entity hierarchy changes must be audited and approved by authorized administrators.
+- Cross‑entity payments must implement proper approval workflows based on transaction amounts.
 
 **Subtasks:**
 - [ ] ENT‑FIN‑001.1: Extend the organisation model to support parent‑subsidiary relationships and inter‑entity accounting. (AGENT)  
@@ -208,9 +323,32 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Executive spend dashboard with anomaly alerts.
 - Configurable alert thresholds per spend category.
 
-**DDD:** AI‑powered spend intelligence within the Finance bounded context (Bill.com Spend & Expense feature).  
+**DDD:** AI‑powered spend intelligence within the Finance bounded context (Bill.com Spend & Expense feature). Phase 8 introduces SpendAnalysis aggregate with AnomalyDetection value objects and SpendPattern entities. Machine learning models encapsulated within AnomalyDetector domain service.  
 **TDD:** Unit test for anomaly detection algorithm with known normal and anomalous spending patterns.  
 **BDD:** "As a finance manager, I am alerted when a vendor suddenly increases prices or when spend in a category exceeds the norm."
+
+**Deep Module:** SpendAnalyticsEngine, AnomalyDetector, and AlertManager modules provide comprehensive spend intelligence. SpendAnalyticsEngine processes financial data for trend analysis, AnomalyDetector uses ML algorithms to identify unusual patterns, and AlertManager manages notification delivery and escalation. These modules share data processing pipelines and alert infrastructure.
+
+**Advanced Code Patterns:**
+- **Strategy Pattern:** Different anomaly detection algorithms pluggable based on data characteristics.
+- **Observer Pattern:** Spend events trigger automatic analysis and alert generation.
+- **Command Pattern:** Alert actions encapsulated as executable responses to anomalies.
+- **Pipeline Pattern:** Spend data processed through configurable analysis pipelines.
+
+**Anti‑Patterns:**
+- **False Positives:** Implement confidence scoring and human review workflows for anomaly alerts.
+- **Performance Impact:** Batch processing for spend analytics to avoid real‑time system degradation.
+- **Alert Fatigue:** Consolidate related anomalies and implement smart alert grouping.
+- **Data Privacy:** Ensure sensitive financial data anonymized in ML training datasets.
+
+**Rules to Follow (Enterprise):**
+- All spend analysis must respect entity permissions and data access policies.
+- Anomaly detection must include confidence scores and explanation of factors.
+- Alert thresholds must be configurable per entity and spend category.
+- Spend analytics must support historical trend analysis with configurable time windows.
+- Duplicate payment detection must implement fuzzy matching for vendor name variations.
+- Executive dashboards must refresh within 10 seconds with cached analytics data.
+- All anomaly alerts must include recommended actions and escalation paths.
 
 **Subtasks:**
 - [ ] ENT‑FIN‑002.1: Implement spend analysis engine with trend calculation and categorisation. (AGENT) – `services/finance/spend‑analytics‑service.ts`  
@@ -237,6 +375,30 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Tenant performance monitoring and optimisation.
 - Tenant billing and resource allocation.
 
+**TDD:** Integration test verifying that tenant data isolation prevents cross‑tenant data access under all circumstances, including direct database access attempts and API endpoint bypasses.
+
+**Deep Module:** TenantIsolationManager, ConfigurationEngine, and CollaborationGateway modules provide comprehensive multi‑tenant architecture. TenantIsolationManager enforces data segregation at all levels, ConfigurationEngine handles tenant‑specific settings and customisations, and CollaborationGateway manages secure cross‑tenant interactions. These modules share tenant context infrastructure and security policies.
+
+**Advanced Code Patterns:**
+- **Tenant Context Pattern:** All operations executed within tenant context with automatic isolation enforcement.
+- **Strategy Pattern:** Different isolation strategies pluggable based on tenant tier and security requirements.
+- **Observer Pattern:** Tenant events trigger configuration updates and billing calculations.
+- **Gateway Pattern:** Cross‑tenant collaboration mediated through secure gateway with audit logging.
+
+**Anti‑Patterns:**
+- **Data Leakage:** Never expose tenant data through caching, logging, or error messages.
+- **Configuration Conflicts:** Ensure tenant customisations don't affect system stability or other tenants.
+- **Performance Isolation:** Prevent noisy tenant problems from affecting other tenant performance.
+- **Shared State:** Avoid any shared mutable state between tenants without proper isolation.
+
+**Rules to Follow:**
+- All database queries must include tenant filtering with RLS policies as backup.
+- Tenant configurations must be version‑controlled and support rollback capabilities.
+- Cross‑tenant collaboration must require explicit consent and audit logging.
+- Tenant monitoring must track resource usage and performance metrics separately.
+- Billing calculations must be based on actual resource consumption with audit trails.
+- Tenant isolation must be enforced at application, database, and infrastructure levels.
+
 **Subtasks:**
 - [ ] ENT‑MULTI‑001.1: Implement advanced data isolation. (AGENT) – `src/multitenancy/DataIsolation.tsx`  
   **verification:** Data isolation is comprehensive and secure.
@@ -258,6 +420,28 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - Performance optimisation and load balancing.
 - Enterprise monitoring and alerting.
 - Compliance and audit trail management.
+
+**Deep Module:** DeploymentAutomation, HighAvailabilityManager, and EnterpriseMonitoring modules provide comprehensive deployment infrastructure. DeploymentAutomation handles CI/CD pipelines and blue‑green deployments, HighAvailabilityManager ensures system resilience and failover capabilities, and EnterpriseMonitoring provides comprehensive observability. These modules share deployment infrastructure and monitoring pipelines.
+
+**Advanced Code Patterns:**
+- **Canary Deployment Pattern:** Gradual rollout with automated rollback on failure detection.
+- **Circuit Breaker Pattern:** Fail‑fast mechanisms prevent cascade failures across services.
+- **Health Check Pattern:** Comprehensive health checks at all system levels with dependency tracking.
+- **Observer Pattern:** Deployment events trigger automated monitoring and alerting.
+
+**Anti‑Patterns:**
+- **Manual Deployments:** All deployments must be automated with proper validation and rollback.
+- **Single Points of Failure:** Eliminate all SPOFs through redundancy and failover mechanisms.
+- **Monitoring Gaps:** Ensure complete observability coverage with no blind spots.
+- **Configuration Drift:** Implement automated configuration management and consistency checks.
+
+**Rules to Follow:**
+- All deployments must pass automated security scans and compliance checks.
+- High availability must be tested through regular chaos engineering exercises.
+- Performance monitoring must track SLA compliance with automated alerting.
+- Disaster recovery must be tested monthly with documented RTO/RPO compliance.
+- Enterprise monitoring must provide centralized visibility across all environments.
+- All scaling decisions must be based on automated metrics with human oversight.
 
 **Subtasks:**
 - [ ] ENT‑MULTI‑002.1: Implement enterprise deployment automation. (AGENT) – `deployment/EnterpriseDeploy.tsx`  

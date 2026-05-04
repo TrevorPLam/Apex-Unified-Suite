@@ -31,8 +31,29 @@ This file covers the Assets Context with CRUD operations, checkout/check-in func
 - `DELETE /api/v1/assets/{assetId}` – soft delete, 204.
 Schemas: `Asset`, `AssetCreate`, `AssetUpdate`. Examples required.
 
+**Rules to Follow:**
+- All endpoints must use `/api/v1/` prefix
+- Response envelopes follow standard format
+- Examples must be included for all endpoints
+- Asset operations require authentication
+- Soft delete for asset removal
+
+**Advanced Code Patterns:**
+- OpenAPI components for reusable schemas
+- Proper HTTP status codes
+- Pagination envelope pattern
+- Location headers for creation
+
+**Anti-Patterns:**
+- Missing pagination limits
+- Inconsistent error response formats
+- Hardcoded values in schemas
+- Missing authentication requirements
+
+**Out of Scope:** Asset templates, bulk operations, advanced reporting.
+
 **DDD:** API exposes the Asset aggregate; status transitions constrained by service.  
-**TDD:** After codegen, integration tests (API‑ASSETS‑002) will be written.  
+**TDD:** Write integration tests (API‑ASSETS‑002) before implementation. Tests must fail initially (red phase).  
 **BDD:** Enables "As a manager, I can track and manage company assets" scenarios.  
 **Deep Module:** The spec is the public interface; AssetService underneath is a deep module.
 
@@ -41,7 +62,26 @@ Schemas: `Asset`, `AssetCreate`, `AssetUpdate`. Examples required.
   **verification:** Spec validates; generated types correct.
 - [ ] API‑ASSETS‑001.2: Run `pnpm codegen` and `pnpm typecheck`. (HUMAN/AGENT)  
   **verification:** No type errors.
-- **Blocks:** API‑ASSETS‑002.
+- [ ] API‑ASSETS‑001.3: Verify examples render correctly in Swagger UI. (AGENT)  
+  **verification:** All examples display properly.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Spec validation required before codegen
+- Type checking after code generation
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- OpenAPI specification design
+- Component schema reuse
+- Example generation
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Missing spec validation
+- Skipping type checking
 
 ---
 
@@ -60,8 +100,28 @@ Schemas: `Asset`, `AssetCreate`, `AssetUpdate`. Examples required.
 **Related Files:** `.../assets.test.ts`
 
 ### Subtasks:
-- [ ] API‑ASSETS‑002.1: Write all integration test cases. (AGENT)  
-  **verification:** Tests compile and run, all red.
+- [ ] API‑ASSETS‑002.1: Write all integration test cases. (AGENT) – `artifacts/api-server/__tests__/api/assets/assets.test.ts`  
+  **verification:** Tests compile and run, all red (no routes exist).
+- [ ] API‑ASSETS‑002.2: Verify test coverage includes negative cases. (AGENT)  
+  **verification:** All error scenarios tested.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Negative test cases required
+- Error scenarios must be tested
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Integration test design
+- Error scenario testing
+- Test coverage verification
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Missing negative test cases
+- Incomplete error scenario testing
 
 ---
 
@@ -114,6 +174,28 @@ Schemas: `Asset`, `AssetCreate`, `AssetUpdate`. Examples required.
 - `GET /api/v1/assets/{assetId}/checkout‑history` – paginated log of all checkout events.
 **DDD:** Checkout events are append‑only; service enforces availability.
 
+**Rules to Follow:**
+- Asset availability must be validated before checkout
+- Checkout events are append-only (no updates)
+- Checkin requires valid checkout record
+- History pagination required
+- Event emission for state changes
+
+**Advanced Code Patterns:**
+- Append-only event logging
+- Availability validation logic
+- State transition enforcement
+- Event-driven architecture
+
+**Anti-Patterns:**
+- Missing availability validation
+- Allowing checkout of unavailable assets
+- Missing event emission
+- Direct state manipulation
+
+**TDD:** Write integration tests before implementation. Tests must verify availability rules and event emission.  
+**BDD:** Enables "As a user, I can check out available assets" scenarios.
+
 ### Subtasks:
 - [ ] API‑ASSETS‑005.1: Add checkout/checkin paths to OpenAPI. (AGENT)  
   **verification:** Spec validates.
@@ -143,10 +225,54 @@ Schemas: `Asset`, `AssetCreate`, `AssetUpdate`. Examples required.
 **Definition of Done:** `CheckoutRepository` (append‑only) and `CheckoutService` (enforces availability rules, updates asset status, emits `AssetCheckedOut` / `AssetCheckedIn` events). Result<T, DomainError> returns.  
 **Deep Module:** Encapsulates checkout lifecycle and status synchronisation.
 
+**Rules to Follow:**
+- Asset availability must be validated before checkout
+- Checkout events are append-only (no updates)
+- Asset status updated atomically with checkout
+- Event emission after successful operations
+- All methods return Result<T, DomainError>
+
+**Advanced Code Patterns:**
+- Append-only event logging
+- Atomic state transitions
+- Event-driven architecture
+- Deep module encapsulation
+
+**Anti-Patterns:**
+- Missing availability validation
+- Non-atomic state updates
+- Missing event emission
+- Exception-based error handling
+
+**DDD:** Service encapsulates checkout aggregate behavior with proper domain events.  
+**TDD:** Write failing tests for all checkout scenarios including availability validation and event emission.  
+**BDD:** Enables "When I check out an asset, its status updates and events are emitted" scenarios.
+
 ### Subtasks:
-- [ ] API‑ASSETS‑007.1: Implement repository and service. (AGENT)  
-- [ ] API‑ASSETS‑007.2: Write unit tests. (AGENT)  
-- [ ] API‑ASSETS‑007.3: Depth refactor check. (AGENT)
+- [ ] API‑ASSETS‑007.1: Implement repository and service. (AGENT) – `lib/db/src/repositories/checkouts.ts`, `services/assets/checkout-service.ts`  
+  **verification:** Unit tests pass.
+- [ ] API‑ASSETS‑007.2: Write unit tests. (AGENT) – `artifacts/api-server/__tests__/services/assets/checkout.test.ts`  
+  **verification:** All tests green.
+- [ ] API‑ASSETS‑007.3: Depth refactor check. (AGENT)  
+  **verification:** Method count ≤ 5, service encapsulates checkout logic, no `throw`.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Service encapsulates checkout complexity
+- Event emission verified in tests
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Service layer encapsulation
+- Event-driven architecture
+- Atomic state management
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Shallow service without encapsulation
+- Missing event emission tests
 
 ---
 

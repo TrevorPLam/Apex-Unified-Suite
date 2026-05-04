@@ -39,11 +39,31 @@ All operations scoped to the organisation. Emits `EventTypeCreated`, `EventTypeU
 - [ ] API‑APPT‑011.1: Add event type paths and schemas to OpenAPI. (AGENT) – `lib/api‑spec/openapi.yaml`  
   **verification:** Spec validates; codegen passes.
 - [ ] API‑APPT‑011.2: Write integration tests (red). (AGENT) – `artifacts/api-server/__tests__/api/appointments/event-types.test.ts`  
-  **verification:** Tests fail.
+  **verification:** Tests fail (no implementation).
 - [ ] API‑APPT‑011.3: Implement `EventTypeService` and `EventTypeRepository`. (AGENT) – `services/appointments/event-type-service.ts`  
   **verification:** Unit tests pass.
-- [ ] API‑APPT‑011.4: Create routes and run integration tests to green. (AGENT)  
+- [ ] API‑APPT‑011.4: Create routes and run integration tests to green. (AGENT) – `routes/appointments/event-types.ts`  
   **verification:** All event type tests pass.
+- [ ] API‑APPT‑011.5: Depth refactor check: method count ≤ 5, service encapsulates event type lifecycle, no `throw`. (AGENT)  
+  **verification:** Manual inspection + `pnpm typecheck`.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Service encapsulates event type complexity
+- Event emission verified in tests
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Service layer encapsulation
+- Event-driven architecture
+- Configuration management
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Shallow service without encapsulation
+- Missing event emission tests
 
 ---
 
@@ -62,11 +82,34 @@ All operations scoped to the organisation. Emits `EventTypeCreated`, `EventTypeU
 **Deep Module:** Encapsulates conditional matching logic and routing engine.
 
 ### Subtasks:
-- [ ] API‑APPT‑012.1: Add routing form paths and schemas to OpenAPI. (AGENT)  
+- [ ] API‑APPT‑012.1: Add routing form paths and schemas to OpenAPI. (AGENT) – `lib/api‑spec/openapi.yaml`  
   **verification:** Spec validates.
-- [ ] API‑APPT‑012.2: Write integration tests (red). (AGENT)  
-- [ ] API‑APPT‑012.3: Implement `RoutingFormService` and repository. (AGENT)  
-- [ ] API‑APPT‑012.4: Create routes, run tests to green. (AGENT)
+- [ ] API‑APPT‑012.2: Write integration tests (red). (AGENT) – `artifacts/api-server/__tests__/api/appointments/routing-forms.test.ts`  
+  **verification:** Tests fail (no implementation).
+- [ ] API‑APPT‑012.3: Implement `RoutingFormService` and repository. (AGENT) – `services/appointments/routing-form-service.ts`  
+  **verification:** Unit tests pass.
+- [ ] API‑APPT‑012.4: Create routes, run tests to green. (AGENT) – `routes/appointments/routing-forms.ts`  
+  **verification:** All tests pass.
+- [ ] API‑APPT‑012.5: Depth refactor check: method count ≤ 5, service encapsulates routing logic, no `throw`. (AGENT)  
+  **verification:** Manual inspection + `pnpm typecheck`.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Service encapsulates conditional routing logic
+- Event emission verified in tests
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Conditional routing engine
+- Service layer encapsulation
+- Event-driven architecture
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Shallow service without encapsulation
+- Missing event emission tests
 
 ---
 
@@ -83,10 +126,41 @@ Emits `NoShowRecorded` domain event.
 **DDD:** Calendly no‑show tracking for reducing wasted slots.
 
 ### Subtasks:
-- [ ] API‑APPT‑013.1: Add no‑show paths to OpenAPI. (AGENT)  
-- [ ] API‑APPT‑013.2: Write integration tests (red). (AGENT)  
-- [ ] API‑APPT‑013.3: Implement `NoShowService` and repository. (AGENT)  
-- [ ] API‑APPT‑013.4: Create routes, run tests to green. (AGENT)
+- [ ] API‑APPT‑013.1: Add no‑show paths to OpenAPI. (AGENT) – `lib/api‑spec/openapi.yaml`  
+  **verification:** Spec validates.
+- [ ] API‑APPT‑013.2: Write integration tests (red). (AGENT) – `artifacts/api-server/__tests__/api/appointments/no-show.test.ts`  
+  **verification:** Tests fail (no implementation).
+- [ ] API‑APPT‑013.3: Implement `NoShowService` and repository. (AGENT) – `services/appointments/no-show-service.ts`  
+  **verification:** Unit tests pass.
+- [ ] API‑APPT‑013.4: Create routes, run tests to green. (AGENT) – `routes/appointments/no-show.ts`  
+  **verification:** All tests pass.
+- [ ] API‑APPT‑013.5: Depth refactor check: method count ≤ 5, service encapsulates no‑show logic, no `throw`. (AGENT)  
+  **verification:** Manual inspection + `pnpm typecheck`.
+
+**Definition of Done Traceability:**
+- No-show tracking endpoints implemented
+- Integration tests verify no‑show workflow
+- Event emission for `NoShowRecorded` verified
+- Client restriction functionality tested
+- All subtasks have specific file paths
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Service encapsulates no‑show tracking logic
+- Event emission verified in tests
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Service layer encapsulation
+- Event-driven architecture
+- Client restriction logic
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Shallow service without encapsulation
+- Missing event emission tests
 
 ---
 

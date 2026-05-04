@@ -8,7 +8,7 @@ This document contains tasks for defining system behavior through BDD features a
 **Status:** ⏳ Not Started  
 **Current state:** No BDD feature files exist – behaviour is unspecified.  
 **Definition of Done:** One `.feature` file per context in `docs/features/`, covering primary user goals **and corresponding error/negative scenarios** for each feature.  
-**Out of Scope:** Exhaustive edge-case scenarios.  
+**Out of Scope:** Exhaustive edge-case scenarios; overly detailed implementation specifications.  
 **Blocks:** All implementation phases (Phase 1–5)  
 **Blocked By:** DOMAIN-001, DOMAIN-002  
 **Depends on:** DOMAIN-001, DOMAIN-002  
@@ -70,9 +70,10 @@ This document contains tasks for defining system behavior through BDD features a
 **Blocked By:** DOMAIN-003 (feature files)  
 **Related Files:** `docs/error-catalog-extended.md`
 
-**DDD:** Errors must use ubiquitous language and map to BDD negative scenarios.  
+**DDD:** Errors must use ubiquitous language and map to BDD negative scenarios. Event flow mapping ensures errors are properly propagated across bounded contexts.  
 **TDD:** The list will drive the creation of error class tests in P1.  
-**BDD:** Each error code is sourced from a negative scenario.
+**BDD:** Each error code is sourced from a negative scenario.  
+**Event Flow Map:** Error events must be defined for cross-context communication (e.g., LeadConversionFailed event emitted by CRM, consumed by Analytics).
 
 ### Subtasks:
 - [ ] ERROR-002-EXT.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
@@ -86,12 +87,114 @@ This document contains tasks for defining system behavior through BDD features a
 
 ---
 
+## [ ] INTEGRATE-002: Define Cross-Context Event Flow ADR  
+**Status:** ⏳ Not Started  
+**Current state:** No clear definition of how events flow between bounded contexts (e.g., CRM lead conversion creating Finance invoice).  
+**Definition of Done:** ADR accepted defining event flow patterns, async communication, and consistency guarantees between contexts.  
+**Blocks:** All cross-context integration scenarios  
+**Blocked By:** DOMAIN-002, DOMAIN-003  
+**Related Files:** `docs/adr/011-cross-context-event-flow.md`
+
+**Advanced Code Patterns:** Event sourcing patterns; saga pattern for distributed transactions; eventual consistency; message broker abstraction.
+**Anti-Patterns:** Synchronous cross-context calls; tight coupling between bounded contexts; lack of compensation mechanisms.
+**Rules to Follow:**
+- All cross-context communication must be asynchronous
+- Events must be immutable and append-only
+- Failed operations must have compensation actions
+- Event schemas must be versioned
+
+**DDD:** Event flow defines how bounded contexts communicate while maintaining autonomy and avoiding tight coupling.
+**TDD:** Event handlers must be tested with mock event buses.
+**BDD:** Cross-context scenarios must be captured as feature files.
+**Deep Module:** Event bus is a deep module hiding complex routing and delivery mechanics.
+
+### Subtasks:
+- [ ] INTEGRATE-002.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
+- [ ] INTEGRATE-002.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
+- [ ] INTEGRATE-002.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
+- [ ] INTEGRATE-002.1 (AGENT): Create ADR defining event flow patterns between contexts (CRM→Finance, Projects→Analytics, etc.). – `docs/adr/011-cross-context-event-flow.md`
+  **Verification:** ADR exists with clear event flow patterns.
+- [ ] INTEGRATE-002.2 (HUMAN): Review and approve event flow ADR.
+  **Verification:** ADR approved.
+  **Blocks:** Cross-context implementation scenarios.
+
+---
+
+## [ ] BDD-AUTO-001: Define BDD-to-Playwright Automation Strategy  
+**Status:** ⏳ Not Started  
+**Current state:** BDD feature files exist but no automation strategy defined for converting them to executable tests.  
+**Definition of Done:** Strategy accepted for wiring Gherkin features to Playwright+Cucumber tests with automated execution.  
+**Blocks:** All automated acceptance testing  
+**Blocked By:** DOMAIN-003  
+**Related Files:** `docs/testing/bdd-automation-strategy.md`
+
+**Advanced Code Patterns:** Page object model; step definition patterns; test data factories; parallel test execution.
+**Anti-Patterns:** Brittle selectors; mixed concerns in step definitions; hard-coded test data; sequential test dependencies.
+**Rules to Follow:**
+- All step definitions must be reusable across features
+- Test data must be generated programmatically
+- Tests must run in parallel without conflicts
+- UI interactions must use page objects
+
+**DDD:** N/A – testing infrastructure.
+**TDD:** Step definitions must be unit tested.
+**BDD:** This task enables automated execution of BDD scenarios.
+**Deep Module:** Test framework is a deep module hiding complex browser automation.
+
+### Subtasks:
+- [ ] BDD-AUTO-001.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
+- [ ] BDD-AUTO-001.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
+- [ ] BDD-AUTO-001.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
+- [ ] BDD-AUTO-001.1 (AGENT): Create BDD automation strategy document. – `docs/testing/bdd-automation-strategy.md`
+  **Verification:** Strategy document exists with clear implementation approach.
+- [ ] BDD-AUTO-001.2 (HUMAN): Review and approve automation strategy.
+  **Verification:** Strategy approved.
+  **Blocks:** Automated acceptance test implementation.
+
+---
+
+## [ ] ERROR-002-EXT.3: Audit Negative Scenario Coverage  
+**Status:** ⏳ Not Started  
+**Current state:** Feature files may miss critical negative scenarios and error handling paths.  
+**Definition of Done:** Complete audit of all feature files to ensure comprehensive negative scenario coverage aligned with domain error catalog.  
+**Blocks:** ERROR-002 implementation  
+**Blocked By:** DOMAIN-003, ERROR-002-EXT  
+**Related Files:** `docs/testing/negative-scenario-audit.md`
+
+**Advanced Code Patterns:** Error scenario testing; boundary testing; mutation testing for error paths.
+**Anti-Patterns:** Happy-path only testing; missing edge cases; untested error conditions.
+**Rules to Follow:**
+- Every feature must have negative scenarios
+- All domain errors must have corresponding test scenarios
+- Error messages must be validated in tests
+- Boundary conditions must be tested
+
+**DDD:** Ensures domain error handling is properly specified and tested.
+**TDD:** Error paths must have unit test coverage.
+**BDD:** Negative scenarios must be captured as Gherkin scenarios.
+**Deep Module:** N/A – testing methodology.
+
+### Subtasks:
+- [ ] ERROR-002-EXT.3.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
+- [ ] ERROR-002-EXT.3.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
+- [ ] ERROR-002-EXT.3.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
+- [ ] ERROR-002-EXT.3.1 (AGENT): Audit all feature files for negative scenario coverage. – `docs/testing/negative-scenario-audit.md`
+  **Verification:** Audit complete with coverage report.
+- [ ] ERROR-002-EXT.3.2 (AGENT): Add missing negative scenarios to feature files.
+  **Verification:** All features have comprehensive negative coverage.
+  **Blocks:** ERROR-002 implementation.
+
+---
+
 ## Behavior Wave Completion Criteria
 
-**Wave Status:** [ ] Complete (0/2 parent tasks done)
+**Wave Status:** [ ] Complete (0/5 parent tasks done)
 
 **Dependencies for Next Waves:**
 - DOMAIN-003 provides executable specifications for all implementation
 - ERROR-002-EXT defines comprehensive error handling requirements
+- INTEGRATE-002 defines cross-context event flow patterns
+- BDD-AUTO-001 defines automated testing strategy
+- ERROR-002-EXT.3 ensures comprehensive negative scenario coverage
 
 **Next Wave:** TOOLING tasks (can run in parallel with behavior tasks)

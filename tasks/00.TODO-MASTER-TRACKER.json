@@ -1108,6 +1108,42 @@
       "description": "Settings Routes",
       "dependencies": ["API-SETTINGS-003", "AUTH-008"],
       "status": "not_started"
+    },
+    {
+      "id": "API-APPT-001",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Appointments Core CRUD",
+      "dependencies": ["DB-APPT-001", "DOMAIN-003"],
+      "status": "not_started",
+      "nextAction": "API-APPT-001.1 (define OpenAPI spec)"
+    },
+    {
+      "id": "API-APPT-002",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Appointments Tests",
+      "dependencies": ["API-APPT-001", "TEST-INFRA-001"],
+      "status": "not_started",
+      "nextAction": "API-APPT-002.1 (write unit tests)"
+    },
+    {
+      "id": "API-APPT-003",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Appointments Service",
+      "dependencies": ["DB-MIGRATE-ALL", "ERROR-002", "ARCH-001"],
+      "status": "not_started",
+      "nextAction": "API-APPT-003.1 (implement service layer)"
+    },
+    {
+      "id": "API-APPT-004",
+      "phase": "P4",
+      "wave": 5,
+      "description": "Appointments Routes",
+      "dependencies": ["API-APPT-003", "AUTH-008", "RBAC-001"],
+      "status": "not_started",
+      "nextAction": "API-APPT-004.1 (create route handlers)"
     }
   ],
   "additionalTasks": {

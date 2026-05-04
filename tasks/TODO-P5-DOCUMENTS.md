@@ -21,13 +21,15 @@ This part covers Documents Data Integration including file management, workflows
 ### [ ] FRONT‑DOCS‑001: Documents & Folders – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** API‑DOCS‑004 (documents green), API‑DOCS‑008 (folders green).  
-**Definition of Done:** Document list and folder tree views use `useDocumentList` and `useFolderList` hooks. File type icons, size formatting, and date display. All mock data imports removed.  
+**Definition of Done:** Document list and folder tree views use `useDocumentList` and `useFolderList` hooks. File type icons, size formatting, and date display. All mock data imports completely removed from Documents components and hooks. Component tests pass with MSW mocks. Manual testing confirms folder navigation and file browsing work correctly.  
 **Related Files:** `artifacts/apex-os/src/pages/Documents.tsx`, `artifacts/apex-os/src/hooks/useDocuments.ts`
 
 **DDD:** Documents bounded context frontend; folder hierarchy and file metadata views.  
-**TDD:** Component test with MSW – documents render in list; folder tree shows hierarchy; empty folder shows empty state.  
-**BDD:** "As a user, I can browse my documents and folders."  
-**Deep Module:** N/A – frontend view.
+**Deep Module:** Documents frontend module encapsulates file/folder management, navigation, and display logic. The module provides a unified interface for document operations while hiding the complexity of API calls, file type handling, and hierarchical navigation behind React Query hooks and well-organized components.
+
+**TDD:** Component test with MSW – documents render in list; folder tree shows hierarchy; empty folder shows empty state.
+
+**BDD:** "As a user, I can browse my documents and folders."
 
 **Subtasks:**
 - [ ] FRONT‑DOCS‑001.1: Create `useDocumentList` and `useFolderList` hooks with pagination and folder filtering. (AGENT) – `src/hooks/documents/useDocumentList.ts`, `useFolderList.ts`  
@@ -41,34 +43,49 @@ This part covers Documents Data Integration including file management, workflows
 
 ---
 
-### [ ] FRONT‑DOCS‑002: File Upload Component Enhancement
+### [ ] FRONT‑DOCS‑002: Basic File Upload Component
 **Status:** ⏳ Not Started  
-**Depends on:** FRONT‑DOCS‑001, API‑DOCS‑004, DOC‑INFRA‑002 (chunked upload).  
-**Definition of Done:** Enhanced file upload interface with:  
-- Drag‑and‑drop file upload zone with visual feedback (highlight on drag, progress ring).  
-- Progress indicators for large files with pause/resume capability.  
-- Multiple file selection with batch upload queue management.  
-- File type validation and size limits with clear error messages.  
-- Upload queue management with retry logic and error handling.  
-- Responsive design optimised for mobile and desktop.  
-- Integration with chunked upload API for files > 100 MB.  
-**Related Files:** `artifacts/apex-os/src/components/documents/FileUpload.tsx`, `FileUploadQueue.tsx`
+**Depends on:** FRONT‑DOCS‑001, API‑DOCS‑004.  
+**Definition of Done:** Basic file upload interface with drag‑and‑drop zone, file type validation, size limits, and progress indicators. Single file upload with error handling.  
+**Related Files:** `artifacts/apex-os/src/components/documents/FileUpload.tsx`
 
 **DDD:** Infrastructure component for document ingestion.  
 **TDD:** Component test – upload a file, verify progress bar updates, verify success callback, verify error handling on network failure (MSW simulates failure).  
 **BDD:** "As a user, I can upload files via drag‑and‑drop with progress feedback."
 
+**Rules to Follow (Frontend):**
+- Use TanStack Query for upload mutations
+- Implement proper error handling with user feedback
+- Show loading states during uploads
+- Validate file types and sizes on client side
+- Use TypeScript interfaces from generated API types
+- Test all upload scenarios with MSW
+- Handle network failures gracefully
+- Provide clear success/error feedback
+
 **Subtasks:**
 - [ ] FRONT‑DOCS‑002.1: Build drag‑and‑drop upload zone component with file type/size validation. (AGENT) – `src/components/documents/FileUpload.tsx`  
-  **verification:** Drop zone highlights on drag; invalid file type shows error message; size limit enforced.
+  **verification:** `npm test -- file-upload-zone.test.tsx` - drop zone highlights on drag; invalid file type shows error message; size limit enforced.
 - [ ] FRONT‑DOCS‑002.2: Implement upload progress tracking with progress bar component. (AGENT)  
-  **verification:** Progress bar updates during upload; completion triggers success callback.
-- [ ] FRONT‑DOCS‑002.3: Add batch upload queue with individual file status (queued, uploading, done, error). (AGENT) – `src/components/documents/FileUploadQueue.tsx`  
-  **verification:** Multiple files can be added; each shows independent progress; retry button on failed files.
-- [ ] FRONT‑DOCS‑002.4: Integrate chunked upload for large files via `useChunkedUpload` hook. (AGENT)  
-  **verification:** Files > 100 MB use chunked endpoint; pause/resume works.
-- [ ] FRONT‑DOCS‑002.5: Add responsive layout for mobile. (AGENT)  
-  **verification:** Upload zone adapts to small screens; touch events work.
+  **verification:** `npm test -- upload-progress.test.tsx` - progress bar updates during upload; completion triggers success callback.
+- [ ] FRONT‑DOCS‑002.3: Add error handling and retry logic for failed uploads. (AGENT)  
+  **verification:** `npm test -- upload-error-handling.test.tsx` - failed uploads show retry button; retry succeeds.
+
+---
+
+### [ ] FRONT‑DOCS‑002.5: Advanced Upload Features
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑DOCS‑002, DOC‑INFRA‑002 (chunked upload).  
+**Definition of Done:** Advanced upload features including batch upload queue, chunked upload for large files, and responsive mobile design.  
+**Related Files:** `artifacts/apex-os/src/components/documents/FileUploadQueue.tsx`, `useChunkedUpload.ts`
+
+**Subtasks:**
+- [ ] FRONT‑DOCS‑002.5.1: Add batch upload queue with individual file status (queued, uploading, done, error). (AGENT) – `src/components/documents/FileUploadQueue.tsx`  
+  **verification:** `npm test -- upload-queue.test.tsx` - multiple files can be added; each shows independent progress; retry button on failed files.
+- [ ] FRONT‑DOCS‑002.5.2: Integrate chunked upload for large files via `useChunkedUpload` hook. (AGENT)  
+  **verification:** `npm test -- chunked-upload.test.tsx` - files > 100 MB use chunked endpoint; pause/resume works.
+- [ ] FRONT‑DOCS‑002.5.3: Add responsive layout for mobile. (AGENT)  
+  **verification:** `npm test -- upload-responsive.test.tsx` - upload zone adapts to small screens; touch events work.
 
 ---
 
@@ -279,6 +296,22 @@ This part covers Documents Data Integration including file management, workflows
 - Soft delete → `useDeleteDocument` mutation, optimistic removal from list.  
 - Folder create/rename → mutations with cache invalidation.  
 - All mutations show toast notifications.
+- All interactive features tested with MSW mocks.
+- Error handling provides clear user feedback.
+
+**Deep Module:** Documents interactive features module encapsulates all user interactions, mutation handling, and state management. The module provides a unified interface for document operations while hiding the complexity of API calls, optimistic updates, and error handling behind well-defined hooks and components.
+
+**TDD:** Integration tests with MSW verify all interactive features work correctly. Tests cover file uploads, downloads, delete operations, folder management, and error scenarios. Each interaction is tested for both success and error paths.
+
+**Anti-Patterns (Frontend):**
+- Manual state management instead of React Query
+- Direct file handling without progress tracking
+- Missing optimistic updates for delete operations
+- Unhandled mutation errors
+- Inconsistent error handling patterns
+- Not invalidating queries after successful mutations
+- Missing loading states during uploads
+- Hardcoded API endpoints
 
 **Subtasks:**
 - [ ] FRONT‑INT‑DOCS.1: Wire upload mutation with progress callback. (AGENT)  

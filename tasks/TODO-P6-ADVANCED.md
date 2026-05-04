@@ -16,7 +16,7 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 
 # Phase 6 – Production Readiness & DevOps (Advanced Features & Opportunities)
 
-*This section contains advanced AP/AR features that need detailed specifications and enhancement opportunities for post‑MVP development. These tasks are largely stubs or deferred to later phases.*
+*This section contains advanced AP/AR features that need detailed specifications and enhancement opportunities for post‑MVP development. These tasks are largely stubs or deferred to later phases. Advanced features are separated from production-readiness tasks to maintain clear scope boundaries.*
 
 ---
 
@@ -48,7 +48,8 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Definition of Done:** *(Placeholder)*  
 - `AICodingService` with `suggestVendor`, `suggestAccountCodes`, `learnFromCorrection` methods.  
 - Initially rule‑based, evolving to ML.  
-**⚠️ Detailed requirements, data sources, and integration points must be defined before work can begin.**
+**⚠️ Detailed requirements, data sources, and integration points must be defined before work can begin.**  
+**Scope Clarification:** This is an advanced AI feature deferred to post-MVP. It requires ML expertise and extensive training data. Not part of core production-readiness work.
 
 ### ⚠️ AI‑AP‑002: Duplicate Detection Engine – Needs Specification
 **Status:** ⏳ Not Started  
@@ -63,7 +64,8 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Depends on:** API‑AP‑014 (bill payments).  
 **Definition of Done:** *(Placeholder)*  
 - `EarlyPaymentDiscountService` calculates discounts, recommends optimal payment schedule.  
-**⚠️ Discount rules, integration with payment runs, and edge cases (partial payments) require specification.**
+**⚠️ Discount rules, integration with payment runs, and edge cases (partial payments) require specification.**  
+**Scope Clarification:** This is an advanced financial feature deferred to post-MVP. Complex business logic and financial calculations make this unsuitable for initial production deployment.
 
 ### ⚠️ ADV‑AR‑001: Credit Management & Risk Scoring – Needs Specification
 **Status:** ⏳ Not Started  

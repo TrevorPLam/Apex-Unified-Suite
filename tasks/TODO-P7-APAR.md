@@ -47,16 +47,17 @@ This document contains AP/AR payment and bank integration tasks including Stripe
 - Real-time payments (RTP)
 
 **Rules to Follow:**
-- Use Stripe Treasury API with proper error handling
-- Implement idempotency for all payment operations
-- Handle Stripe webhook signature verification
-- Follow NACHA compliance requirements
+- Stripe Treasury API: Use proper error handling with exponential backoff for rate limits
+- Idempotency: Implement Stripe idempotency keys for all payment operations to prevent duplicates
+- Webhook Security: Verify Stripe webhook signatures using their official library
+- NACHA Compliance: Follow NACHA Operating Rules for ACH formatting and timing
+- Error Handling: Map Stripe error codes to domain-specific error responses
 
-**Advanced Code Patterns:**
-- Stripe Transfer lifecycle management
-- Webhook event processing
-- Idempotency key generation
-- Payment reconciliation algorithms
+**Deep Module:**
+- Stripe Treasury integration as payment processing deep module with clear separation of concerns
+- ACH payment lifecycle management with proper abstraction layers
+- Webhook processing pipeline with event sourcing patterns
+- Payment reconciliation service with domain-specific business logic
 
 **Anti-Patterns:**
 - Don't skip webhook signature verification
@@ -111,16 +112,17 @@ curl -X POST http://localhost:8081/integrations/stripe/ach/test-payment
 - Bank account aggregation for personal use
 
 **Rules to Follow:**
-- Use Plaid API with proper error handling
-- Implement secure Plaid Link token generation
-- Handle Plaid webhook signature verification
-- Follow bank reconciliation best practices
+- Plaid API: Use proper error handling with webhook signature verification
+- Link Tokens: Generate secure, short-lived Plaid Link tokens for bank connections
+- Transaction Sync: Implement incremental sync with proper change detection
+- Bank Reconciliation: Use fuzzy matching algorithms for transaction-to-payment matching
+- Data Security: Encrypt Plaid access tokens at rest and rotate regularly
 
-**Advanced Code Patterns:**
-- Plaid Link token management
-- Transaction matching algorithms
-- Bank balance synchronization
-- Webhook event processing
+**Deep Module:**
+- Plaid bank feed integration with transaction categorization deep module
+- Bank account verification workflow with multi-step authentication flows
+- Transaction matching algorithms with machine learning categorization
+- Balance synchronization service with real-time updates
 
 **Anti-Patterns:**
 - Don't store Plaid access tokens insecurely
@@ -295,6 +297,13 @@ curl -X POST http://localhost:8081/integrations/plaid/test-verification
 - Handle network‑specific status updates (invited, connected, declined).
 - Map network vendor IDs to internal vendor records.
 
+**Rules to Follow:**
+- Bill.com API: Use OAuth 2.0 with proper token management and refresh flows
+- Vendor Sync: Implement bidirectional sync with conflict resolution for data conflicts
+- Network Payments: Handle vendor payment preferences and network-specific status updates
+- Rate Limiting: Respect Bill.com API limits (1000 requests/hour per app)
+- Error Mapping: Map Bill.com error codes to domain-specific business errors
+
 **Subtasks:**
 - [ ] INT‑FIN‑001.1: Implement Bill.com vendor network API client with authentication. (AGENT) – `integrations/bill‑com/vendor‑network‑client.ts`  
   **verification:** Client can search and retrieve vendor data.
@@ -408,6 +417,23 @@ pnpm vitest run -- lib/payments/nacha-formats.test.ts
 # Manual verification
 curl -X POST http://localhost:8081/payments/nacha/test-generation
 ```
+
+---
+
+## Integration Rules Framework
+
+To avoid rules duplication across all integration tasks, the following common rules framework applies:
+
+### **Common Integration Rules**
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+- **Error Handling**: Implement exponential backoff for rate limits and network errors
+- **Security**: Verify webhook signatures and store credentials securely
+- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage
+- **Logging**: Implement structured logging with security-sensitive data redaction
+
+### **Provider-Specific Rules**
+Each integration task should only include rules specific to that provider, not duplicate the common rules above.
 
 ---
 

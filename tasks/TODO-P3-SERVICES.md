@@ -58,20 +58,60 @@ This part covers the Cross‑Cutting Infrastructure APIs that serve all other co
 - Organisation‑scoped: only returns results for the user's organisation.  
 - Supports full‑text search using PostgreSQL `tsvector` (or external engine if configured).  
 **Integration tests:** search for a known term, verify results across modules, verify organisation isolation, empty query returns empty, pagination.  
-**DDD:** Infrastructure service that reads from a materialised search index.  
-**TDD:** Write tests before implementation.  
-**Deep Module:** Encapsulates query construction, relevance ranking, and cross‑module result aggregation.
+
+**Rules to Follow:**
+- Search results must be organisation-scoped
+- Index updates via domain event subscribers
+- Relevance ranking for result ordering
+- Pagination support for large result sets
+- Query validation and sanitization
+
+**Advanced Code Patterns:**
+- Domain event-driven index updates
+- Full-text search implementation
+- Relevance ranking algorithms
+- Cross-module result aggregation
+
+**Anti-Patterns:**
+- Global search (no organisation scoping)
+- Manual index updates (not event-driven)
+- Missing relevance ranking
+- Unpaginated result sets
+
+**DDD:** Infrastructure service that reads from a materialised search index. This is NOT a deep module - it's a specialized search utility.  
+**Deep Module:** N/A - This is an infrastructure search service, not a domain deep module.  
+**TDD:** Write tests before implementation. Tests must fail initially (red phase).  
+**BDD:** Enables "As a user, I can search across all modules from a single search box" scenarios.
 
 ### Subtasks:
 - [ ] API‑SEARCH‑001.1: Add search endpoint to OpenAPI. (AGENT)  
   **verification:** Spec validates.
-- [ ] API‑SEARCH‑001.2: Write integration tests with known seed data. (AGENT) – `artifacts/api‑server/__tests__/api/search.test.ts`  
+- [ ] API‑SEARCH‑001.2: Write integration tests with known seed data. (AGENT) – `artifacts/api-server/__tests__/api/search.test.ts`  
   **verification:** Red.
-- [ ] API‑SEARCH‑001.3: Implement `SearchService` with PostgreSQL full‑text search (or adapter for chosen engine). (AGENT) – `artifacts/api-server/src/services/search/search‑service.ts`  
+- [ ] API‑SEARCH‑001.3: Implement `SearchService` with PostgreSQL full‑text search (or adapter for chosen engine). (AGENT) – `services/search/search-service.ts`  
   **verification:** Unit tests pass.
-- [ ] API‑SEARCH‑001.4: Implement event subscribers that update `search_index` on entity create/update/delete. (AGENT)  
+- [ ] API‑SEARCH‑001.4: Implement event subscribers that update `search_index` on entity create/update/delete. (AGENT) – `services/search/index-subscribers.ts`  
   **verification:** Unit tests with mock event bus.
-- [ ] API‑SEARCH‑001.5: Create search route and run integration tests to green. (AGENT)
+- [ ] API‑SEARCH‑001.5: Create search route and run integration tests to green. (AGENT) – `routes/search.ts`  
+  **verification:** All tests pass.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Search index updates via domain events
+- Organisation scoping enforced
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Domain event-driven architecture
+- Full-text search implementation
+- Index subscriber pattern
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Manual index updates
+- Missing organisation scoping
+- Synchronous index updates
 
 ---
 
@@ -86,19 +126,59 @@ This part covers the Cross‑Cutting Infrastructure APIs that serve all other co
 - `GET /api/v1/export/{entityType}?columns=name,email&format=csv` – export data from any list resource with selected columns and optional filtering.  
 - Import supports: leads, contacts, companies, tasks, time entries, vendors, customers. Each entity type has a configurable column mapping.  
 **Integration tests:** upload CSV (preview), execute import, verify entities created, export entities, verify CSV content. Import with errors → error report generated.  
-**DDD:** Infrastructure service for bulk data operations across contexts.  
-**TDD:** Write tests before implementation.  
-**Deep Module:** Encapsulates file parsing, validation, column mapping, and transactional import.
+
+**Rules to Follow:**
+- Import operations must be transactional
+- CSV validation before execution
+- Column mapping configurable per entity type
+- Export supports dynamic column selection
+- Import history tracked for audit
+
+**Advanced Code Patterns:**
+- Transactional bulk operations
+- CSV parsing with validation
+- Dynamic column mapping
+- Streaming export for large datasets
+
+**Anti-Patterns:**
+- Non-transactional imports (partial data)
+- Missing CSV validation
+- Hardcoded column mappings
+- Memory-intensive export operations
+
+**DDD:** Infrastructure service for bulk data operations across contexts. This is NOT a deep module - it's a utility service that provides cross-cutting functionality without complex business logic.  
+**Deep Module:** N/A - This is an infrastructure utility service, not a domain deep module.  
+**TDD:** Write tests before implementation. Tests must fail initially (red phase).  
+**BDD:** Enables "As an admin, I can bulk import contacts from a CSV file" scenarios.
 
 ### Subtasks:
 - [ ] API‑IMPORT‑001.1: Add import/export paths and schemas to OpenAPI. (AGENT)  
   **verification:** Spec validates.
-- [ ] API‑IMPORT‑001.2: Write integration tests for import (preview, execute, error handling) and export. (AGENT)  
-  **verification:** Red.
-- [ ] API‑IMPORT‑001.3: Implement `ImportService` with CSV parsing, validation, column mapping, and transactional execution. (AGENT)  
+- [ ] API‑IMPORT‑001.2: Write integration tests for import (preview, execute, error handling) and export. (AGENT) – `artifacts/api-server/__tests__/api/import-export.test.ts`  
+  **verification:** Tests fail (no implementation).
+- [ ] API‑IMPORT‑001.3: Implement `ImportService` with CSV parsing, validation, column mapping, and transactional execution. (AGENT) – `services/import-export/import-service.ts`  
   **verification:** Unit tests pass.
-- [ ] API‑IMPORT‑001.4: Implement `ExportService` with dynamic column selection and CSV generation. (AGENT)  
+- [ ] API‑IMPORT‑001.4: Implement `ExportService` with dynamic column selection and CSV generation. (AGENT) – `services/import-export/export-service.ts`  
   **verification:** Unit tests pass.
-- [ ] API‑IMPORT‑001.5: Create import/export routes and run integration tests to green. (AGENT)
+- [ ] API‑IMPORT‑001.5: Create import/export routes and run integration tests to green. (AGENT) – `routes/import-export.ts`  
+  **verification:** All tests pass.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Import/export operations transactional
+- CSV validation required before execution
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Transactional bulk operations
+- CSV parsing with validation
+- Streaming data processing
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Non-transactional operations
+- Missing validation steps
+- Memory-intensive processing
 
 ---

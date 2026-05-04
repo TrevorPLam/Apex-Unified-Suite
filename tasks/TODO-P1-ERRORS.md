@@ -27,7 +27,16 @@ This document contains error handling tasks that provide the foundation for all 
 
 **Generic Errors:** `ValidationError`, `DatabaseError`, `NetworkError`, `TimeoutError`
 
-**Anti-Patterns:** Using string literals for errors; throwing exceptions instead of Either pattern; inconsistent error codes.  
+**Advanced Code Patterns:** Either monad pattern for error handling; domain error taxonomy with hierarchical error types; error factory functions for consistent creation; error serialization for API responses.
+**Anti-Patterns:** Using string literals for errors; throwing exceptions instead of Either pattern; inconsistent error codes; mixing domain errors with technical errors.
+**Rules to Follow:**
+- All domain errors must extend base DomainError class
+- Error codes must be unique across all contexts
+- Error messages must be user-friendly and actionable
+- All errors must return Either<Error, never> pattern
+- Error metadata must include context for debugging
+
+**DDD:** Domain errors express business rule violations in the ubiquitous language. Each bounded context has its own error taxonomy.  
 **Related Files:** `artifacts/api-server/src/errors/domain-errors.ts`
 
 **DDD:** Domain errors express business rule violations in the ubiquitous language. Each bounded context has its own error taxonomy.  
@@ -81,7 +90,16 @@ This document contains error handling tasks that provide the foundation for all 
 - `DatabaseError` → 500
 - Unknown errors → 500
 
-**Anti-Patterns:** Leaking implementation details in error messages; inconsistent error formats; missing request correlation.  
+**Advanced Code Patterns:** Middleware chain pattern; error mapping strategy; structured logging with correlation IDs; error envelope standardization; integration with monitoring systems.
+**Anti-Patterns:** Leaking implementation details in error messages; inconsistent error formats; missing request correlation; swallowing errors without logging.
+**Rules to Follow:**
+- All errors must be logged with request correlation ID
+- Error responses must follow consistent envelope format
+- Domain errors must map to appropriate HTTP status codes
+- Sensitive information must never appear in error responses
+- Error handler must be the last middleware in the chain
+
+**DDD:** Global error handler translates domain errors into HTTP responses while preserving domain semantics.  
 **Related Files:** `artifacts/api-server/src/middlewares/error-handler.ts`
 
 **DDD:** Global error handler translates domain errors into HTTP responses while preserving domain semantics.  

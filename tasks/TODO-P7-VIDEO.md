@@ -47,11 +47,11 @@ This document contains video conferencing integration tasks for Zoom SDK, Micros
 - Handle Zoom rate limits (100 requests/second)
 - Store Zoom credentials securely with rotation
 
-**Advanced Code Patterns:**
-- Zoom OAuth 2.0 server-to-server flow
-- Webhook signature verification
-- Meeting lifecycle state management
-- Recording download with chunked transfer
+**Deep Module:**
+- Zoom SDK integration with OAuth 2.0 authentication and JWT fallback
+- Meeting lifecycle management with real-time status updates
+- Recording management with chunked download and processing
+- Webhook processing pipeline with event filtering and routing
 
 **Anti-Patterns:**
 - Don't store Zoom JWT tokens long-term
@@ -126,11 +126,11 @@ curl -X POST http://localhost:8081/integrations/zoom/test-meeting
 - Implement proper permission checks
 - Follow Microsoft Teams API limits
 
-**Advanced Code Patterns:**
-- Graph API Teams operations
-- Online meeting lifecycle management
-- Teams-specific event mapping
-- Recording policy enforcement
+**Deep Module:**
+- Microsoft Teams integration via Graph API with licensing validation
+- Online meeting lifecycle management with Teams-specific features
+- Recording policy enforcement with permission-based access
+- Microsoft-specific event mapping and feature integration
 
 **Anti-Patterns:**
 - Don't ignore Teams licensing requirements
@@ -201,11 +201,11 @@ curl -X POST http://localhost:8081/integrations/teams/test-meeting
 - Implement proper quota management
 - Follow Google Meet API limitations
 
-**Advanced Code Patterns:**
-- Google Calendar API Meet integration
-- Meet conference data management
-- Workspace feature enablement
-- Live caption and recording management
+**Deep Module:**
+- Google Meet integration via Calendar API with Workspace features
+- Meet conference data management with live caption support
+- Workspace integration with feature enablement and licensing
+- Meet API quota management with intelligent rate limiting
 
 **Anti-Patterns:**
 - Don't ignore Google Workspace licensing
@@ -254,6 +254,23 @@ curl -X POST http://localhost:8081/integrations/meet/test-meeting
   **verification:** Meet recordings are managed correctly.
 - [ ] INT‑VIDEO‑003.4: Handle Meet API limitations and quotas. (AGENT)  
   **verification:** Meet operations respect API limits.
+
+---
+
+## Integration Rules Framework
+
+To avoid rules duplication across all integration tasks, the following common rules framework applies:
+
+### **Common Integration Rules**
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+- **Error Handling**: Implement exponential backoff for rate limits and network errors
+- **Security**: Verify webhook signatures and store credentials securely
+- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage
+- **Logging**: Implement structured logging with security-sensitive data redaction
+
+### **Provider-Specific Rules**
+Each integration task should only include rules specific to that provider, not duplicate the common rules above.
 
 ---
 

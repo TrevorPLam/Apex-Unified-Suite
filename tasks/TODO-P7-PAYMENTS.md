@@ -41,17 +41,17 @@ This document contains payment processing tasks for Stripe integration and compl
 - Stripe Billing (advanced subscription features)
 
 **Rules to Follow:**
-- Use Stripe API v2023-10-16 with proper error handling
-- Implement PCI DSS compliance requirements
-- Handle Stripe rate limits and idempotency
-- Store Stripe keys securely with environment variables
+- Stripe API v2023-10-16: Use proper error handling with exponential backoff for rate limits
+- PCI Compliance: Implement PCI DSS requirements for card data handling and tokenization
+- Idempotency: Use Stripe idempotency keys to prevent duplicate payment processing
+- Security: Store Stripe keys securely with environment variables and access logging
+- Webhook Security: Verify webhook signatures and process events asynchronously
 
-**Advanced Code Patterns:**
-- Payment intent lifecycle management
-- Webhook signature verification
-- Idempotent payment operations
-- Subscription state management
-- Dispute resolution workflows
+**Deep Module:**
+- Stripe payment processing with PCI compliance and security deep module
+- Payment intent lifecycle management with proper state transitions
+- Subscription management with recurring billing automation
+- Webhook processing pipeline with event-driven architecture
 
 **Anti-Patterns:**
 - Don't store raw card data
@@ -121,17 +121,17 @@ curl -X POST http://localhost:8081/integrations/stripe/test-payment
 - Payment fraud detection
 
 **Rules to Follow:**
-- Use Stripe test environment for all tests
-- Implement comprehensive error scenario testing
-- Follow PCI DSS compliance checklist
-- Test payment performance under load
+- Test Environment: Use Stripe test environment exclusively for all payment testing
+- Error Coverage: Implement comprehensive error scenario testing including network failures
+- PCI Validation: Follow PCI DSS compliance checklist with automated validation
+- Performance Testing: Test payment processing under load with benchmarking
+- Security Testing: Include security audit testing in the test suite
 
-**Advanced Code Patterns:**
-- Mock Stripe responses for testing
-- PCI compliance validation scripts
-- Payment error simulation
-- Performance benchmarking
-- Security audit testing
+**Deep Module:**
+- Payment testing framework with comprehensive test scenarios and edge cases
+- PCI compliance validation with security audit automation
+- Performance testing suite with load testing and benchmarking
+- Error simulation and testing infrastructure
 
 **Anti-Patterns:**
 - Don't test with live Stripe keys
@@ -182,6 +182,23 @@ curl -X POST http://localhost:8081/integrations/payments/test-compliance
   **verification:** Payment errors are handled correctly.
 - [ ] INT‑PAYMENT‑002.4: Performance testing for payment processing. (AGENT)  
   **verification:** Payment processing meets performance requirements.
+
+---
+
+## Integration Rules Framework
+
+To avoid rules duplication across all integration tasks, the following common rules framework applies:
+
+### **Common Integration Rules**
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+- **Error Handling**: Implement exponential backoff for rate limits and network errors
+- **Security**: Verify webhook signatures and store credentials securely
+- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage
+- **Logging**: Implement structured logging with security-sensitive data redaction
+
+### **Provider-Specific Rules**
+Each integration task should only include rules specific to that provider, not duplicate the common rules above.
 
 ---
 

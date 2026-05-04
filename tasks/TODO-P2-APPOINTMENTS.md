@@ -34,9 +34,17 @@ This part covers the complete Scheduling & Appointments bounded context for Phas
 - Soft delete: `deleted_at` (timestamp nullable).  
 Zod schemas generated.
 
-**DDD:** The Appointment aggregate root in the Appointments bounded context. There is no dependency on Projects; this context is fully autonomous.  
-**TDD:** Write schema test then implement.  
+**DDD:** The Appointment aggregate root in the Appointments bounded context. There is no dependency on Projects; this context is fully autonomous. Cross-context foreign key to CRM contacts is justified because appointments represent scheduled interactions with external contacts that exist in the CRM bounded context - this is a deliberate architectural decision to avoid duplicating contact management across contexts.
+**TDD:** Write schema test then implement.
 **BDD:** Enables "Book an available time slot" scenarios from `appointments.feature`.
+**Deep Module:** The appointments table is a shallow storage layer; the rich domain logic lives in the AppointmentService which handles booking rules, availability conflicts, and calendar integrations.
+**Advanced Code Patterns:** Repository pattern with multi-tenancy support, factory methods for appointment creation, strategy pattern for different appointment types (one-on-one, group, collective).
+**Anti-Patterns:** Avoid N+1 queries when loading appointments with related data; prevent cross-context data leakage by never exposing full contact objects from appointments API; avoid storing business logic in database triggers.
+**Multi-Tenancy Anti-Patterns:** Never query appointments without organization_id filter; avoid shared sequences or UUIDs across tenants; prevent tenant data leakage through foreign key cascades.
+**Rules to Follow:** All database operations must include organization_id in WHERE clauses; appointment status transitions must follow state machine rules; time zone handling must normalize to UTC; availability conflicts must be detected before booking.
+**Out of Scope:** Recurring appointment series management (future phase), advanced scheduling algorithms, video conferencing integration.
+**Size:** Appropriate - focused on core table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑APPT‑001.1: Write schema test. (AGENT)  
@@ -57,13 +65,25 @@ Zod schemas generated.
 - Soft delete: `deleted_at`.  
 - Index on `(service_provider_id, start_time)`.
 
+**DDD:** AvailabilityWindow is a value object within the Appointment aggregate, representing time slots when a service provider is available. Contains recurrence rules and booking constraints.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Service provider sets available hours" scenarios.
+**Deep Module:** Shallow storage for recurrence rules; business logic for availability calculation lives in service layer.
+**Advanced Code Patterns:** Value object pattern for time windows, strategy pattern for different recurrence types (daily, weekly, monthly), builder pattern for complex availability rules.
+**Anti-Patterns:** Avoid storing calculated availability in database; prevent infinite recurrence loops; avoid timezone-specific storage (store in UTC).
+**Multi-Tenancy Anti-Patterns:** Never query availability without organization_id filter; prevent cross-tenant availability exposure.
+**Rules to Follow:** All queries must include organization_id; recurrence validation must prevent invalid RRULE formats; availability must respect provider's working hours; buffer times must be enforced.
+**Out of Scope:** Complex availability patterns like split shifts, holiday-specific exceptions.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
+
 ### Subtasks:
 - [ ] DB-APPT-002.1: Write schema validation test – assert all columns, FK constraints, index on `(service_provider_id, start_time)`, and soft delete. (AGENT) – `lib/db/src/__tests__/availability-windows.test.ts`  
   **verification:** `pnpm test -- availability-windows.test.ts` fails (table not yet created), then passes after implementation.
 - [ ] DB-APPT-002.2: Implement table with all columns, FK to users, and index. (AGENT) – `lib/db/src/schema/appointments/availability_windows.ts`  
-  **verification:** Test passes, `pnpm typecheck` clean.  
+  **verification:** Test passes, `pnpm typecheck` clean.
 - [ ] DB-APPT-002.3: Generate Zod schemas using `drizzle-zod`. (AGENT)  
-  **verification:** Generated schemas compile and include all fields.  
+  **verification:** Generated schemas compile and include all fields.
 - **Depends on:** DB-ORG-001, DB-IDENTITY-001 (users FK).  
 - **Blocks:** DB-APPT-004.
 
@@ -79,15 +99,27 @@ Zod schemas generated.
 - GIN index on `cancellation_policy`.  
 - Soft delete: `deleted_at`.
 
+**DDD:** BookingRule is a value object containing business rules for appointment booking, cancellation policies, and reminder settings. Scoped per organization.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Configure booking policies" scenarios.
+**Deep Module:** Shallow configuration storage; validation logic lives in service layer.
+**Advanced Code Patterns:** Policy object pattern for booking rules, specification pattern for rule validation, observer pattern for reminder notifications.
+**Anti-Patterns:** Avoid business logic in database constraints; prevent inconsistent policy states; avoid hard-coded policy limits.
+**Multi-Tenancy Anti-Patterns:** Never query rules without organization_id filter; prevent cross-tenant policy exposure.
+**Rules to Follow:** All operations must include organization_id; cancellation policies must be JSON-validated; reminder frequencies must be bounded; policy changes must not affect existing appointments.
+**Out of Scope:** Dynamic pricing rules, advanced availability algorithms.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
+
 ### Subtasks:
 - [ ] DB-APPT-003.1: Write schema validation test – assert all columns, FK to organizations, GIN index on `cancellation_policy`, and soft delete. (AGENT) – `lib/db/src/__tests__/booking-rules.test.ts`  
   **verification:** `pnpm test -- booking-rules.test.ts` fails (table not yet created), then passes after implementation.
 - [ ] DB-APPT-003.2: Implement table with all columns, FK, and GIN index. (AGENT) – `lib/db/src/schema/appointments/booking_rules.ts`  
-  **verification:** Test passes, `pnpm typecheck` clean.  
+  **verification:** Test passes, `pnpm typecheck` clean.
 - [ ] DB-APPT-003.3: Generate Zod schemas using `drizzle-zod`. (AGENT)  
-  **verification:** Generated schemas compile and include all fields.  
+  **verification:** Generated schemas compile and include all fields.
 - [ ] DB-APPT-003.4: Test JSONB validation for `cancellation_policy` field. (AGENT)  
-  **verification:** Zod schema correctly validates JSONB structure.  
+  **verification:** Zod schema correctly validates JSONB structure.
 - **Depends on:** DB-ORG-001.  
 - **Blocks:** API-APPT-003.
 
@@ -96,9 +128,17 @@ Zod schemas generated.
 ### [ ] DB‑APPT‑004: Add Client Foreign Key to Appointments
 **Status:** ⏳ Not Started  
 **Depends on:** DB‑APPT‑001, DB‑CRM‑002  
-**Definition of Done:** Migration adds `client_id` foreign key constraint to appointments table pointing to contacts.id.  
-**Reason:** The initial appointments table was created with nullable `client_id` before contacts table existed. This migration enforces the relationship after both tables exist.  
-**Related Files:** `lib/db/migrations/xxxx_add_client_fk_to_appointments.sql`
+**DDD:** Cross-context foreign key justification: The client relationship represents a real-world connection between appointments and contacts. While contacts live in CRM context, appointments need to reference them to avoid data duplication and maintain data integrity. This FK is a deliberate bounded context bridge.
+**TDD:** Write migration test then implement.
+**BDD:** Enables "Appointment shows client information" scenarios.
+**Deep Module:** Simple migration; enrichment logic lives in service layer.
+**Advanced Code Patterns:** Migration pattern with rollback support, data validation pattern for FK constraints.
+**Anti-Patterns:** Avoid cascading deletes that could affect CRM data; prevent orphaned appointment records.
+**Multi-Tenancy Anti-Patterns:** Migration must preserve organization_id boundaries; prevent cross-tenant data mixing.
+**Rules to Follow:** All migrations must be reversible; FK constraints must be validated before enabling; existing appointments without clients must be handled gracefully.
+**Out of Scope:** Client data synchronization, bulk contact imports.
+**Size:** Appropriate - focused migration.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 **Subtasks:**
 - [ ] DB‑APPT‑004.1: Create migration to add foreign key constraint. (AGENT)  
@@ -118,6 +158,18 @@ Zod schemas generated.
 - `default_availability_source` (boolean), `deleted_at` (soft delete), timestamps.  
 **Indexes:** `(user_id, provider)`, `(organization_id, sync_status)`.  
 **Security:** Tokens encrypted at rest using environment key.
+
+**DDD:** CalendarConnection is an external integration aggregate that stores encrypted credentials for third-party calendar services. Each connection belongs to a specific user within an organization.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Connect Google Calendar" scenarios.
+**Deep Module:** Shallow storage for encrypted tokens; sync logic lives in integration services.
+**Advanced Code Patterns:** Adapter pattern for different calendar providers, proxy pattern for token encryption, observer pattern for sync status updates.
+**Anti-Patterns:** Never store plain text tokens; avoid synchronous API calls in database operations; prevent token leakage through logs.
+**Multi-Tenancy Anti-Patterns:** Never query connections without organization_id filter; prevent cross-tenant token exposure; encrypt tokens per-organization.
+**Rules to Follow:** All operations must include organization_id; tokens must be encrypted at rest; sync errors must be logged without exposing sensitive data; refresh tokens must be handled securely.
+**Out of Scope:** Real-time bi-directional sync, calendar event conflict resolution.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB-APPT-005.1: Write schema validation test – assert all columns, FK constraints, encryption fields, and indexes. (AGENT) – `lib/db/src/__tests__/calendar-connections.test.ts`  
@@ -142,6 +194,18 @@ Zod schemas generated.
 - `status` (enum: scheduled/started/ended/cancelled), `created_at`, `updated_at`.  
 **Indexes:** `(appointment_id)`, `(organization_id, provider)`, `(external_meeting_id)`.
 
+**DDD:** MeetingIntegration is a value object that links appointments to external meeting services. Stores meeting metadata and join information.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Automatically create Zoom meeting" scenarios.
+**Deep Module:** Shallow storage for meeting metadata; integration logic lives in external services.
+**Advanced Code Patterns:** Factory pattern for different meeting providers, strategy pattern for meeting creation, observer pattern for status updates.
+**Anti-Patterns:** Avoid storing meeting passwords in plain text; prevent redundant meeting creation; avoid storing large meeting recordings in database.
+**Multi-Tenancy Anti-Patterns:** Never query integrations without organization_id filter; prevent cross-tenant meeting access.
+**Rules to Follow:** All operations must include organization_id; meeting passwords must be encrypted; join URLs must be validated; status changes must be audited.
+**Out of Scope:** Meeting recording management, advanced meeting analytics.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
+
 ### Subtasks:
 - [ ] DB-APPT-006.1: Write schema validation test – assert all columns, FK to appointments, and indexes. (AGENT) – `lib/db/src/__tests__/meeting-integrations.test.ts`  
   **verification:** `pnpm test -- meeting-integrations.test.ts` fails (table not yet created), then passes after implementation.
@@ -165,6 +229,18 @@ Zod schemas generated.
 - `refunded_amount_cents` (int default 0), `refund_reason` (text nullable)  
 - `processed_at` (timestamp nullable), `failure_reason` (text nullable), `created_at`, `updated_at`.  
 **Indexes:** `(appointment_id)`, `(organization_id, status)`, `(stripe_payment_intent_id)`.
+
+**DDD:** PaymentTransaction is a financial aggregate that tracks payment processing for appointments. Supports Stripe integration with proper audit trails.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Collect payment for appointment" scenarios.
+**Deep Module:** Shallow storage for financial transactions; payment logic lives in payment services.
+**Advanced Code Patterns:** Command pattern for payment processing, strategy pattern for different payment methods, observer pattern for payment status updates.
+**Anti-Patterns:** Never store raw payment method details; prevent inconsistent financial states; avoid hardcoded payment amounts.
+**Multi-Tenancy Anti-Patterns:** Never query transactions without organization_id filter; prevent cross-tenant financial data exposure.
+**Rules to Follow:** All operations must include organization_id; amounts must be stored in cents; refund amounts must never exceed original amounts; payment status transitions must be validated.
+**Out of Scope:** Subscription management, advanced refund workflows.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB-APPT-007.1: Write schema validation test – assert all columns, FK constraints, and financial fields. (AGENT) – `lib/db/src/__tests__/payment-transactions.test.ts`  
@@ -197,6 +273,18 @@ Zod schemas generated.
 - `voter_id` (FK to users), `voter_email` (text), `created_at`.  
 
 **Indexes:** `(creator_id, status)`, `(poll_id)` on options, `(voter_id, poll_id)` on votes.
+
+**DDD:** MeetingPoll is a scheduling aggregate that enables group scheduling through voting. Contains options and votes for time slot selection.
+**TDD:** Write schema validation test then implement.
+**BDD:** Supports "Schedule meeting with multiple participants" scenarios.
+**Deep Module:** Complex relational structure with voting logic; business rules for poll closure and winner selection.
+**Advanced Code Patterns:** Aggregate pattern with child entities, state machine pattern for poll status, strategy pattern for different voting rules.
+**Anti-Patterns:** Prevent duplicate voting; avoid inconsistent vote counts; prevent poll modification after closure.
+**Multi-Tenancy Anti-Patterns:** Never query polls without organization_id filter; prevent cross-tenant poll access.
+**Rules to Follow:** All operations must include organization_id; each voter can only vote once per poll; vote counts must be atomic; poll closure must be irreversible.
+**Out of Scope:** Advanced voting systems, weighted voting, anonymous polls.
+**Size:** Large task - involves three related tables with complex relationships. Should be split into smaller tasks.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB-APPT-008.1: Write schema validation test – assert all tables, FK constraints, and indexes. (AGENT) – `lib/db/src/__tests__/meeting-polls.test.ts`  

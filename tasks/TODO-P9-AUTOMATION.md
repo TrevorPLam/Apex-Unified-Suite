@@ -60,9 +60,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Client preference management for reminders (opt‑out per channel).
 - Per‑event‑type reminder templates stored in the event type configuration.
 
+**Deep Module:**
+- Reminder sequence engine is a deep module: simple interface (scheduleReminder(appointmentId, eventTypeId)) but complex implementation handling per-event-type template selection, multi-channel orchestration, timezone-aware scheduling, and escalation logic with configurable intervals.
+- The complexity is hidden behind a simple API but involves coordinating with notification services, managing retry logic, and handling client preferences across multiple dimensions (channel, timing, content).
+
 **DDD:** Reminder engine within the Appointments bounded context; per‑event‑type configuration (Calendly requirement).  
 **TDD:** Unit test verifying that different event types trigger different reminder sequences based on configuration.  
 **BDD:** "As a service provider, my clients get reminders tailored to the type of appointment they booked."
+
+**Advanced Code Patterns:**
+- **Strategy Pattern for Channel Selection**: Use strategy pattern for different notification channels (email, SMS, push) with fallback chains.
+- **Template Engine with Variable Substitution**: Implement template engine supporting appointment variables (${clientName}, ${appointmentTime}, etc.) with type-safe substitution.
+- **Scheduled Job with Idempotency**: Use idempotent job processing with unique keys to prevent duplicate reminders on job restart.
+- **Circuit Breaker for External Services**: Wrap email/SMS providers with circuit breaker to handle provider outages gracefully.
+
+**Anti-Patterns:**
+- ❌ **Hard-Coded Reminder Timing**: Don't hard-code reminder schedules; make them configurable per event type.
+- ❌ **Fire-and-Forget Notifications**: Don't send notifications without tracking delivery status; implement proper logging and retry.
+- ❌ **Ignoring Timezone**: Don't schedule reminders in server timezone; always use client's local timezone.
+- ❌ **Synchronous Channel Calls**: Don't block on external notification API calls; use async processing with queues.
+
+**Rules to Follow:**
+- **JOB‑015**: Implement scheduled jobs with idempotency keys to prevent duplicate execution.
+- **NOTIFY‑012**: Use circuit breaker pattern for external notification providers; fallback to alternative provider.
+- **TIMEZONE‑008**: Always schedule reminders in recipient's local timezone with DST handling.
+- **TDD‑022**: Mock external notification services in tests; verify correct parameters passed.
+- **CONFIG‑012**: Make reminder timing and channels configurable per event type via admin interface.
 
 **Subtasks:**
 - [ ] AUTO‑001.1: Implement reminder sequence engine with per‑event‑type configuration support. (AGENT) – `automation/reminders/ReminderEngine.ts`  
@@ -110,6 +133,33 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Provider availability optimisation for rebooking.
 - Client communication during rebooking process.
 
+**Deep Module:**
+- Rebooking engine is a deep module: simple interface (initiateRebooking(cancelledAppointmentId)) but complex implementation handling waitlist prioritization algorithms, availability matching across multiple providers, preference satisfaction (client preferred times, provider continuity), and transactional consistency when multiple waitlist clients compete for the same slot.
+- Waitlist management encapsulates complex queue logic with priority scoring based on wait time, client preferences, and historical patterns.
+
+**DDD:** Rebooking automation within Appointments bounded context; Waitlist aggregate with WaitlistEntry entities. Rebooking coordination is a domain service using saga pattern for multi-step workflows.
+**TDD:** Unit test verifying that when a popular time slot becomes available, the highest-priority waitlist client is automatically booked and notified.
+**BDD:** "As a client on the waitlist, I am automatically booked when a suitable appointment becomes available."
+
+**Advanced Code Patterns:**
+- **Saga Pattern for Rebooking**: Use saga pattern to coordinate multi-step rebooking (release slot → match waitlist → book → notify) with compensation on failure.
+- **Priority Queue for Waitlist**: Implement waitlist as priority queue with composite scoring (wait time + preference match + client tier).
+- **Optimistic Slot Claiming**: Use optimistic locking with version numbers when multiple waitlist entries compete for the same slot.
+- **Circuit Breaker for Notification**: Wrap notification calls in circuit breaker to handle provider outages during high-volume rebooking.
+
+**Anti-Patterns:**
+- ❌ **First-Come-First-Served Only**: Don't use simple FIFO for waitlist; consider preferences and historical patterns.
+- ❌ **Synchronous Rebooking**: Don't process rebooking synchronously during cancellation; use async queue to handle peak loads.
+- ❌ **Ignoring Preference Matching**: Don't rebook without considering client preferences (time of day, provider continuity).
+- ❌ **No Conflict Resolution**: Don't fail silently when multiple clients qualify for the same slot; implement deterministic tie-breaking.
+
+**Rules to Follow:**
+- **SAGA‑008**: Implement rebooking as compensating saga with clear rollback steps on failure.
+- **QUEUE‑012**: Use priority queue for waitlist with composite scoring algorithm.
+- **LOCK‑015**: Use optimistic locking when claiming slots from waitlist to prevent double-booking.
+- **TDD‑028**: Test race conditions in waitlist processing; verify only one client gets each slot.
+- **NOTIFY‑018**: Send immediate notification to client when auto-booked from waitlist with option to decline.
+
 **Subtasks:**
 - [ ] AUTO‑003.1: Implement rebooking workflow engine. (AGENT) – `automation/rebooking/RebookingEngine.ts`  
   **verification:** Rebooking workflows work smoothly.
@@ -131,6 +181,33 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Workflow testing and debugging tools.
 - Workflow performance monitoring and optimisation.
 - Integration with external automation services.
+
+**Deep Module:**
+- Workflow execution engine is a deep module: simple interface (executeWorkflow(workflowId, context)) but complex implementation handling graph-based workflow execution, conditional branching, parallel step coordination, variable scoping, and error recovery with compensation logic.
+- Visual workflow builder DSL (Domain Specific Language) abstracts complex automation logic into composable nodes while maintaining type safety and validation.
+
+**DDD:** Workflow builder as separate bounded context (Automation) with WorkflowDefinition aggregate and WorkflowExecution entities. Uses event sourcing for execution history.
+**TDD:** Unit test verifying that a workflow with conditional branches executes only the correct path based on context data.
+**BDD:** "As a power user, I can build custom automation workflows using a visual drag-and-drop interface."
+
+**Advanced Code Patterns:**
+- **DSL for Workflow Definition**: Implement internal DSL for workflow definitions with type-safe node configuration.
+- **Visitor Pattern for Workflow Execution**: Use visitor pattern to traverse and execute workflow graphs with different execution strategies.
+- **Event Sourcing for Execution History**: Store workflow execution as event stream for complete audit trail and replay capability.
+- **Sandboxed Execution**: Run workflow steps in sandboxed environment with resource limits and timeout enforcement.
+
+**Anti-Patterns:**
+- ❌ **Infinite Loop Detection Missing**: Don't allow workflows without cycle detection; implement max iteration limits.
+- ❌ **Synchronous Step Execution**: Don't execute long-running steps synchronously; use async job queue.
+- ❌ **No Compensation on Failure**: Don't leave partial workflow executions without cleanup; implement compensation actions.
+- ❌ **Tight Coupling to External APIs**: Don't directly call external APIs from workflow steps; use abstraction layer.
+
+**Rules to Follow:**
+- **DSL‑012**: Implement type-safe DSL for workflow definitions with compile-time validation.
+- **EXEC‑025**: Use event sourcing for workflow execution history; enable replay and debugging.
+- **LIMIT‑018**: Enforce resource limits on workflows (max steps, execution time, memory).
+- **TDD‑035**: Test workflow execution with complex graphs including cycles and parallel branches.
+- **ISOLATION‑015**: Run workflow steps in isolated contexts with proper error boundaries.
 
 **Subtasks:**
 - [ ] AUTO‑004.1: Implement visual workflow builder. (AGENT) – `src/components/automation/WorkflowBuilder.tsx`  
@@ -159,9 +236,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Rule management interface: create, edit, enable/disable, and reorder rules.
 - Activity logging for all automated actions.
 
+**Deep Module:**
+- Stage-based automation engine is a deep module: simple interface (evaluateRules(entity, fromStage, toStage)) but complex implementation handling rule condition evaluation, action orchestration across multiple services (CRM, Email, Task), inactivity detection with configurable thresholds, and rule priority resolution when multiple rules match.
+- Inactivity detection uses sliding window algorithms with efficient event indexing to detect stale records without full table scans.
+
 **DDD:** CRM automation within the CRM bounded context; stage machine triggers automated follow‑up (ActiveCampaign‑inspired).  
 **TDD:** Unit test verifying that moving a lead to "contacted" stage triggers task creation with correct due date and assignee.  
 **BDD:** "As a sales rep, follow‑up tasks are automatically created when I move a lead to a new stage."
+
+**Advanced Code Patterns:**
+- **Rule Engine with Predicate Pattern**: Implement rules as composable predicates with AND/OR/NOT logic and clear precedence.
+- **Event-Driven Rule Evaluation**: Use domain events (LeadStageChanged) to trigger rule evaluation asynchronously.
+- **Circuit Breaker for Actions**: Wrap action execution (email send, task creation) in circuit breakers to handle service degradation.
+- ** Sliding Window for Inactivity**: Use efficient sliding window algorithm with materialized views for inactivity detection.
+
+**Anti-Patterns:**
+- ❌ **Synchronous Rule Evaluation**: Don't evaluate rules synchronously during stage changes; use async processing.
+- ❌ **Hard-Coded Stage Triggers**: Don't hard-code stage-to-action mappings; use configurable rule engine.
+- ❌ **Blocking on Action Failure**: Don't block stage change if automation fails; log and continue with retry queue.
+- ❌ **Full Table Scans for Inactivity**: Don't scan entire table for inactivity; use indexed last-activity timestamps.
+
+**Rules to Follow:**
+- **RULE‑015**: Implement rule engine with composable predicates and clear evaluation order.
+- **ASYNC‑022**: Process automation rules asynchronously; don't block user actions on automation.
+- **CIRCUIT‑012**: Use circuit breakers for action execution; queue failed actions for retry.
+- **TDD‑025**: Test rule combinations with complex predicate logic (AND/OR/NOT).
+- **INDEX‑018**: Maintain indexed last-activity timestamp for efficient inactivity queries.
 
 **Subtasks:**
 - [ ] AUTO‑CRM‑001.1: Implement stage‑based automation rules engine. (AGENT) – `automation/crm/stage‑automation‑engine.ts`  
@@ -187,9 +287,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Activity logging for each sequence step (email opened, link clicked, task completed).
 - Sequence performance analytics: enrollment rate, completion rate, step‑by‑step drop‑off.
 
+**Deep Module:**
+- Sequence execution engine is a deep module: simple interface (enrollContact(sequenceId, contactId)) but complex implementation handling step scheduling with timezone awareness, enrollment state management across multiple steps, pause/exit logic, email engagement tracking integration, and sequence analytics aggregation.
+
 **DDD:** ActiveCampaign‑style nurture sequences within CRM bounded context.  
+**Process Manager:** This is a cross-context orchestration pattern - the nurture sequence Process Manager coordinates CRM (for contact data), Email Service (for sending), and Analytics (for tracking). It manages the long-running sequence lifecycle across bounded contexts.
 **TDD:** Integration test enrolling a contact and verifying that step emails are queued at correct intervals.  
 **BDD:** "As a marketer, I can create a nurture sequence that automatically sends a series of emails to new leads."
+
+**Advanced Code Patterns:**
+- **Process Manager Pattern**: Use Process Manager saga to coordinate sequence execution across CRM, Email, and Analytics contexts.
+- **State Machine for Enrollment**: Model enrollment lifecycle as state machine (Active → Paused → Exited → Completed).
+- **Scheduled Job with Idempotency**: Use idempotent job processing with sequence step instance keys.
+- **Event-Driven Analytics**: Publish domain events for email opens/clicks; consume in Analytics context.
+
+**Anti-Patterns:**
+- ❌ **Direct Context Calls**: Don't directly call other bounded contexts from sequence engine; use Process Manager and integration events.
+- ❌ **No Sequence State Tracking**: Don't lose track of which step a contact is on; maintain explicit enrollment state.
+- ❌ **Synchronous Email Sending**: Don't send emails synchronously during sequence processing; queue for async delivery.
+- ❌ **Ignoring Timezone in Scheduling**: Don't schedule all steps in server timezone; respect contact's local timezone.
+
+**Rules to Follow:**
+- **PROCESS‑012**: Use Process Manager for cross-context orchestration; maintain saga state for long-running sequences.
+- **EVENT‑018**: Publish integration events for context boundaries; consume events for cross-context updates.
+- **SAGA‑015**: Implement compensation for failed steps (e.g., pause enrollment if email service unavailable).
+- **TDD‑032**: Test sequence timing across timezone boundaries and daylight saving transitions.
+- **IDEMPOT‑008**: Ensure sequence step execution is idempotent; prevent duplicate emails on retry.
 
 **Subtasks:**
 - [ ] AUTO‑CRM‑002.1: Implement sequence engine with step scheduling and execution. (AGENT) – `automation/crm/nurture‑engine.ts`  
@@ -268,9 +391,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Inactive task reminder: tasks assigned but untouched for X days trigger a reminder to the assignee.
 - All automated notifications delivered via in‑app notification and email; logged as project activity.
 
+**Deep Module:**
+- Deadline monitoring engine is a deep module: simple interface (checkDeadlines()) but complex implementation handling multi-level deadline hierarchies (project → milestone → task), escalation level progression, notification batching for efficiency, and intelligent inactivity detection (excluding weekends/holidays based on organization calendar).
+- Stalled project detection uses statistical analysis of activity patterns with configurable sensitivity to avoid false positives from naturally slow projects.
+
 **DDD:** PM automation within the Projects bounded context; deadline‑driven and inactivity‑based triggers.  
 **TDD:** Integration test verifying that an overdue milestone triggers escalation notifications.  
 **BDD:** "As a project manager, I am automatically alerted when milestones are overdue or projects are stalled."
+
+**Advanced Code Patterns:**
+- **Deadline Hierarchy Walker**: Implement tree-walking algorithm for deadline hierarchies with rollup notifications.
+- **Escalation State Machine**: Model escalation levels as state machine with configurable timeouts and notification channels.
+- **Statistical Inactivity Detection**: Use statistical process control to detect genuine stalls vs. normal variation.
+- **Batch Notification Pattern**: Batch multiple deadline notifications into single digest email to reduce noise.
+
+**Anti-Patterns:**
+- ❌ **Notification Spam**: Don't send individual notifications for every overdue item; batch and digest.
+- ❌ **Ignoring Business Hours**: Don't count weekends/holidays as inactivity without configuration.
+- ❌ **Fixed Escalation Timing**: Don't use hard-coded escalation delays; make them configurable per project type.
+- ❌ **Blocking on Notification Failure**: Don't block automation if notification fails; log and retry asynchronously.
+
+**Rules to Follow:**
+- **BATCH‑012**: Batch deadline notifications into digests; limit to max 1 per day per recipient.
+- **CALENDAR‑015**: Respect organization calendar for inactivity calculations; exclude weekends/holidays.
+- **ESCALATE‑018**: Implement configurable escalation levels with clear progression rules.
+- **TDD‑028**: Test escalation logic with mocked time to verify proper timing.
+- **ASYNC‑025**: Process deadline checks asynchronously; don't block project operations.
 
 **Subtasks:**
 - [ ] AUTO‑PROJ‑001.1: Implement milestone and due‑date automation engine. (AGENT) – `automation/projects/deadline‑engine.ts`  
@@ -318,9 +464,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Sends notification to the plan owner when work is generated.
 - Retry logic: if generation fails, retry up to 3 times with exponential backoff; log final failure and notify admin.
 
+**Deep Module:**
+- Recurring work scheduler is a deep module: simple interface (generateWorkFromPlan(planId)) but complex implementation handling RRULE parsing, duplicate detection with distributed locking, batch task generation with progress tracking, and retry logic with exponential backoff for transient failures.
+
 **DDD:** PM Scheduler automation – this is the recurring work generation engine for the Projects‑owned Scheduler feature.  
+**Process Manager:** This is a cross-context orchestration - the scheduler Process Manager coordinates Projects (for task creation), Notifications (for owner alerts), and potentially Integrations (for external calendar updates). It manages the long-running generation lifecycle with compensation for partial failures.
 **TDD:** Integration test: create a recurring plan, manually set `next_run_date` to today, run the scheduler job, verify tasks created and `next_run_date` advanced.  
 **BDD:** "As a PM, tasks are automatically created every week from my recurring work plan."
+
+**Advanced Code Patterns:**
+- **Process Manager for Generation**: Use Process Manager to coordinate task creation, notification, and calendar sync across contexts.
+- **Distributed Lock for Duplicate Prevention**: Use distributed lock (Redis) to prevent duplicate generation in multi-instance deployments.
+- **Batch Processing with Progress**: Process generation in batches with progress tracking and resumption on failure.
+- **Idempotent Generation with Idempotency Keys**: Use idempotency keys based on plan ID + run date to ensure exactly-once generation.
+
+**Anti-Patterns:**
+- ❌ **Duplicate Generation**: Don't allow duplicate task generation on job restart; use idempotency checks.
+- ❌ **All-or-Nothing Generation**: Don't fail entire generation if one task fails; continue with error logging.
+- ❌ **Synchronous External Calls**: Don't block generation on external calendar API calls; queue for async processing.
+- ❌ **No Progress Tracking**: Don't run long generations without progress visibility; implement progress tracking.
+
+**Rules to Follow:**
+- **PROCESS‑015**: Use Process Manager for cross-context orchestration during work generation.
+- **IDEMPOT‑012**: Implement idempotent generation with planId + runDate composite key.
+- **DISTLOCK‑008**: Use distributed locking to prevent duplicate generation in concurrent deployments.
+- **TDD‑035**: Test generation with mocked time and simulated failures; verify retry behavior.
+- **BATCH‑018**: Process large generations in batches with commit points for resumption.
 
 **Subtasks:**
 - [ ] AUTO‑PROJ‑003.1: Implement scheduled job runner (node‑cron or similar) that processes recurring work plans. (AGENT) – `automation/projects/recurring‑work‑scheduler.ts`  
@@ -348,9 +517,32 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Schedule can be paused (e.g., during holiday periods) and resumed.
 - Payment run schedule history: view past auto‑generated runs with status (reviewed/executed/skipped).
 
+**Deep Module:**
+- Payment run scheduler is a deep module: simple interface (createDraftPaymentRun(scheduleId)) but complex implementation handling bill selection with configurable rules, bank account balance validation, payment date calculation with banking holidays, and draft run assembly with approval routing.
+
 **DDD:** Bill.com automated payment scheduling within the Finance bounded context.  
+**Process Manager:** This is a cross-context orchestration - the payment run Process Manager coordinates Finance (for bills and payment runs), Notifications (for finance team alerts), and potentially Banking (for balance checks). It manages the draft creation lifecycle with rollback on validation failures.
 **TDD:** Integration test: configure a schedule, simulate trigger, verify draft payment run created with correct bills.  
 **BDD:** "As a finance manager, a draft payment run is automatically prepared every Friday for my review."
+
+**Advanced Code Patterns:**
+- **Process Manager for Draft Creation**: Use Process Manager to coordinate bill selection, validation, and notification across contexts.
+- **Configurable Rule Engine**: Use rule engine for bill selection (due date window, approval status, vendor type filters).
+- **Banking Calendar Awareness**: Implement banking calendar for payment date calculation excluding holidays and weekends.
+- **Draft Run Transaction**: Wrap draft creation in transaction with rollback capability on validation failure.
+
+**Anti-Patterns:**
+- ❌ **Hard-Coded Selection Criteria**: Don't hard-code bill selection logic; make it configurable per schedule.
+- ❌ **Ignoring Bank Holidays**: Don't schedule payments on banking holidays; respect banking calendar.
+- ❌ **Synchronous Balance Checks**: Don't block draft creation on balance API calls; use cached balances with async refresh.
+- ❌ **No Validation Before Creation**: Don't create draft runs with invalid bills; validate all bills before including.
+
+**Rules to Follow:**
+- **PROCESS‑018**: Use Process Manager for cross-context orchestration during payment run creation.
+- **RULE‑022**: Implement configurable bill selection rules with UI-based configuration.
+- **CALENDAR‑018**: Respect banking calendar for payment date calculations.
+- **TDD‑038**: Test bill selection rules with various combinations of criteria.
+- **VALID‑025**: Validate all bills before including in draft run; reject drafts with validation errors.
 
 **Subtasks:**
 - [ ] AUTO‑FIN‑001.1: Implement payment run scheduler with configurable frequency and rules. (AGENT) – `automation/finance/payment‑run‑scheduler.ts`  
@@ -375,9 +567,31 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Error handling: if generation fails (e.g., customer inactive), log error and notify finance team; do not block other templates.
 - Duplicate prevention: checks that an invoice for the same template and period hasn't already been created.
 
+**Deep Module:**
+- Recurring invoice generator is a deep module: simple interface (generateInvoiceFromTemplate(templateId)) but complex implementation handling RRULE parsing for complex schedules, duplicate detection with distributed locking, invoice line item calculation with tax and discount application, and auto-send coordination with email queue.
+
 **DDD:** Bill.com recurring billing automation within Finance.  
 **TDD:** Integration test: create a monthly template, set `next_invoice_date` to today, run generation job, verify invoice created and date advanced.  
 **BDD:** "As a finance manager, recurring invoices are automatically generated on schedule without manual effort."
+
+**Advanced Code Patterns:**
+- **Idempotent Generation**: Use templateId + billingPeriod composite key for idempotency to prevent duplicate invoices.
+- **Distributed Locking**: Use Redis distributed lock to prevent duplicate generation in multi-instance deployments.
+- **Async Invoice Sending**: Queue invoices for async sending to avoid blocking generation job.
+- **Tax Engine Integration**: Use strategy pattern for tax calculation with pluggable tax engines.
+
+**Anti-Patterns:**
+- ❌ **Duplicate Invoice Generation**: Don't allow duplicate invoices for same period; implement strict idempotency.
+- ❌ **Synchronous Email Blocking**: Don't block generation on email sending; use message queue.
+- ❌ **Hard-Coded Tax Rules**: Don't hard-code tax calculations; use configurable tax engine.
+- ❌ **No Retry on Failure**: Don't fail permanently on transient errors; implement exponential backoff retry.
+
+**Rules to Follow:**
+- **IDEMPOT‑015**: Implement idempotent invoice generation with templateId + billingPeriod key.
+- **DISTLOCK‑012**: Use distributed locking to prevent duplicate generation in concurrent deployments.
+- **ASYNC‑028**: Queue invoices for asynchronous sending; don't block generation job.
+- **TDD‑042**: Test RRULE parsing for complex recurring schedules (quarterly, annually).
+- **RETRY‑018**: Implement exponential backoff retry for generation failures.
 
 **Subtasks:**
 - [ ] AUTO‑FIN‑002.1: Implement recurring invoice generation job with duplicate prevention. (AGENT) – `automation/finance/recurring‑invoice‑generator.ts`  
@@ -400,9 +614,31 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Escalation can be paused per customer (e.g., payment plan agreed).
 - Escalation history logged on the invoice and customer records.
 
+**Deep Module:**
+- Collections escalation engine is a deep module: simple interface (evaluateEscalation(invoiceId)) but complex implementation handling multi-level rule evaluation with composite conditions (days overdue + reminder count + customer tier), escalation level progression with state machine, collector assignment algorithm with workload balancing, and pause/resume logic with grace period handling.
+
 **DDD:** Bill.com collections workflow automation within Finance.  
 **TDD:** Integration test: simulate an overdue invoice with 3 reminders, verify escalation triggers and collector assigned.  
 **BDD:** "As a collections manager, overdue invoices automatically escalate through defined levels until resolved."
+
+**Advanced Code Patterns:**
+- **State Machine for Escalation Levels**: Implement escalation as state machine with configurable transitions and entry/exit actions.
+- **Composite Rule Engine**: Use composite pattern for escalation rules with AND/OR/NOT logic combining multiple conditions.
+- **Workload Balancing for Collector Assignment**: Use round-robin or least-busy algorithm for collector assignment with skill matching.
+- **Grace Period with Scheduled Resume**: Use scheduled jobs for pause grace period with automatic resume.
+
+**Anti-Patterns:**
+- ❌ **Hard-Coded Escalation Rules**: Don't hard-code escalation criteria; make fully configurable per level.
+- ❌ **Immediate External Handoff**: Don't escalate to external collections without internal review gates.
+- ❌ **Ignoring Customer History**: Don't escalate without considering customer payment history and tier.
+- ❌ **No Escalation Audit Trail**: Don't escalate without logging; maintain full audit trail of all level changes.
+
+**Rules to Follow:**
+- **SM‑022**: Implement escalation levels as explicit state machine with clear transitions.
+- **RULE‑028**: Make escalation rules fully configurable with composite condition builder.
+- **BALANCE‑015**: Balance collector assignment based on current workload and skill match.
+- **TDD‑045**: Test escalation edge cases (exact threshold, multiple simultaneous triggers).
+- **AUDIT‑025**: Log all escalation decisions with rationale and rule that triggered.
 
 **Subtasks:**
 - [ ] AUTO‑FIN‑003.1: Implement collections escalation engine with configurable levels and rules. (AGENT) – `automation/finance/collections‑escalation‑engine.ts`  
@@ -432,9 +668,31 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Notification to folder owners or admins when files are deleted (summary email).
 - Configurable grace period: files deleted but recoverable for N days before permanent deletion.
 
+**Deep Module:**
+- Retention enforcement engine is a deep module: simple interface (enforcePolicy(policyId)) but complex implementation handling recursive folder tree walking with policy inheritance, compliance hold detection across file hierarchies, grace period management with scheduled permanent deletion, and batch deletion with progress tracking for large datasets.
+
 **DDD:** Document lifecycle automation within the Documents bounded context (ShareFile retention enforcement).  
 **TDD:** Integration test: create a policy with delete_after_days = 1, upload a file, advance time, run enforcement, verify file deleted and logged.  
 **BDD:** "As a compliance officer, files are automatically deleted when their retention period expires."
+
+**Advanced Code Patterns:**
+- **Tree Walker with Memoization**: Use recursive tree walker with memoized policy inheritance for efficient enforcement.
+- **Batch Deletion with Cursor**: Process deletions in batches with database cursor for memory efficiency.
+- **Scheduled Grace Period Jobs**: Use scheduled jobs for grace period expiration with permanent deletion.
+- **Compliance Hold Overlay**: Check compliance holds as overlay on retention policy without modifying policy.
+
+**Anti-Patterns:**
+- ❌ **Recursive Deletion Without Limits**: Don't recurse infinitely; implement max depth and cycle detection.
+- ❌ **Ignoring Compliance Holds**: Don't delete files under legal hold; implement hold detection at enforcement time.
+- ❌ **Immediate Permanent Deletion**: Don't permanently delete immediately; implement soft-delete with grace period.
+- ❌ **No Deletion Audit Trail**: Don't delete without logging; maintain complete deletion audit trail.
+
+**Rules to Follow:**
+- **TREE‑012**: Implement folder tree walking with max depth limit and cycle detection.
+- **HOLD‑018**: Check compliance holds immediately before deletion; never delete held files.
+- **GRACE‑015**: Implement soft-delete with configurable grace period before permanent deletion.
+- **TDD‑038**: Test policy inheritance scenarios with nested folders and overrides.
+- **AUDIT‑022**: Log all deletion actions with file metadata, policy, and timestamp.
 
 **Subtasks:**
 - [ ] AUTO‑DOCS‑001.1: Implement retention enforcement job with folder tree walking and policy inheritance. (AGENT) – `automation/documents/retention‑enforcer.ts`  
@@ -460,9 +718,31 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Pre‑archive notification: X days before archival, notify document owner that the document will be archived unless action is taken.
 - Archival log tracks all moves with timestamps.
 
+**Deep Module:**
+- Archive engine is a deep module: simple interface (archiveDocuments(ruleId)) but complex implementation handling idle-time calculation with activity window exclusions, event-driven archival with project/deal state listeners, pre-archive notification scheduling, and bulk move operations with transaction integrity across large document sets.
+
 **DDD:** Document lifecycle management within the Documents bounded context (ShareFile archival feature).  
 **TDD:** Integration test: mark a project as completed, verify its documents are moved to archive.  
 **BDD:** "As a project manager, project documents are automatically archived when the project is completed."
+
+**Advanced Code Patterns:**
+- **Activity Window Exclusion**: Exclude weekends/holidays from idle-time calculation using calendar service.
+- **Event-Driven Archival**: Listen to ProjectCompleted/DealClosed events for event-driven archival.
+- **Scheduled Pre-Archive Notifications**: Use scheduled jobs for pre-archive warning notifications.
+- **Bulk Move with Transaction**: Wrap bulk document moves in transaction with rollback on failure.
+
+**Anti-Patterns:**
+- ❌ **Counting All Days as Idle**: Don't count weekends/holidays as idle time without configuration.
+- ❌ **Synchronous Bulk Moves**: Don't move large document sets synchronously; use background job.
+- ❌ **No Pre-Archive Warning**: Don't archive without warning; implement pre-archive notifications.
+- ❌ **Archive Without Audit**: Don't archive without logging; maintain complete archival audit trail.
+
+**Rules to Follow:**
+- **CALENDAR‑012**: Respect organization calendar for idle-time calculations.
+- **ASYNC‑032**: Process bulk archival asynchronously; don't block project/deal operations.
+- **NOTIFY‑028**: Send pre-archive notifications X days before archival with opt-out option.
+- **TDD‑042**: Test idle-time calculation with various activity patterns and calendar configurations.
+- **AUDIT‑028**: Log all archival actions with source, destination, and triggering event.
 
 **Subtasks:**
 - [ ] AUTO‑DOCS‑002.1: Implement archive rule engine (idle‑time and event‑driven archival). (AGENT) – `automation/documents/archive‑engine.ts`  
@@ -486,9 +766,31 @@ This updated Phase 9 includes the original Automation Workflows, CRM automatio
 - Optionally auto‑extends links: if configured, links that reach their expiry can be automatically extended by N days (max extensions configurable).
 - Expiry log tracks all expired and cleaned links.
 
+**Deep Module:**
+- Link expiry cleanup is a deep module: simple interface (cleanupExpiredLinks()) but complex implementation handling batch query for expired links with pagination, cascade deactivation with access token revocation, access log cleanup with retention compliance, auto-extension logic with max extension limits, and creator notification batching for efficiency.
+
 **DDD:** Share link lifecycle management within Documents (ShareFile).  
 **TDD:** Integration test: create a link with 1‑day expiry, advance time, run cleanup, verify link deactivated and creator notified.  
 **BDD:** "As a document owner, expired share links are automatically deactivated and I am notified."
+
+**Advanced Code Patterns:**
+- **Batch Processing with Pagination**: Process expired links in batches with keyset pagination for efficiency.
+- **Cascade Deactivation**: Cascade deactivate access tokens when link expires for security.
+- **Retention-Compliant Log Cleanup**: Clean access logs with retention period compliance after grace period.
+- **Configurable Auto-Extension**: Implement auto-extension with max extension count and total duration limits.
+
+**Anti-Patterns:**
+- ❌ **Full Table Scan for Expired**: Don't scan entire table for expired links; use indexed expiry date query.
+- ❌ **Orphaned Access Tokens**: Don't leave access tokens active after link expiry; cascade revoke.
+- ❌ **Immediate Log Deletion**: Don't delete access logs immediately; respect retention compliance grace period.
+- ❌ **Unlimited Auto-Extension**: Don't allow infinite auto-extensions; implement hard limits.
+
+**Rules to Follow:**
+- **INDEX‑025**: Use indexed expiry date queries; avoid full table scans.
+- **CASCADE‑018**: Cascade revoke access tokens when deactivating expired links.
+- **RETAIN‑022**: Respect data retention policies for log cleanup with grace period.
+- **TDD‑048**: Test auto-extension limits; verify max extensions and total duration enforced.
+- **BATCH‑028**: Process link expiry in batches to avoid memory issues with large datasets.
 
 **Subtasks:**
 - [ ] AUTO‑DOCS‑003.1: Implement link expiry cleanup job with deactivation and access log cleanup. (AGENT) – `automation/documents/link‑cleanup‑job.ts`  

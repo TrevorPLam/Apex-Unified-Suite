@@ -33,6 +33,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Offline queue management and retry logic.
 - Offline status indicators and user guidance.
 
+**Deep Module:** Offline data storage system with intelligent synchronization, conflict resolution, and queue management. The module encapsulates offline storage strategies, data synchronization protocols, conflict detection/resolution algorithms, and offline queue management while providing simple interfaces for offline functionality.
+
+**Advanced Code Patterns:**
+- Repository pattern for offline data storage abstraction
+- Command pattern for offline operation queuing
+- Strategy pattern for different synchronization strategies
+- Observer pattern for sync status notifications
+- State machine for conflict resolution workflows
+- Adapter pattern for different storage backends (IndexedDB, WebSQL, localStorage)
+
+**Anti-Patterns:**
+- Do not store sensitive data in localStorage without encryption
+- Avoid blocking the UI during synchronization operations
+- Do not ignore network status changes - handle all connectivity states
+- Avoid data loss during sync conflicts - always preserve user changes
+- Do not assume network stability - design for frequent disconnections
+
+**Rules to Follow:**
+- All offline data must be encrypted at rest
+- Synchronization must be incremental and bandwidth-efficient
+- Conflict resolution must prioritize user intent over server state
+- Offline queue must survive browser restarts and crashes
+- Sync status must be clearly visible to users at all times
+- Offline mode must be gracefully degraded, not completely broken
+
 **Subtasks:**
 - [ ] OFFLINE‑001.1: Implement offline data storage. (AGENT) – `src/offline/DataStorage.tsx`  
   **verification:** Offline data storage works reliably.
@@ -54,6 +79,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Bandwidth optimisation and data compression.
 - Network‑aware UI adaptations.
 - Connection quality monitoring and reporting.
+
+**Deep Module:** Progressive enhancement system with bandwidth optimization, network-aware UI adaptations, and connection quality monitoring. The module encapsulates progressive enhancement strategies, bandwidth optimization algorithms, network condition detection, and UI adaptation logic while providing simple interfaces for building resilient applications.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different enhancement levels based on capabilities
+- Observer pattern for network quality monitoring
+- Factory pattern for creating network-aware components
+- Decorator pattern for adding progressive enhancement features
+- State machine for network condition state management
+- Adapter pattern for different network optimization strategies
+
+**Anti-Patterns:**
+- Do not assume high-speed connectivity - design for 2G/3G networks
+- Avoid loading large assets without user consent on metered connections
+- Do not break core functionality when network is unavailable
+- Avoid complex UI interactions on low-end devices
+- Do not ignore data costs for mobile users
+
+**Rules to Follow:**
+- Core functionality must work without network connectivity
+- Bandwidth usage must be minimized on metered connections
+- UI must adapt within 200ms of network condition changes
+- Connection quality must be monitored and reported to users
+- Progressive enhancement must be transparent to users
+- All features must have offline equivalents where possible
 
 **Subtasks:**
 - [ ] OFFLINE‑002.1: Implement progressive enhancement system. (AGENT) – `src/progressive/Enhancement.tsx`  

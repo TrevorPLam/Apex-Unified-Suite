@@ -21,19 +21,45 @@ This part covers CRM Data Integration including leads pipeline, contacts/compani
 ### [ ] FRONT‑CRM‑001: CRM Lead Pipeline – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** API‑CRM‑005 (leads API green).  
-**Definition of Done:** Lead Kanban view in `CRM.tsx` uses `useLeadList` hook with stage filtering. Columns dynamically built from pipeline stages. Card drag‑and‑drop wired to `useUpdateLead` mutation. All mock data imports removed.  
+**Definition of Done:** Lead Kanban view in `artifacts/apex-os/src/pages/CRM.tsx` uses `useLeadList` hook with stage filtering. Columns dynamically built from pipeline stages. Card drag‑and‑drop wired to `useUpdateLead` mutation. All mock data imports removed from CRM components and hooks. Component tests pass with MSW mocks. Manual testing confirms drag-and-drop functionality works with optimistic updates and rollback on failure.  
 **Related Files:** `artifacts/apex-os/src/pages/CRM.tsx`, potential extracted lead components.
 
-**DDD:** Frontend Lead aggregate view; stage changes respect domain rules.  
+**DDD:** Frontend Lead entity view (not aggregate - frontend manages presentation, domain logic lives in backend); stage changes respect domain rules via API mutations.  
+**Deep Module:** CRM frontend forms a cohesive presentation layer that encapsulates lead state management, stage transitions, and user interactions. The module hides API complexity behind React Query hooks and provides a consistent interface for lead operations.
+
 **TDD:** Component test with MSW – verify leads render in correct columns; drag‑and‑drop calls update API; rollback on failure.
+
+**Advanced Code Patterns:**
+- Optimistic updates with automatic rollback
+- Custom hooks for data fetching and mutations
+- Drag-and-drop with visual feedback
+- Loading states and error boundaries
+- Toast notifications for user feedback
+
+**Anti-Patterns:**
+- Direct API calls in components (use hooks instead)
+- Mock data in production builds
+- Unhandled mutation errors
+- Missing loading states
+- Hardcoded stage names (use dynamic pipeline config)
+
+**Rules to Follow (Frontend):**
+- Use TanStack Query for all API calls
+- Implement optimistic updates for user actions
+- Always show loading states during data fetching
+- Handle errors gracefully with user feedback
+- Use TypeScript interfaces from generated API types
+- Follow component composition patterns
+- Test all interactive features with MSW
+- Remove all mock data imports before completion
 
 **Subtasks:**
 - [ ] FRONT‑CRM‑001.1: Create `useLeadList` hook with stage filtering and pagination. (AGENT) – `src/hooks/crm/useLeadList.ts`  
-  **verification:** Returns typed lead data; filter by stage works.
+  **verification:** `npm test -- useLeadList.test.ts` - passes with typed lead data and stage filtering.
 - [ ] FRONT‑CRM‑001.2: Replace mock leads in Kanban columns with API data; show loading skeleton during fetch. (AGENT)  
-  **verification:** Leads appear in correct stage columns; empty stage shows empty state.
+  **verification:** `npm run dev -- --port 3000 && npm test -- crm-kanban.test.tsx` - leads appear in correct stage columns; empty stage shows empty state.
 - [ ] FRONT‑CRM‑001.3: Wire drag‑and‑drop to `useUpdateLead` mutation with optimistic update and rollback on failure. (AGENT)  
-  **verification:** Drag lead to new column → stage updates immediately; API error → card returns to original column; toast notification shown.
+  **verification:** `npm test -- crm-drag-drop.test.tsx` - drag lead to new column → stage updates immediately; API error → card returns to original column; toast notification shown.
 
 ---
 
@@ -64,13 +90,29 @@ This part covers CRM Data Integration including leads pipeline, contacts/compani
 ### [ ] FRONT‑INT‑CRM: CRM Interactive Features Wiring
 **Status:** ⏳ Not Started  
 **Depends on:** FRONT‑CRM‑001, FRONT‑CRM‑002, FRONT‑CRM‑003, API‑CRM‑005 (routes exist).  
-**Definition of Done:**  
-- Drag‑and‑drop lead stage change calls `useUpdateLead` mutation (optimistic update: move card immediately, rollback on failure).  
-- Create lead form uses `useCreateLead` mutation, on success invalidates lead list.  
-- Deal stage change wired similarly.  
-- Activity creation form hooks to `useCreateActivity`.  
-- All mutation loading/error states displayed using toast notifications (sonner).  
+**Definition of Done:**
+- Drag‑and‑drop lead stage change calls `useUpdateLead` mutation (optimistic update: move card immediately, rollback on failure).
+- Create lead form uses `useCreateLead` mutation, on success invalidates lead list.
+- Deal stage change wired similarly.
+- Activity creation form hooks to `useCreateActivity`.
+- All mutation loading/error states displayed using toast notifications (sonner).
 - **Idempotency Key Reuse:** Frontend must store generated idempotency key in component state and retransmit same key on retry attempts for payment mutations; persists until success.
+- All interactive features tested with MSW mocks.
+- Error handling provides clear user feedback.
+
+**Deep Module:** CRM interactive features module encapsulates all user interactions, mutation handling, and state management. The module provides a unified interface for CRM operations while hiding the complexity of API calls, optimistic updates, and error handling behind well-defined hooks and components.
+
+**TDD:** Integration tests with MSW verify all interactive features work correctly. Tests cover drag-and-drop operations, form submissions, mutation success/failure scenarios, and toast notifications. Each interaction is tested for both success and error paths.
+
+**Anti-Patterns (Frontend):**
+- Manual state management instead of React Query
+- Direct DOM manipulation for drag-and-drop
+- Missing optimistic updates
+- Unhandled mutation errors
+- Inconsistent error handling patterns
+- Hardcoded API endpoints
+- Missing loading states during mutations
+- Not invalidating queries after successful mutations
 
 **Subtasks:**
 - [ ] FRONT‑INT‑CRM.1: Wire `useCreateLead`, `useUpdateLead`, `useDeleteLead` to forms and drag‑and‑drop. (AGENT)  

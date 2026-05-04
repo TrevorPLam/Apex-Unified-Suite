@@ -38,9 +38,9 @@ This document contains accounting software integration tasks for QuickBooks Onli
 - Sync status dashboard showing last sync time, pending items, errors.
 
 **Out of Scope:**
-- QuickBooks Desktop integration
-- QuickBooks Payroll integration
-- QuickBooks Time tracking integration
+- QuickBooks Desktop integration (different API and authentication)
+- QuickBooks Payroll integration (separate service with different data model)
+- QuickBooks Time tracking integration (requires specialized time tracking APIs)
 
 **Rules to Follow:**
 - Use QuickBooks Online API v3 with proper error handling

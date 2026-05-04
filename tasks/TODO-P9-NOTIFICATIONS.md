@@ -39,6 +39,32 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **TDD:** Unit test verifying that each new automation event type maps to a notification with correct template and default channels.  
 **BDD:** "As a user, I receive timely notifications for all important automated actions across the platform."
 
+**Deep Module:** Smart notification engine with event-driven architecture, notification preference learning, and multi-channel delivery abstraction. The module encapsulates notification timing logic, channel routing, and user preference management while exposing simple interfaces for sending notifications across the platform.
+
+**Advanced Code Patterns:**
+- Event-driven notification dispatcher using domain events for loose coupling
+- Strategy pattern for multi-channel delivery (email, SMS, push, in-app)
+- Observer pattern for real-time notification synchronisation
+- Factory pattern for notification template creation per event type
+- Command pattern for notification queue management and retry logic
+- Adapter pattern for integrating different notification service providers
+
+**Anti-Patterns:**
+- Avoid synchronous notification sending that blocks user interactions
+- Do not hardcode notification templates - use configurable template system
+- Avoid monolithic notification handlers - split by channel and event type
+- Do not ignore user preferences - always respect notification settings
+- Avoid notification spam - implement intelligent frequency limiting
+
+**Rules to Follow:**
+- All notifications must be asynchronous and non-blocking
+- Notification templates must be configurable per organization
+- User notification preferences must be respected at all times
+- Critical alerts must have multiple delivery channels
+- Notification failures must be logged and retried with exponential backoff
+- Notification content must be accessible (WCAG 2.2 AA compliant)
+- Sensitive data must never be included in notification content
+
 **Subtasks:**
 - [ ] NOTIF‑001.1: Implement smart notification engine. (AGENT) – `src/notifications/SmartNotifications.tsx`  
   **verification:** Notifications are timely and relevant.
@@ -63,6 +89,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Team presence and availability indicators.
 - Real‑time conflict resolution alerts.
 
+**Deep Module:** Real-time collaboration engine with WebSocket connections, presence management, and conflict resolution. The module encapsulates real-time communication protocols, collaborative state management, and conflict detection/resolution while providing simple interfaces for building collaborative features.
+
+**Advanced Code Patterns:**
+- Observer pattern for real-time event broadcasting
+- State machine for collaborative editing state management
+- Command pattern for collaborative operations with undo/redo
+- Pub/Sub pattern for real-time message distribution
+- Conflict resolution using operational transformation (OT) or CRDT
+- Connection pool management for WebSocket scalability
+
+**Anti-Patterns:**
+- Avoid tight coupling between collaboration features and business logic
+- Do not ignore network partitions - handle disconnections gracefully
+- Avoid broadcasting unnecessary data - filter updates by relevance
+- Do not store collaborative state in localStorage only
+- Avoid blocking the UI during conflict resolution
+
+**Rules to Follow:**
+- All real-time features must work offline with sync on reconnection
+- Collaborative changes must be optimistically applied and rolled back on conflict
+- User presence must be updated within 100ms of any activity
+- Conflict resolution must preserve user intent whenever possible
+- Real-time features must have fallback to polling if WebSocket unavailable
+- All collaborative data must be encrypted in transit
+
 **Subtasks:**
 - [ ] NOTIF‑002.1: Implement real‑time collaboration notifications. (AGENT) – `src/collaboration/RealTimeNotifications.tsx`  
   **verification:** Collaboration notifications are instant.
@@ -84,6 +135,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Critical incident response workflows.
 - Emergency contact and communication systems.
 - Alert testing and validation procedures.
+
+**Deep Module:** Emergency alert system with multi-level escalation, incident response workflows, and emergency contact management. The module encapsulates alert severity classification, escalation logic, incident tracking, and emergency communication protocols while providing simple interfaces for critical alert handling.
+
+**Advanced Code Patterns:**
+- Chain of responsibility for alert escalation levels
+- State machine for incident lifecycle management
+- Template method for emergency response workflows
+- Strategy pattern for different alert delivery methods
+- Circuit breaker pattern for preventing alert storms
+- Observer pattern for incident status notifications
+
+**Anti-Patterns:**
+- Do not create alert fatigue - implement intelligent alert grouping
+- Avoid blocking critical alerts behind administrative approvals
+- Do not hardcode escalation rules - make them configurable
+- Avoid single point of failure in alert delivery
+- Do not ignore timezone differences in emergency contacts
+
+**Rules to Follow:**
+- Critical alerts must be delivered within 30 seconds of trigger
+- Emergency alerts must have at least 3 delivery channels
+- All alert escalations must be logged with timestamps
+- Emergency contact information must be verified quarterly
+- Alert testing must not trigger actual emergency responses
+- Incident response workflows must be accessible during system outages
 
 **Subtasks:**
 - [ ] NOTIF‑003.1: Implement emergency alert system. (AGENT) – `src/alerts/EmergencyAlerts.tsx`  

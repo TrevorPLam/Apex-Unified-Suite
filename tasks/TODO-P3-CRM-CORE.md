@@ -34,7 +34,7 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 **Related Files:** `lib/api‑spec/openapi.yaml`
 
 **DDD:** The Lead API exposes the CRM bounded context's lead aggregate. Operations align with domain actions.  
-**TDD:** After codegen, we'll write failing integration tests (API‑CRM‑002) that verify the contract.  
+**TDD (Spec):** After codegen, we'll write failing integration tests (API‑CRM‑002) that verify the contract. This is a specification task, not implementation.  
 **BDD:** This spec enables the "Sales rep can manage leads" scenario and its negative counterparts.  
 **Deep Module:** The API spec is the public interface; the LeadService underneath will be a deep module.
 
@@ -72,9 +72,11 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 **Related Files:** `artifacts/api‑server/__tests__/api/crm/leads.test.ts`
 
 **DDD:** Tests verify that the Lead aggregate lifecycle and rules are enforced.  
-**TDD:** Write tests first; they will all fail because no routes exist.  
+**TDD:** Write tests first; they will all fail because no routes exist. **Order Note:** Integration tests (API‑CRM‑002) should be written before service implementation (API‑CRM‑003) to follow TDD red-green-refactor.  
 **BDD:** The "Move lead through stages" and "Invalid stage jump" scenarios are directly covered.  
-**Deep Module:** Tests call only the HTTP API, treating the backend as a deep module.
+**Deep Module:** Tests call only the HTTP API, treating the backend as a deep module.  
+
+**Missing Event Emission Test:** Add test to verify `LeadCreated` event is emitted on successful lead creation and contains correct payload data.
 
 ### Subtasks:
 - [ ] API‑CRM‑002.1: Set up test database and configuration using `beforeAll` hooks from TEST‑INFRA‑001. (AGENT)  
@@ -104,10 +106,14 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 **Anti-Patterns:** Business logic in route handlers; exposing raw SQL.  
 **Related Files:** `lib/db/src/repositories/crm/leads.ts`, `artifacts/api-server/src/services/crm/lead-service.ts`
 
-**DDD:** The `LeadService` is the entry point into the CRM context. Stage machine and soft delete are domain rules.  
-**TDD:** Write unit tests for `LeadService` with a mocked repository – verify stage transitions, soft delete behavior, Result<T, DomainError> return types, and event emission. Write unit tests for `LeadRepository` against a test database – verify soft delete filtering, `includeDeleted`, CRUD.  
+**DDD:** The `LeadService` is the entry point into the CRM context. Stage machine and soft delete are domain rules. **Inconsistent Deep Module Labeling:** This is actually a deep module service, not shallow - it encapsulates complex business logic.  
+**TDD:** Write unit tests for `LeadService` with a mocked repository – verify stage transitions, soft delete behavior, Result<T, DomainError> return types, and event emission. Write unit tests for `LeadRepository` against a test database – verify soft delete filtering, `includeDeleted`, CRUD. **Missing Event Emission Test:** Add test case to verify domain event emission with correct payload structure.  
 **BDD:** The service encapsulates "move lead through stages" workflow.  
-**Deep Module:** The service interface is simple (5 methods) while hiding stage machine logic, validation, soft delete filtering, and persistence.  
+**Deep Module:** The service interface is simple (5 methods) while hiding stage machine logic, validation, soft delete filtering, and persistence. **Event Taxonomy Distinction:** Distinguish between domain events (`LeadCreated`, `LeadStageChanged`) and system events.  
+
+**DoD Boundary Overlap:** Some validation logic overlaps with API‑CRM‑004 routes layer - clarify separation of concerns.  
+**DoD Missing Negative Cases:** Add tests for invalid stage transitions, duplicate email handling, and conversion lock scenarios.  
+**Subtask Verification:** Replace descriptive verification with executable test commands.  
 **Depth refactor check:** After implementation, verify public methods ≤ 5, service encapsulates at least three non‑trivial concerns (e.g., validation, persistence, event publication) behind ≤5 public methods.
 
 ### Subtasks:
@@ -158,11 +164,11 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 
 ### Subtasks:
 - [ ] API‑CRM‑005.1: Run test suite, fix failures. (AGENT)  
-  **verification:** `pnpm test -- leads.test.ts` all green.
+  **verification:** `pnpm test -- leads.test.ts --reporter=verbose` all green.  
 - [ ] API‑CRM‑005.2: Add edge‑case tests (invalid transition, soft‑deleted access, pagination boundary, converted lead update). (AGENT)  
-  **verification:** Green.
+  **verification:** `pnpm test -- leads.test.ts --grep="edge case"` all green.  
 - [ ] API‑CRM‑005.3: All tests pass. (AGENT)  
-  **verification:** Final green check.
+  **verification:** `pnpm test -- leads.test.ts` final green check with coverage report.
 
 ---
 
@@ -185,21 +191,28 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 
 ### API‑CRM‑007: Contacts – Integration Tests (Red)
 **Depends on:** API‑CRM‑006, TEST‑INFRA‑001.  
-**Definition of Done:** Failing CRUD tests in `contacts.test.ts`, including soft delete, unique email conflict, not found, and ownership/visibility updates.  
 **Subtasks:** write tests for create (with company), list (filter by assigned owner), get, update (ownership change), delete, unauthorized.
 
 ---
 
 ### API‑CRM‑008: Contacts – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, ERROR‑002, BaseRepository.  
-**Definition of Done:** `ContactRepository` (extending BaseRepository, soft delete with `includeDeleted`) and `ContactService` (enforces unique email per organization, either returns). Service also handles assignment and visibility changes, emitting events.  
+**Definition of Done:** `ContactRepository` (extending BaseRepository, soft delete with `includeDeleted`) and `ContactService` (enforces unique email per organization, either). Service also handles assignment and visibility changes, emitting events.  
+**DDD Inconsistency:** Aggregate/Event descriptions should clearly distinguish Contact aggregate boundaries and event types.  
 **Deep Module:** Service hides deduplication and query logic.  
-**Depth refactor check** added.
+**Depth refactor check:** After implementation, verify service methods ≤ 5, encapsulates multiple concerns behind simple interface.  
+
+**Out of Scope:** Contact ownership transfer workflows, bulk contact operations, contact synchronization with external systems.
 
 ### Subtasks:
-- [ ] API‑CRM‑008.1: Implement repository. (AGENT)  
-- [ ] API‑CRM‑008.2: Implement service with ownership handling. (AGENT)  
-- [ ] API‑CRM‑008.3: Write unit tests. (AGENT)
+- [ ] API‑CRM‑008.1: Implement repository with soft delete support. (AGENT) – `lib/db/src/repositories/crm/contacts.ts`  
+  **verification:** Unit tests for repository pass: `pnpm test -- contacts.repository.test.ts`.
+- [ ] API‑CRM‑008.2: Implement service with ownership handling and event emission. (AGENT) – `artifacts/api-server/src/services/crm/contact-service.ts`  
+  **verification:** Unit tests for service pass: `pnpm test -- contact-service.test.ts`.
+- [ ] API‑CRM‑008.3: Write unit tests covering all service methods and edge cases. (AGENT) – `artifacts/api-server/src/services/crm/__tests__/contact-service.test.ts`  
+  **verification:** Test coverage ≥ 90%: `pnpm test -- coverage -- contact-service.test.ts`.
+- [ ] API‑CRM‑008.4: Depth refactor check - verify method count and encapsulation. (AGENT)  
+  **verification:** Service has ≤5 methods and encapsulates multiple concerns: `grep -c "export.*method\|export.*function" contact-service.ts | grep -E "^[1-5]$` && pnpm typecheck`.
 
 ---
 
@@ -226,14 +239,28 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 ### API‑CRM‑012: Companies – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
 **Definition of Done:** `CompanyRepository` (soft delete, GIN index awareness) and `CompanyService` (unique domain per organization, either). Service also manages ownership.  
+**DDD Inconsistency:** Aggregate/Event descriptions should clearly specify Company aggregate boundaries and relationship to other entities.  
 **Deep Module:** JSONB details hidden.  
-**Depth refactor check** added.
+**Depth refactor check:** After implementation, verify service encapsulates company settings management and domain validation behind simple interface.  
+
+**Out of Scope:** Company hierarchy management, bulk company operations, CRM data synchronization.
+
+### Subtasks:
+- [ ] API‑CRM‑012.1: Implement repository with soft delete support. (AGENT) – `lib/db/src/repositories/crm/companies.ts`  
+  **verification:** Unit tests for repository pass: `pnpm test -- companies.repository.test.ts`.
+- [ ] API‑CRM‑012.2: Implement service with ownership handling and event emission. (AGENT) – `artifacts/api-server/src/services/crm/company-service.ts`  
+  **verification:** Unit tests for service pass: `pnpm test -- company-service.test.ts`.
+- [ ] API‑CRM‑012.3: Write unit tests covering all service methods and edge cases. (AGENT) – `artifacts/api-server/src/services/crm/__tests__/company-service.test.ts`  
+  **verification:** Test coverage ≥ 90%: `pnpm test -- coverage -- company-service.test.ts`.
+- [ ] API‑CRM‑012.4: Depth refactor check - verify method count and encapsulation. (AGENT)  
+  **verification:** Service has ≤5 methods and encapsulates multiple concerns: `grep -c "export.*method\|export.*function" company-service.ts | grep -E "^[1-5]$` && pnpm typecheck`.
 
 ---
 
 ### API‑CRM‑013: Companies – Routes & Green Tests
 **Depends on:** API‑CRM‑012, AUTH‑008.  
-**Subtasks:** routes, integration tests green.
+**Definition of Done:** Routes wired, integration tests green.  
+**Subtasks:** create routes, run tests to green.
 
 ---
 
@@ -253,8 +280,11 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 ### API‑CRM‑016: Deals – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
 **Definition of Done:** `DealRepository` and `DealService` with pipeline rules (prospecting → qualification → … closed‑won/lost), probability constraints, either, event emission (`DealCreated`, `DealStageChanged`). Unit tested.  
+**DDD Inconsistency:** Aggregate/Event descriptions should clearly define Deal aggregate lifecycle and event taxonomy.  
 **Deep Module:** Encapsulates deal pipeline logic.  
-**Depth refactor check** added.
+**Depth refactor check:** After implementation, verify pipeline logic is encapsulated behind simple service interface.  
+
+**Out of Scope:** Deal forecasting, advanced pipeline analytics, deal splitting/merging.
 
 ---
 
@@ -280,12 +310,46 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 ### API‑CRM‑020: Activities – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL.  
 **Definition of Done:** `ActivityRepository` (no soft delete, append‑only) and `ActivityService` (validates entity existence, either).  
-**Deep Module:** Simple append‑only service.
+**DDD Inconsistency:** Aggregate/Event descriptions should clarify Activity as a value object or entity within other aggregates.  
+**Deep Module:** Simple append‑only service.  
+**Depth refactor check:** After implementation, verify service maintains simplicity while handling multiple activity types.  
+
+**Out of Scope:** Activity editing/deletion, activity analytics, bulk activity operations.
 
 ---
 
 ### API‑CRM‑021: Activities – Routes & Green Tests
 **Depends on:** API‑CRM‑020.  
 **Subtasks:** routes, tests green.
+
+---
+
+## Common CRM Core Sections
+
+**Rules to Follow:**  
+- All API endpoints must use generated Zod schemas for validation  
+- Service methods must return Result<T, DomainError> using neverthrow  
+- Domain events must be emitted for all state changes  
+- Soft delete patterns must be consistent across entities  
+- Tenant scoping must be enforced in all repository queries  
+
+**Advanced Code Patterns:**  
+- Repository pattern with BaseRepository inheritance  
+- Service layer as deep modules with Result types  
+- Domain event emission with structured payloads  
+- Consistent error handling with domain-specific errors  
+
+**Anti-Patterns:**  
+- Business logic in route handlers  
+- Direct database queries without repository abstraction  
+- Throwing exceptions instead of using Result types  
+- Missing tenant scoping in multi-tenant queries  
+- Inconsistent error handling across services  
+
+**Out of Scope:**  
+- Advanced CRM analytics and reporting  
+- Workflow automation beyond basic state changes  
+- Real-time collaboration features  
+- Mobile-specific optimizations
 
 ---

@@ -56,7 +56,7 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 
 **DDD:** N/A – infrastructure concern.  
 **TDD:** The smoke test (DB‑MIGRATE‑ALL.5) serves as validation.  
-**Deep Module:** N/A.
+**Deep Module:** Migration module encapsulates schema evolution logic with clear separation between migration generation, execution, and rollback strategies.
 
 **Subtasks:**
 - [ ] TOOLING‑005.1: Add `generate` and `migrate` scripts to `lib/db/package.json`; remove or comment out `push`/`push-force` scripts. (AGENT)  
@@ -84,6 +84,18 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Workspace caching for `pnpm` store and node modules to speed up runs.
 - Dependabot or Renovate configuration for automated dependency updates.
 **Related Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml` or `renovate.json`
+
+**DDD:** N/A – infrastructure concern.  
+**TDD:** CI serves as automated test execution environment. All tests must pass in CI before merge.  
+**Deep Module:** CI pipeline encapsulates build, test, and deployment logic with modular job design.  
+**Anti-Patterns:**  
+- Don't create monolithic CI jobs that mix concerns  
+- Don't ignore failing tests for "temporary" fixes  
+- Don't skip security scans for speed  
+**Rules to Follow:**  
+- All code changes must pass CI before merge  
+- Breaking changes must be explicitly detected and blocked  
+- Security vulnerabilities must be addressed before deployment  
 
 **Subtasks:**
 - [ ] CI‑001.1: Create workflow file with lint, typecheck, test, and security jobs. (AGENT)  
@@ -123,6 +135,18 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Definition of Done:** On tag push (e.g., `v*`), a workflow builds multi‑stage Docker images for frontend and backend, tags them with the Git tag and `latest`, and pushes them to GitHub Container Registry (or another registry).  
 **Related Files:** `.github/workflows/build‑and‑push.yml`
 
+**DDD:** N/A – infrastructure concern.  
+**TDD:** Docker build verification serves as integration test.  
+**Deep Module:** Containerization module encapsulates build and deployment logic with reproducible images.  
+**Anti-Patterns:**  
+- Don't build images with unnecessary dependencies  
+- Don't skip health checks in production images  
+- Don't use latest tags in production  
+**Rules to Follow:**  
+- All images must be reproducible with specific versions  
+- Images must include health checks  
+- Registry credentials must be secured  
+
 **Subtasks:**
 - [ ] CI‑003.1: Create build‑and‑push workflow. (AGENT)  
   **verification:** Workflow config valid.
@@ -136,6 +160,18 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Depends on:** E2E‑001 (Playwright tests written), CI‑001.  
 **Definition of Done:** On pull requests or main pushes, an E2E job starts the full docker‑compose stack (frontend, backend, db), runs Playwright tests against it, and uploads artifacts on failure.  
 **BDD:** This automates the executable specifications from Phase 0.  
+**DDD:** N/A – infrastructure concern.  
+**TDD:** E2E tests validate complete user workflows and integration points.  
+**Deep Module:** E2E testing module encapsulates end-to-end validation with proper test isolation.  
+**Anti-Patterns:**  
+- Don't create flaky tests that depend on timing  
+- Don't skip proper test cleanup  
+- Don't ignore test failures for "temporary" issues  
+**Rules to Follow:**  
+- All critical user flows must have E2E coverage  
+- Tests must be deterministic and repeatable  
+- Test failures must block deployment  
+
 **Subtasks:**
 - [ ] CI‑004.1: Create E2E workflow. (AGENT)  
   **verification:** Workflow runs.
@@ -154,6 +190,18 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - `nginx.conf` includes SPA rewrite rule (all routes → index.html except static files), gzip, and security headers (X‑Frame‑Options, etc.).  
 - Image exposes port 80.
 
+**DDD:** N/A – infrastructure concern.  
+**TDD:** Container serves as integration test environment.  
+**Deep Module:** Frontend containerization encapsulates build optimization and static asset serving.  
+**Anti-Patterns:**  
+- Don't serve from development build in production  
+- Don't ignore security headers and CSP  
+- Don't use root user in containers  
+**Rules to Follow:**  
+- All static assets must be optimized and compressed  
+- Security headers must be configured  
+- Containers must run as non-root user  
+
 **Subtasks:**
 - [ ] DOCKER‑001.1: Write `Dockerfile.frontend` and `nginx.conf`. (AGENT)  
   **verification:** `docker build -f Dockerfile.frontend -t apex-frontend .` succeeds, `docker run` serves the app.
@@ -163,12 +211,36 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 ### DOCKER‑002: Create Backend Dockerfile
 **Definition of Done:** `Dockerfile.backend` is multi‑stage: builds with esbuild (or pnpm run build), runs via Node 24. Health check defined (`HEALTHCHECK CMD curl -f http://localhost:8081/api/healthz`). Exposes port 8081. **Entry script runs `pnpm run migrate` before starting the backend.**
 
+**DDD:** N/A – infrastructure concern.  
+**TDD:** Container health check serves as integration test.  
+**Deep Module:** Backend containerization encapsulates application deployment with migration handling.  
+**Anti-Patterns:**  
+- Don't skip database migrations in startup  
+- Don't run as root user in production  
+- Don't ignore health check failures  
+**Rules to Follow:**  
+- Containers must run database migrations before starting  
+- Health checks must be properly configured  
+- Application logs must be structured and externalized  
+
 **Subtasks:** write, verify build.
 
 ---
 
 ### DOCKER‑003: Create docker‑compose for Local Development
 **Definition of Done:** `docker‑compose.yml` defines: postgres (with volume), backend (depends_on postgres, env vars), frontend (depends_on backend). Uses `.env.example` variables. Networks configured.  
+**DDD:** N/A – infrastructure concern.  
+**TDD:** Docker compose serves as development integration test environment.  
+**Deep Module:** Development environment module encapsulates service orchestration and dependency management.  
+**Anti-Patterns:**  
+- Don't hardcode environment variables in compose file  
+- Don't ignore service dependencies  
+- Don't skip volume mounting for data persistence  
+**Rules to Follow:**  
+- All services must have proper health checks  
+- Environment variables must be externalized  
+- Data persistence must be configured  
+
 **Subtasks:** write, test `docker compose up`.
 
 ---
@@ -178,6 +250,18 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Definition of Done:**  
 - `.env.example` (already created) is audited for completeness across all services (frontend, backend, portal).  
 - `.env.production` template is created (without secrets, with production‑grade defaults: `NODE_ENV=production`, `PORT=8081`, etc.).  
+**DDD:** N/A – infrastructure concern.  
+**TDD:** Environment validation serves as configuration test.  
+**Deep Module:** Configuration module encapsulates environment variable management with validation.  
+**Anti-Patterns:**  
+- Don't commit actual secrets to version control  
+- Don't ignore required environment variables  
+- Don't use different variable names across environments  
+**Rules to Follow:**  
+- All required variables must be documented  
+- Production templates must not contain secrets  
+- Environment variables must be validated at startup  
+
 **Subtasks:** audit and create template.
 
 ---

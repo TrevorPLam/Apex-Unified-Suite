@@ -41,17 +41,17 @@ This document contains advanced storage integration tasks for multiple cloud pro
 - Storage cost optimization analytics
 
 **Rules to Follow:**
-- Implement consistent storage adapter interface
-- Handle provider-specific limitations gracefully
-- Implement proper error handling and retry logic
-- Follow security best practices for credentials
+- Storage Interface: Implement consistent storage adapter interface across all providers
+- Provider Limitations: Handle provider-specific limitations gracefully with fallback strategies
+- Error Handling: Implement proper error handling with retry logic and exponential backoff
+- Credential Security: Follow security best practices for credential storage and rotation
+- Conflict Resolution: Use version-based conflict resolution with manual override capability
 
-**Advanced Code Patterns:**
-- Storage adapter factory pattern
-- Provider-agnostic storage interface
-- Automatic failover with health checks
-- Conflict resolution algorithms
-- Chunked file upload/download
+**Deep Module:**
+- Storage adapter factory pattern with provider-agnostic interface
+- Failover management system with health checks and automatic switching
+- Cross-provider synchronization with conflict resolution algorithms
+- Chunked file upload/download with progress tracking and resume capability
 
 **Anti-Patterns:**
 - Don't hardcode provider-specific logic in business code
@@ -114,6 +114,23 @@ curl -X POST http://localhost:8081/integrations/storage/test-failover
   **verification:** Failover works seamlessly between providers.
 - [ ] INT‑STORAGE‑001.5: Implement cross‑provider synchronization. (AGENT) – `lib/integrations/storage/sync‑manager.ts`  
   **verification:** File synchronization works across providers.
+
+---
+
+## Integration Rules Framework
+
+To avoid rules duplication across all integration tasks, the following common rules framework applies:
+
+### **Common Integration Rules**
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+- **Error Handling**: Implement exponential backoff for rate limits and network errors
+- **Security**: Verify webhook signatures and store credentials securely
+- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage
+- **Logging**: Implement structured logging with security-sensitive data redaction
+
+### **Provider-Specific Rules**
+Each integration task should only include rules specific to that provider, not duplicate the common rules above.
 
 ---
 

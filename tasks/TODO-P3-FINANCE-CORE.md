@@ -29,7 +29,7 @@ This part covers the complete Finance context Core CRUD operations – Invoices,
 - `DELETE /api/v1/finance/invoices/{invoiceId}` – soft delete, 204.  
 Schemas: `Invoice`, `InvoiceCreate`, `InvoiceUpdate`. Examples required.  
 **DDD:** Invoice type determines party FK and lifecycle. Multi‑currency and tax are now first‑class.  
-**TDD:** After codegen, integration tests (API‑FIN‑002) will be written.  
+**TDD (Spec):** After codegen, integration tests (API‑FIN‑002) will be written. This is a specification task, not implementation.  
 **BDD:** Enables "Create multi‑currency invoice" and "Invoice with tax" scenarios.  
 **Deep Module:** The spec is the public interface; InvoiceService underneath will be a deep module.
 
@@ -61,7 +61,11 @@ Schemas: `Invoice`, `InvoiceCreate`, `InvoiceUpdate`. Examples required.
 
 ### Subtasks:
 - [ ] API‑FIN‑002.1: Write test cases including multi‑currency and tax assertions. (AGENT)  
-  **verification:** Tests fail (red).
+  **verification:** Tests fail (red) with 404 errors: `pnpm test -- invoices.test.ts --reporter=verbose`.
+- [ ] API‑FIN‑002.2: Add test for invoice status transitions and validation. (AGENT)  
+  **verification:** Status transition tests fail with validation errors.
+- [ ] API‑FIN‑002.3: Add test for unauthorized access and permission validation. (AGENT)  
+  **verification:** Authorization tests fail with 401/403 errors.
 
 ---
 
@@ -77,17 +81,29 @@ Schemas: `Invoice`, `InvoiceCreate`, `InvoiceUpdate`. Examples required.
   - Tax fields validated against valid tax types.  
 - Emits `InvoiceCreated`, `InvoicePaid` events.  
 - All methods return `Result<T, DomainError>`.  
-**Deep Module:** Encapsulates invoice lifecycle, type validation, currency and tax handling.
+**Deep Module:** Encapsulates invoice lifecycle, type validation, currency and tax handling.  
+
+**Missing Event Emission Test:** Add test case to verify `InvoiceCreated` and `InvoicePaid` events are emitted with correct payload structure.  
+**Finance Anti-Patterns:**  
+- Missing currency validation allowing invalid exchange rates  
+- Incorrect tax calculations leading to financial discrepancies  
+- Allowing invoice updates after sent status (violates accounting rules)  
+- Missing audit trail for invoice modifications  
+
+**DoD Boundary Overlap:** Some validation logic overlaps with routes layer - clarify separation between service validation and route validation.  
+**DoD Missing Negative Cases:** Add tests for invalid currency codes, negative amounts, tax type validation, and unauthorized status transitions.
 
 ### Subtasks:
 - [ ] API‑FIN‑003.1: Implement `InvoiceRepository` extending `BaseRepository` with soft delete. (AGENT) – `lib/db/src/repositories/finance/invoices.ts`  
-  **verification:** Unit tests for repository pass.
+  **verification:** Unit tests for repository pass: `pnpm test -- invoices.repository.test.ts`.
 - [ ] API‑FIN‑003.2: Implement `InvoiceService` with type validation, status machine, currency/tax support. (AGENT) – `artifacts/api-server/src/services/finance/invoice‑service.ts`  
-  **verification:** Unit tests with mocked repo pass.
+  **verification:** Unit tests with mocked repo pass: `pnpm test -- invoice-service.test.ts`.
 - [ ] API‑FIN‑003.3: Write unit tests for service (type validation, status transitions, currency change guard, event emission). (AGENT)  
-  **verification:** Green.
-- [ ] API‑FIN‑003.4: Depth refactor check: method count ≤ 5, no `throw`, all returns Either. (AGENT)  
-  **verification:** `grep` check, `pnpm typecheck`.
+  **verification:** All unit tests green with ≥90% coverage: `pnpm test -- coverage -- invoice-service.test.ts`.
+- [ ] API‑FIN‑003.4: Add event emission tests for `InvoiceCreated` and `InvoicePaid` events. (AGENT)  
+  **verification:** Event emission tests pass with correct payload validation.
+- [ ] API‑FIN‑003.5: Depth refactor check: method count ≤ 5, no `throw`, all returns Either. (AGENT)  
+  **verification:** `grep -c "export.*method\|export.*function" invoice-service.ts | grep -E "^[1-5]$" && grep -q "throw\|Throw" invoice-service.ts || echo "No throws found" && pnpm typecheck`.
 
 ---
 
@@ -134,13 +150,26 @@ Schemas: `Payment`, `PaymentCreate`. Examples.
 **Status:** ⏳ Not Started  
 **Depends on:** DB‑MIGRATE‑ALL, EVENT‑001.  
 **Definition of Done:** `PaymentRepository` (append‑only, supports `findByIdempotencyKey`). `PaymentService` validates balance, handles currency conversion if different from invoice, emits `PaymentRecorded` (and `InvoicePaid` if fully paid), handles idempotency (check key, catch DB unique violation). Result<T, DomainError> returns.  
-**Deep Module:** Encapsulates payment validation, currency handling, idempotency, and event publishing.
+**Deep Module:** Encapsulates payment validation, currency handling, idempotency, and event publishing.  
+
+**Finance Anti-Patterns:**  
+- Missing idempotency handling causing duplicate payments  
+- Incorrect balance calculations leading to overpayment  
+- Missing currency conversion logic for multi-currency payments  
+- Allowing payment modification (violates accounting principles)  
+- Incomplete audit trail for payment transactions
 
 ### Subtasks:
-- [ ] API‑FIN‑007.1: Implement repository with idempotency key lookup. (AGENT)  
-- [ ] API‑FIN‑007.2: Implement service with balance check, currency handling, event emission, and idempotency. (AGENT)  
-- [ ] API‑FIN‑007.3: Write test for duplicate idempotency key. (AGENT)  
-- [ ] API‑FIN‑007.4: Depth refactor check. (AGENT)
+- [ ] API‑FIN‑007.1: Implement repository with idempotency key lookup. (AGENT) – `lib/db/src/repositories/finance/payments.ts`  
+  **verification:** Repository unit tests pass: `pnpm test -- payments.repository.test.ts`.
+- [ ] API‑FIN‑007.2: Implement service with balance check, currency handling, event emission, and idempotency. (AGENT) – `artifacts/api-server/src/services/finance/payment-service.ts`  
+  **verification:** Service unit tests pass: `pnpm test -- payment-service.test.ts`.
+- [ ] API‑FIN‑007.3: Write test for duplicate idempotency key handling. (AGENT)  
+  **verification:** Idempotency tests pass with correct duplicate detection.
+- [ ] API‑FIN‑007.4: Write tests for currency conversion and balance validation. (AGENT)  
+  **verification:** Currency and balance tests pass with accurate calculations.
+- [ ] API‑FIN‑007.5: Depth refactor check - verify service encapsulates payment logic correctly. (AGENT)  
+  **verification:** Service has ≤5 methods and proper error handling: `grep -c "export.*method\|export.*function" payment-service.ts | grep -E "^[1-5]$" && pnpm typecheck`.
 
 ---
 
@@ -206,7 +235,14 @@ Schemas: `Payment`, `PaymentCreate`. Examples.
 **Status:** ⏳ Not Started  
 **Depends on:** DB‑MIGRATE‑ALL, EVENT‑001.  
 **Definition of Done:** `BudgetRepository` and `BudgetService` with: `spent_amount` derived from payments/invoices, not writable; emits `BudgetThresholdReached` when 80% consumed; emits `BudgetExceeded` when spend exceeds allocation. Result<T, DomainError> returns.  
-**Deep Module:** Encapsulates budget tracking, threshold detection, and event publishing.
+**Deep Module:** Encapsulates budget tracking, threshold detection, and event publishing.  
+
+**Finance Anti-Patterns:**  
+- Allowing direct modification of derived `spent_amount` field  
+- Missing real-time budget threshold notifications  
+- Incorrect budget calculations excluding certain transaction types  
+- Missing budget variance analysis and reporting  
+- Incomplete budget audit trail for compliance
 
 ---
 
@@ -214,5 +250,37 @@ Schemas: `Payment`, `PaymentCreate`. Examples.
 **Status:** ⏳ Not Started  
 **Depends on:** API‑FIN‑015.  
 **Subtasks:** routes, tests green.
+
+---
+
+## Common Finance Core Sections
+
+**Rules to Follow:**  
+- All financial operations must be atomic and consistent  
+- Multi-currency support must be handled with proper exchange rate validation  
+- Payment records are append-only (no modifications allowed)  
+- Budget calculations must be derived, not directly modifiable  
+- All finance services must emit appropriate domain events  
+
+**Advanced Code Patterns:**  
+- Result<T, DomainError> pattern for all service methods  
+- Transactional data consistency across multiple entities  
+- Event-driven architecture for financial notifications  
+- Idempotency handling for payment operations  
+- Derived field calculations with proper validation  
+
+**Finance Anti-Patterns:**  
+- Direct modification of financial records after they're finalized  
+- Missing currency conversion logic in multi-currency scenarios  
+- Allowing negative balances without proper validation  
+- Non-atomic financial transactions leading to data inconsistency  
+- Missing audit trails for financial operations  
+
+**Out of Scope:**  
+- Advanced financial reporting and analytics  
+- Tax calculation engine integration  
+- Automated payment processing workflows  
+- Financial forecasting and planning tools  
+- Regulatory compliance reporting (SOX, GAAP, etc.)
 
 ---

@@ -21,7 +21,9 @@ This part covers Finance Data Integration including invoices, payments, budgets,
 ### [ ] FRONT‑FIN‑001: Invoices & Payments – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** API‑FIN‑004 (invoices green), API‑FIN‑008 (payments green).  
-**Definition of Done:** Invoice list and payment views use `useInvoiceList` and `usePaymentList` hooks. Multi‑currency display (symbol + amount). Tax breakdown shown. All mock data imports removed.
+**Definition of Done:** Invoice list and payment views use `useInvoiceList` and `usePaymentList` hooks. Multi‑currency display (symbol + amount). Tax breakdown shown. All mock data imports completely removed from Finance components and hooks. Component tests pass with MSW mocks. Manual testing confirms currency display and tax calculations work correctly.
+
+**Deep Module:** Finance frontend module encapsulates financial data management, currency handling, and tax calculations. The module provides a unified interface for financial operations while hiding the complexity of multi-currency formatting, tax calculations, and API calls behind React Query hooks and well-organized components.
 
 **Subtasks:**
 - [ ] FRONT‑FIN‑001.1: Create hooks for invoices and payments. (AGENT)  
@@ -50,6 +52,23 @@ This part covers Finance Data Integration including invoices, payments, budgets,
 - Card freeze/unfreeze toggle → `useUpdateCard` mutation.  
 - Budget update form → `useUpdateBudget` mutation.  
 - Toast notifications for all outcomes.
+- All interactive features tested with MSW mocks.
+- Error handling provides clear user feedback.
+- Idempotency key persistence works correctly.
+
+**Deep Module:** Finance interactive features module encapsulates all user interactions, mutation handling, and financial state management. The module provides a unified interface for financial operations while hiding the complexity of API calls, idempotency key management, and error handling behind well-defined hooks and components.
+
+**TDD:** Integration tests with MSW verify all interactive features work correctly. Tests cover invoice approvals, payment creation with idempotency, card operations, and budget updates. Each interaction is tested for both success and error paths, including idempotency key reuse scenarios.
+
+**Anti-Patterns (Frontend):**
+- Manual state management instead of React Query
+- Missing idempotency key persistence
+- Direct API calls in components
+- Unhandled mutation errors
+- Inconsistent error handling patterns
+- Not invalidating queries after successful mutations
+- Missing loading states during financial operations
+- Hardcoded currency symbols or tax rates
 
 **Subtasks:**
 - [ ] FRONT‑INT‑FIN.1: Wire invoice approval/rejection. (AGENT)  

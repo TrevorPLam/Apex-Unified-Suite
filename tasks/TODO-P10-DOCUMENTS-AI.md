@@ -37,8 +37,48 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Initial implementation can use pattern matching (regex for SSN, credit card) plus a third‑party DLP API for advanced detection; both behind a port interface.
 
 **DDD:** AI security service within the Documents bounded context (ShareFile secure share recommender).  
-**TDD:** Unit test with sample documents containing known PII/PHI/PCI data verifying detection and correct classification.  
+**TDD:** Unit test with sample documents containing known PII/PHI/PCI data verifying detection and correct classification; integration test verifying that policy enforcement blocks or warns appropriately based on configuration.  
 **BDD:** "As a compliance officer, the system automatically warns users when they try to share documents containing sensitive client data."
+
+**Deep Module:** AI-powered DLP (Data Loss Prevention) system with PII/PHI/PCI detection, policy enforcement, and audit logging. The module encapsulates pattern matching algorithms, external DLP service integration, policy management, and detection event tracking while providing simple interfaces for document security scanning.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different detection methods (regex, ML models, external APIs)
+- Observer pattern for real-time detection event notifications
+- Factory pattern for creating detection policies
+- Command pattern for policy enforcement actions
+- Adapter pattern for different DLP service providers
+- Event-driven architecture for detection workflows
+
+**Anti-Patterns (AI):**
+- Do not rely solely on pattern matching for sensitive data detection
+- Avoid false positives that block legitimate document sharing
+- Do not ignore context when evaluating sensitive data (e.g., sample data vs real data)
+- Avoid training ML models on biased or incomplete datasets
+- Do not cache detection results without proper invalidation
+
+**Advanced Code Patterns:**
+- Repository pattern for detection event persistence
+- State machine for policy enforcement workflows
+- Decorator pattern for adding detection to document operations
+- Caching strategies for detection pattern optimization
+- Queue management for batch document scanning
+- Rate limiting for external DLP API calls
+
+**Anti-Patterns:**
+- Do not block document operations with synchronous scanning
+- Avoid storing raw sensitive content in detection logs
+- Do not ignore user feedback on false positives/negatives
+- Avoid complex policy rules without clear business justification
+- Do not bypass detection for any user role without audit trail
+
+**Rules to Follow:**
+- All detection must complete within 2 seconds for documents <10MB
+- Detection events must be retained for at least 7 years
+- Policy changes must take effect immediately across all operations
+- False positive rate must be below 1% for production data
+- All detection features must work offline with cached patterns
+- Sensitive content must never be logged or stored in plain text
 
 **Subtasks:**
 - [ ] AI‑DOCS‑002.1: Implement PII/PHI/PCI detection engine using pattern matching and optional external DLP API. (AGENT) – `lib/ai/dlp/document‑scanner.ts`  
@@ -66,8 +106,48 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Tags are used by the global search index to improve document search relevance.
 
 **DDD:** AI service within the Documents bounded context that enriches document metadata for better organisation and search.  
-**TDD:** Unit test with sample documents of known types verifying correct classification and metadata extraction.  
+**TDD:** Unit test with sample documents of known types verifying correct classification and metadata extraction; integration test verifying that classification accuracy improves with user feedback.  
 **BDD:** "As a user, documents I upload are automatically categorised and tagged so I can find them easily later."
+
+**Deep Module:** AI document classification and tagging system with automatic metadata extraction, confidence scoring, and learning from corrections. The module encapsulates classification algorithms, metadata extraction patterns, confidence management, and learning systems while providing simple interfaces for document intelligence features.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different classification models (pre-trained, custom ML, rule-based)
+- Observer pattern for classification result notifications
+- Factory pattern for creating metadata extractors per document type
+- Command pattern for classification correction and learning
+- Adapter pattern for different AI service providers
+- Event-driven architecture for classification workflows
+
+**Anti-Patterns (AI):**
+- Do not rely on a single classification model without fallback
+- Avoid overfitting classification models to specific document types
+- Do not ignore confidence scores when auto-applying classifications
+- Avoid training models on biased or unrepresentative document samples
+- Do not cache classification results without proper invalidation
+
+**Advanced Code Patterns:**
+- Repository pattern for classification and metadata persistence
+- State machine for classification lifecycle management
+- Decorator pattern for adding classification to document operations
+- Caching strategies for classification model optimization
+- Queue management for batch document processing
+- Feedback loop implementation for model improvement
+
+**Anti-Patterns:**
+- Do not block document operations with synchronous classification
+- Avoid storing raw document content in classification logs
+- Do not ignore user corrections to classification results
+- Avoid complex classification rules without clear business value
+- Do not bypass manual review for low-confidence classifications
+
+**Rules to Follow:**
+- Classification must complete within 5 seconds for documents <50MB
+- Confidence scores must be displayed to users for all classifications
+- User corrections must be incorporated into model within 24 hours
+- Classification accuracy must be validated quarterly against human labels
+- All classification features must work offline with cached models
+- Manual review queue must be processed within 48 hours
 
 **Subtasks:**
 - [ ] AI‑DOCS‑003.1: Implement document classification model (can use a pre‑trained model or third‑party API via a port interface). (AGENT) – `lib/ai/documents/classifier‑service.ts`  

@@ -50,6 +50,33 @@ This file contains team management and enterprise scheduling features that build
 - Team‑based appointment assignment and routing.
 - Team performance metrics and reporting.
 
+**Deep Module:**
+- Team availability aggregation is a deep module: it combines multiple provider schedules with different availability windows, time zones, and buffer times into a unified availability matrix. The interface is simple (getTeamAvailability(teamId, dateRange)) but the implementation handles complex overlapping logic, conflict resolution, and cache invalidation when individual schedules change.
+- Role-based permission system is deep: minimal surface (canAssign(providerId), canViewTeam(teamId)) but encapsulates complex RBAC logic with inheritance and team-specific overrides.
+
+**DDD:** Team management within the Appointments bounded context; aggregate root is Team with Provider entities as value objects. Team availability is a domain service that aggregates provider schedules.
+**TDD:** Unit test verifying that overlapping provider schedules with conflicting availability windows produce correct aggregated availability matrix with gaps properly identified.
+**BDD:** "As a scheduling admin, I can create teams of providers and see combined availability across all team members."
+
+**Advanced Code Patterns:**
+- **Availability Aggregation Strategy Pattern**: Use strategy pattern for different aggregation algorithms (union, intersection, weighted) to combine provider schedules.
+- **Team Cache Invalidation**: Implement cache-aside pattern for team availability with fine-grained invalidation (only invalidate when a provider in the team updates their schedule).
+- **Permission Decorator**: Use decorator pattern to wrap team operations with permission checks without cluttering business logic.
+- **Event-Driven Team Updates**: Publish TeamAvailabilityChanged domain events when team composition or member schedules change.
+
+**Anti-Patterns:**
+- ❌ **N+1 Query Problem**: Don't query each provider's schedule individually; use batch queries with proper joins.
+- ❌ **Recursive Role Lookup**: Avoid recursive database queries for role inheritance; flatten role permissions at team membership level.
+- ❌ **Synchronous Availability Calculation**: Don't calculate availability on every request; pre-compute and cache with smart invalidation.
+- ❌ **Team Membership Direct Deletion**: Don't hard-delete team memberships; use soft delete with audit trail to preserve assignment history.
+
+**Rules to Follow:**
+- **RBAC‑025**: Implement team-level RBAC with role inheritance from organization defaults (enterprise pattern).
+- **CACHE‑007**: Cache team availability for 5 minutes; invalidate when any member's schedule changes.
+- **DDD‑018**: Team aggregate root manages team membership lifecycle; provider entities are value objects referenced by ID.
+- **TDD‑031**: Mock provider schedules in tests; don't depend on actual scheduling API availability.
+- **PERF‑042**: Use materialized views or cached aggregates for team performance metrics; calculate asynchronously.
+
 **Subtasks:**
 - [ ] TEAM‑001.1: Implement team creation and management UI. (AGENT) – `src/components/teams/TeamManager.tsx`  
   **verification:** Teams can be created, configured, and managed.
@@ -71,6 +98,33 @@ This file contains team management and enterprise scheduling features that build
 - Geographic and timezone‑based assignment optimisation.
 - Provider preference and availability constraint handling.
 - Assignment analytics and optimisation recommendations.
+
+**Deep Module:**
+- Assignment optimization is a deep module: simple interface (assignAppointment(appointmentId, constraints)) but complex multi-dimensional optimization balancing workload fairness, skill match quality, geographic proximity, timezone alignment, and provider preferences. The algorithm uses weighted scoring with configurable priorities.
+- Constraint satisfaction engine handles conflicting requirements (e.g., client requests specific provider but that provider is at capacity) with fallback strategies and graceful degradation.
+
+**DDD:** Assignment algorithms as domain services in the Appointments bounded context; operates on Team aggregates and Provider value objects. Assignment decisions produce AssignmentMade domain events.
+**TDD:** Unit test verifying that 100 appointments distributed across 5 providers with varying workloads results in balanced distribution (standard deviation < 20%) while respecting skill requirements.
+**BDD:** "As a scheduler, appointments are automatically assigned to the most appropriate available provider based on skills, workload, and location."
+
+**Advanced Code Patterns:**
+- **Strategy Pattern for Assignment Algorithms**: Implement multiple assignment strategies (round-robin, weighted-score, greedy-optimization) selectable via configuration.
+- **Constraint Satisfaction Framework**: Use constraint programming approach with soft constraints (preferences) and hard constraints (required skills, availability).
+- **Multi-Criteria Scoring**: Weighted scoring algorithm combining workload, skills, geography, and ratings with configurable weights per organization.
+- **Assignment Cache Warming**: Pre-compute provider availability scores in background job to make assignment decisions faster.
+
+**Anti-Patterns:**
+- ❌ **Naive Round-Robin**: Don't assign purely by rotation; consider skills and workload to avoid poor client experiences.
+- ❌ **Synchronous Optimization**: Don't run complex optimization algorithms synchronously during booking; use pre-computed scores.
+- ❌ **Ignoring Constraint Conflicts**: Don't fail silently when constraints conflict; implement priority-based conflict resolution.
+- ❌ **Hard-Coded Weighting**: Don't hard-code scoring weights; make them configurable per organization.
+
+**Rules to Follow:**
+- **ALGO‑031**: Assignment algorithm must complete within 500ms; use pre-computed provider scores.
+- **CACHE‑011**: Cache provider workload and availability scores; refresh every 5 minutes or on change.
+- **DDD‑022**: Assignment decisions are domain events; publish AssignmentMade with reason (skill match, workload balance, etc.).
+- **TDD‑035**: Test assignment fairness with statistical tests; ensure no provider gets >150% average load.
+- **PERF‑048**: Use batch optimization for bulk assignments; process in background job.
 
 **Subtasks:**
 - [ ] TEAM‑002.1: Implement load‑balanced assignment algorithms. (AGENT) – `services/teams/LoadBalancer.ts`  
@@ -94,6 +148,33 @@ This file contains team management and enterprise scheduling features that build
 - Coverage management for provider absences.
 - Team scheduling calendars and coordination tools.
 
+**Deep Module:**
+- Provider handoff workflow is a deep module: simple interface (initiateHandoff(appointmentId, fromProviderId, toProviderId)) but encapsulates complex state machine logic for handoff lifecycle (requested → accepted → in-progress → completed), conflict detection (both providers modifying simultaneously), and rollback procedures on failure.
+- Coverage management is deep: handles absence planning with cascading coverage assignments, coverage gap detection, and automatic reassignment of affected appointments when coverage changes.
+
+**DDD:** Collaboration features within Appointments bounded context; Handoff aggregate with states (Requested, Accepted, InProgress, Completed, Cancelled). Coverage planning uses SchedulingPolicy entity.
+**TDD:** Unit test verifying that handoff state machine transitions correctly through all states and publishes appropriate domain events at each transition.
+**BDD:** "As a provider, I can hand off an appointment to a colleague and track the handoff status."
+
+**Advanced Code Patterns:**
+- **State Machine for Handoffs**: Implement handoff lifecycle as explicit state machine with entry/exit actions and transition guards.
+- **Optimistic Locking**: Use version-based optimistic locking for shared appointment editing to handle concurrent modifications.
+- **Coverage Graph Algorithm**: Model coverage relationships as directed graph; detect cycles and gaps algorithmically.
+- **CQRS for Collaboration**: Separate read models for handoff status queries from command processing for better scalability.
+
+**Anti-Patterns:**
+- ❌ **Implicit State Management**: Don't track handoff state implicitly through boolean flags; use explicit state machine.
+- ❌ **Last-Write-Wins**: Don't allow last write to win on shared appointments; implement proper conflict detection.
+- ❌ **Broadcast Notifications**: Don't notify all team members for every handoff; use targeted notifications based on roles.
+- ❌ **Synchronous Handoff Processing**: Don't process handoffs synchronously during peak hours; queue and process asynchronously.
+
+**Rules to Follow:**
+- **SM‑017**: Implement handoff state machine with explicit states, transitions, and entry/exit actions.
+- **CQRS‑012**: Use CQRS pattern for collaboration features; separate read/write models with eventual consistency.
+- **DDD‑025**: Handoff aggregate encapsulates all handoff state transitions; external code triggers transitions via domain methods.
+- **TDD‑038**: Test concurrent handoff scenarios; verify conflict detection and resolution work correctly.
+- **NOTIFY‑015**: Send targeted notifications only to affected providers; avoid broadcast noise.
+
 **Subtasks:**
 - [ ] TEAM‑003.1: Implement provider handoff workflows. (AGENT) – `src/components/teams/HandoffManager.tsx`  
   **verification:** Provider handoffs work smoothly.
@@ -115,6 +196,33 @@ This file contains team management and enterprise scheduling features that build
 - Team scheduling efficiency analysis.
 - Client satisfaction and feedback analytics.
 - Performance improvement recommendations and insights.
+
+**Deep Module:**
+- Performance aggregation engine is a deep module: simple interface (getTeamMetrics(teamId, period)) but complex implementation handling data from multiple sources (appointments, feedback, completions), time-series aggregation, statistical normalization, and trend analysis with configurable KPI weights.
+- Recommendation engine uses ML-inspired heuristics to identify patterns (overbooking certain providers, underutilization of others) and suggest actionable improvements.
+
+**DDD:** Analytics as domain service in Appointments bounded context; queries Team and Provider aggregates; produces AnalyticsReport value objects. Metrics calculation is read-model optimized.
+**TDD:** Unit test verifying that metrics calculation correctly aggregates data across multiple dimensions (time, provider, appointment type) with proper statistical accuracy.
+**BDD:** "As a team manager, I can view comprehensive performance analytics and receive recommendations for improvement."
+
+**Advanced Code Patterns:**
+- **Materialized View Pattern**: Pre-compute common metrics queries in materialized views refreshed periodically.
+- **CQRS for Analytics**: Separate read-optimized analytics models from operational transaction models.
+- **Time-Series Aggregation**: Use time-series data structures for efficient period-over-period comparison.
+- **Recommendation Pipeline**: Implement pluggable recommendation pipeline allowing different algorithms for different metric types.
+
+**Anti-Patterns:**
+- ❌ **Real-Time Analytics on Transactional DB**: Don't run complex analytics queries against operational database; use read replicas or analytics warehouse.
+- ❌ **Blocking Analytics Calculation**: Don't calculate analytics synchronously during page load; use background jobs and cached results.
+- ❌ **Hard-Coded KPI Definitions**: Don't hard-code KPI formulas; make them configurable per organization.
+- ❌ **Ignoring Data Freshness**: Don't serve stale analytics without indicating data age to users.
+
+**Rules to Follow:**
+- **ANALYTICS‑023**: Calculate analytics asynchronously in background jobs; cache results for fast retrieval.
+- **CQRS‑015**: Use separate read models for analytics; optimize for query performance over write consistency.
+- **TDD‑041**: Test analytics calculations with known datasets; verify statistical accuracy of aggregations.
+- **PERF‑052**: Use materialized views or columnar storage for analytics data; target <2s query time.
+- **CONFIG‑018**: Make KPI definitions and weights configurable per organization via admin interface.
 
 **Subtasks:**
 - [ ] TEAM‑004.1: Implement team productivity metrics. (AGENT) – `src/components/teams/TeamProductivity.tsx`  
@@ -142,6 +250,33 @@ This file contains team management and enterprise scheduling features that build
 - Bulk operations on recurring appointment series.
 - Recurrence conflict resolution and management.
 
+**Deep Module:**
+- Recurrence engine is a deep module: simple interface (generateOccurrences(pattern, startDate, endDate)) but complex implementation handling RRULE parsing (RFC 5545), timezone-aware expansion, exception handling (EXDATE, RDATE), and pattern modification semantics (this-and-future vs this-only).
+- Conflict detection is deep: evaluates conflicts across expanded recurrence sets efficiently without materializing all occurrences; uses lazy evaluation with early termination.
+
+**DDD:** Recurring appointments within Appointments bounded context; RecurringAppointment aggregate containing RecurrenceRule value object and Exception collection. Expansion is a domain service.
+**TDD:** Unit test verifying that RRULE "FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=20241231" correctly expands to 156 occurrences with proper handling of timezone transitions.
+**BDD:** "As a scheduler, I can create complex recurring appointment patterns with exceptions and modifications."
+
+**Advanced Code Patterns:**
+- **Iterator Pattern for Recurrence**: Implement recurrence expansion as lazy iterator to avoid memory explosion on infinite recurrences.
+- **RRULE Parser with Validation**: Parse and validate RFC 5545 RRULE with helpful error messages for malformed rules.
+- **Exception Tracking**: Store exceptions (cancellations, modifications) separately from base pattern; apply during expansion.
+- **Bulk Operation Transaction**: Wrap bulk operations on recurring series in database transaction with rollback capability.
+
+**Anti-Patterns:**
+- ❌ **Materializing Infinite Recurrences**: Don't generate all occurrences upfront for unbounded recurrences; use lazy expansion.
+- ❌ **Storing Every Occurrence**: Don't store individual records for each occurrence; store pattern and exceptions only.
+- ❌ **Ignoring Timezone DST**: Don't ignore daylight saving time transitions; handle ambiguous and non-existent times correctly.
+- ❌ **Lossy Pattern Modifications**: Don't lose original pattern when modifying "this and future"; keep original for audit.
+
+**Rules to Follow:**
+- **RECURR‑012**: Implement RFC 5545 compliant RRULE parsing with full test coverage.
+- **PERF‑028**: Use lazy iterator for recurrence expansion; never materialize infinite recurrences in memory.
+- **TDD‑025**: Test recurrence expansion across DST boundaries and leap years.
+- **DDD‑015**: Store recurrence pattern and exceptions separately; compute occurrences on demand.
+- **TRANS‑008**: Wrap bulk operations in transactions with proper rollback on failure.
+
 **Subtasks:**
 - [ ] ENT‑SCHED‑001.1: Implement advanced recurring patterns. (AGENT) – `src/components/appointments/RecurringPatterns.tsx`  
   **verification:** Complex recurring patterns work correctly.
@@ -164,6 +299,33 @@ This file contains team management and enterprise scheduling features that build
 - Resource utilisation analytics and reporting.
 - Resource booking and reservation systems.
 
+**Deep Module:**
+- Resource scheduling engine is a deep module: simple interface (bookResource(resourceId, timeRange, appointmentId)) but complex implementation handling multi-resource constraints, hierarchical resources (rooms within buildings), resource substitution rules, and optimization across competing demands.
+- Resource conflict resolution uses constraint satisfaction with backtracking to find feasible schedules when conflicts exist.
+
+**DDD:** Resource management within Appointments bounded context; Resource aggregate with ResourceType classification. Multi-resource appointments use ResourceRequirement value objects.
+**TDD:** Unit test verifying that booking a room requiring specific equipment correctly enforces equipment availability and rejects when equipment unavailable.
+**BDD:** "As a scheduler, I can book rooms and equipment alongside appointments with automatic conflict detection."
+
+**Advanced Code Patterns:**
+- **Resource Hierarchy**: Model resources hierarchically (building → floor → room → equipment) with inheritance of availability.
+- **Constraint Satisfaction**: Use CSP solver for multi-resource scheduling with soft and hard constraints.
+- **Resource Pool Pattern**: Manage shared resources via pool with checkout/checkin semantics.
+- **Optimistic Resource Booking**: Use optimistic locking with conflict detection for concurrent resource booking attempts.
+
+**Anti-Patterns:**
+- ❌ **Resource Overbooking**: Don't allow double-booking without explicit intent; enforce strict conflict detection.
+- ❌ **Ignoring Resource Dependencies**: Don't book a room without checking its required equipment is also available.
+- ❌ **Synchronous Resource Search**: Don't search for available resources synchronously during booking; use pre-indexed availability.
+- ❌ **Resource Data Duplication**: Don't duplicate resource info in appointment records; reference by ID with join.
+
+**Rules to Follow:**
+- **RESRC‑018**: Enforce resource hierarchy with inherited availability; child resources unavailable when parent unavailable.
+- **CONSTR‑012**: Use constraint satisfaction for multi-resource booking with backtracking on conflicts.
+- **TDD‑028**: Test multi-resource booking scenarios including cascading unavailability.
+- **DDD‑021**: Resource aggregate manages booking state; external code references resources by ID only.
+- **CACHE‑015**: Cache resource availability index; refresh when bookings made or cancelled.
+
 **Subtasks:**
 - [ ] ENT‑SCHED‑002.1: Implement resource availability management. (AGENT) – `src/components/resources/ResourceManager.tsx`  
   **verification:** Resources are managed effectively.
@@ -185,6 +347,33 @@ This file contains team management and enterprise scheduling features that build
 - Advanced booking rules and approval workflows.
 - Scheduling compliance monitoring and enforcement.
 - Policy violation detection and reporting.
+
+**Deep Module:**
+- Policy engine is a deep module: simple interface (validateBooking(appointment, context)) but complex implementation handling policy inheritance (org → dept → team), policy composition (multiple policies applying simultaneously), and conflict resolution when policies contradict.
+- Approval workflow engine manages multi-stage approvals with escalation, delegation, and timeout handling.
+
+**DDD:** Scheduling policies within Appointments bounded context; SchedulingPolicy aggregate with PolicyRule entities. Policy evaluation is a domain service using specification pattern.
+**TDD:** Unit test verifying that conflicting policies (e.g., org requires 24h notice, dept allows 4h) resolve correctly with department policy taking precedence.
+**BDD:** "As an admin, I can define organization-wide scheduling policies that automatically enforce compliance."
+
+**Advanced Code Patterns:**
+- **Specification Pattern**: Implement scheduling rules as composable specifications (minimum notice, maximum duration, etc.).
+- **Policy Chain of Responsibility**: Chain policy validators with precedence order for inheritance handling.
+- **Approval State Machine**: Model approval workflows as state machines with transitions for approve, reject, escalate, delegate.
+- **Policy Evaluation Cache**: Cache policy evaluation results for identical contexts to improve performance.
+
+**Anti-Patterns:**
+- ❌ **Hard-Coded Rules**: Don't hard-code scheduling rules in code; use configurable policy engine.
+- ❌ **Silent Policy Violations**: Don't silently ignore policy violations; explicitly reject with clear messages.
+- ❌ **Blocking Approval**: Don't block all bookings pending approval; use async workflow with temporary holds.
+- ❌ **No Policy Audit Trail**: Don't apply policies without logging; maintain full audit trail of policy enforcement.
+
+**Rules to Follow:**
+- **POLICY‑025**: Implement scheduling policies as composable specifications with clear precedence rules.
+- **WORKFLOW‑015**: Use state machine for approval workflows with explicit states and transitions.
+- **TDD‑032**: Test policy inheritance scenarios with multiple levels of organization hierarchy.
+- **DDD‑024**: SchedulingPolicy aggregate manages policy lifecycle; rules are value objects.
+- **AUDIT‑012**: Log all policy evaluations and enforcement actions for compliance reporting.
 
 **Subtasks:**
 - [ ] ENT‑SCHED‑003.1: Implement organisation‑wide scheduling policies. (AGENT) – `src/components/policies/SchedulingPolicies.tsx`  

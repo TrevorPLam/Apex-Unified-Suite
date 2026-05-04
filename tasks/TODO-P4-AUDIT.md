@@ -58,6 +58,8 @@ Performance optimized with database indexes and pagination limits.
 - `AuditRepository` extending `BaseRepository<AuditLog>` (no soft delete, append‑only)  
 - `AuditService` with methods for querying, filtering, and exporting audit logs  
 - Optimized queries using database indexes on `(organization_id, created_at)`, `(action)`, `(context)`  
+- Advanced Code Patterns: Repository pattern with query optimization, service layer with error handling  
+- Anti-Patterns: Avoid N+1 queries, prevent direct database access from routes  
 
 **Subtasks:**
 - [ ] API‑AUDIT‑003.1: Implement repository and service for audit logs. (AGENT)  

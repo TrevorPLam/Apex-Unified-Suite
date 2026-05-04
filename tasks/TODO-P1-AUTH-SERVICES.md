@@ -9,6 +9,15 @@ This document contains the core authentication service implementations that prov
 **Definition of Done:** `artifacts/api-server/src/lib/crypto.ts` exports `hashPassword(plain)` and `verifyPassword(plain, hash)` using argon2id.  
 **Related Files:** `artifacts/api-server/src/lib/crypto.ts`
 
+**Advanced Code Patterns:** Cryptographic service pattern; secure password hashing with argon2id; salt management; timing attack prevention.
+**Anti-Patterns:** Storing plain text passwords; using weak hashing algorithms (MD5, SHA1); insufficient work factor; predictable salts.
+**Rules to Follow:**
+- Password hashing must use argon2id with appropriate parameters
+- Hash verification must be timing-attack resistant
+- Password hashes must never be reversible
+- Hash parameters must be configurable for future upgrades
+- All password operations must be constant-time
+
 **DDD:** Infrastructure service within Identity; domain doesn't care about hashing details.  
 **TDD:** Write unit tests for hash/verify round‑tripping before implementation.  
 **BDD:** Indirectly tested via registration/login scenarios.  
@@ -31,6 +40,15 @@ This document contains the core authentication service implementations that prov
 **Definition of Done:** `artifacts/api-server/src/lib/jwt.ts` exports `generateAccessToken(user)`, `generateRefreshToken(user)`, `verifyToken(token)` with configurable expiry.  
 **Related Files:** `artifacts/api-server/src/lib/jwt.ts`  
 **Dependencies:** Verify `framer-motion@^12.23.24` in workspace catalog (update memory rules if needed)
+
+**Advanced Code Patterns:** Token service pattern; JWT with RS256 signing; token rotation; secure key management; token blacklisting.
+**Anti-Patterns:** Using symmetric keys for JWT tokens; missing token expiration; insecure key storage; no token rotation.
+**Rules to Follow:**
+- JWT tokens must use asymmetric signing (RS256)
+- Access tokens must have short expiration (<15 minutes)
+- Refresh tokens must be stored securely and rotated
+- Token secrets must be managed through secure configuration
+- All token operations must validate token structure
 
 **DDD:** JWT tokens represent an authenticated session; not part of the domain model itself.  
 **TDD:** Write unit tests for token creation (includes correct payload) and verification (rejects expired/invalid tokens).  
@@ -61,6 +79,15 @@ This document contains the core authentication service implementations that prov
 - Organization existence check is a stub that will be replaced in Phase 2 when OrganizationRepository is ready.  
 **Related Files:** `artifacts/api-server/src/services/auth.ts`
 **Depends on:** DEP-001.1 (neverthrow dependency for Either pattern)
+
+**Advanced Code Patterns:** Service layer pattern; repository abstraction; token rotation strategy; authentication orchestration; domain service composition.
+**Anti-Patterns:** Business logic in routes; direct database access; synchronous token operations; missing audit trails.
+**Rules to Follow:**
+- All auth operations must be transactional
+- Service methods must never throw exceptions
+- Authentication state must be auditable
+- Token operations must be atomic and consistent
+- User sessions must be properly managed and invalidated
 
 **DDD:** AuthService is the core of the Identity context. It enforces registration rules and ties users to organizations.  
 **TDD:** Write unit tests mocking the (future) UserRepository and OrganizationRepository.  

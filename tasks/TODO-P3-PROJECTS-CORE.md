@@ -30,9 +30,29 @@ This part covers the complete Projects context Core CRUD operations – Projects
 Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.  
 **Anti-Patterns:** Allowing direct progress field mutation.  
 **Related Files:** `lib/api‑spec/openapi.yaml`
+**Out of Scope:** Project templates, recurring work generation, advanced reporting.
+
+**Rules to Follow:**
+- All endpoints must use `/api/v1/` prefix
+- Progress fields are read-only in API
+- Budget fields require authorization checks
+- Response envelopes follow standard format
+- Examples must be included for all endpoints
+
+**Advanced Code Patterns:**
+- Use OpenAPI components for reusable schemas
+- Implement proper HTTP status codes
+- Use pagination envelope pattern
+- Include Location headers for creation
+
+**Anti-Patterns:**
+- Direct progress field mutation
+- Missing pagination limits
+- Inconsistent error response formats
+- Hardcoded values in schemas
 
 **DDD:** API exposes the `Project` aggregate root. Progress is derived from tasks; the endpoint exposes it read‑only. Budget fields are writable by authorised users (PROJ‑DOM‑005).  
-**TDD:** After codegen, integration tests (API‑PROJ‑002) will be written.  
+**TDD:** Write integration tests (API‑PROJ‑002) before implementation. Tests must fail initially (red phase).  
 **BDD:** Enables "As a PM, I can create a project and set a budget" scenarios.
 
 ### Subtasks:
@@ -73,8 +93,32 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 - `update` rejects any direct write to `progress_percent`, `task_count`, or `completed_task_count`; only the service's internal method updates them. Budget fields (`estimated_hours`, `budget_hours`, `budget_amount_cents`) are writable by authorised users.
 - `updateProjectProgress` queries all active tasks for the project, computes ratio, and atomically updates the progress columns.
 - Emits `ProjectCompleted` when status transitions to `completed`.
+- Emits `TaskCompleted` when task status moves to `done` (domain event taxonomy).
 - All methods return `Result<T, DomainError>`.
 **Deep Module:** Encapsulates status machine, progress derivation, budget management, and event publishing.
+
+**Rules to Follow:**
+- No exceptions thrown - use Result pattern
+- All database operations in transactions
+- Event emission after successful state changes
+- Progress fields calculated, never set directly
+- Authorization checks for budget field updates
+
+**Advanced Code Patterns:**
+- State machine pattern for status transitions
+- Domain event emission for state changes
+- Transactional consistency for progress updates
+- Optimistic locking for concurrent updates
+
+**Anti-Patterns:**
+- Throwing exceptions instead of Result pattern
+- Direct progress field manipulation
+- Missing transaction boundaries
+- Event emission before state persistence
+
+**DDD:** Service encapsulates Project aggregate behavior with proper domain events. Event taxonomy distinguishes between `ProjectCompleted` (aggregate state) and `TaskCompleted` (child entity state).  
+**TDD:** Write failing tests for all service methods including event emission. Verify `TaskCompleted` events are emitted when task status changes.  
+**BDD:** Enables "When a task is completed, project progress updates automatically" scenarios.
 
 ### Subtasks:
 - [ ] API‑PROJ‑003.1: Implement `ProjectRepository`. (AGENT) – `lib/db/src/repositories/projects.ts`  
@@ -86,7 +130,26 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 - [ ] API‑PROJ‑003.4: Implement automatic progress update: subscribe to `TaskCompleted` event, call `updateProjectProgress`. (AGENT)  
   **verification:** Unit test with mock event bus.
 - [ ] API‑PROJ‑003.5: Depth refactor check: method count ≤ 5, service encapsulates at least three non‑trivial concerns, no `throw`. (AGENT)  
-  **verification:** Manual + `pnpm typecheck`.
+  **verification:** Manual inspection + `pnpm typecheck`.
+
+**Rules to Follow:**
+- Method count limited to 5 for maintainability
+- Service must encapsulate multiple concerns
+- All methods return Result<T, DomainError>
+- No exception throwing in service layer
+- Event emission only after successful operations
+
+**Advanced Code Patterns:**
+- Deep module encapsulation
+- Result pattern for error handling
+- Domain event emission
+- State machine implementation
+
+**Anti-Patterns:**
+- Shallow service with single responsibility
+- Exception-based error handling
+- Missing event emission
+- Direct database access without abstraction
 
 ---
 
@@ -123,7 +186,28 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 ### [ ] API‑PROJ‑007: Tasks – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL, BaseRepository.  
 **Definition of Done:** `TaskRepository` (soft delete) and `TaskService` (enforces parent‑child completion rules, validates project exists, **handles lane assignment and position reordering**, emits `TaskCompleted` on status move to `done`). Result<T, DomainError> returns.  
-**Depth refactor check** added.
+**Deep Module:** Encapsulates task hierarchy, board positioning, and completion rule enforcement.
+
+**Rules to Follow:**
+- Parent task cannot be completed if unfinished subtasks exist
+- Lane and position updates must be atomic
+- Task completion emits domain events
+- Project validation before task operations
+- Soft delete for all task operations
+
+**Advanced Code Patterns:**
+- Hierarchical task validation
+- Board position management
+- Domain event emission
+- Transactional consistency
+
+**Anti-Patterns:**
+- Allowing parent completion with unfinished subtasks
+- Non-atomic position updates
+- Missing project validation
+- Direct database access without service layer
+
+**Depth refactor check** added to verify service encapsulation and method count.
 
 ---
 
@@ -152,7 +236,28 @@ Schemas: `Project`, `ProjectCreate`, `ProjectUpdate`. Examples required.
 ### [ ] API‑PROJ‑011: Milestones – Service & Repository
 **Depends on:** DB‑MIGRATE‑ALL.  
 **Definition of Done:** `MilestoneRepository` and `MilestoneService` (complete only once, emits `MilestoneCompleted` event). Result<T, DomainError> returns.  
-**Depth refactor check.**
+**Deep Module:** Encapsulates milestone lifecycle and completion validation.
+
+**Rules to Follow:**
+- Milestones can only be completed once
+- Completion requires completed_at timestamp
+- Event emission after successful completion
+- Soft delete for milestone removal
+- Project validation for milestone operations
+
+**Advanced Code Patterns:**
+- State validation for completion
+- Domain event emission
+- Transactional consistency
+- Result pattern for error handling
+
+**Anti-Patterns:**
+- Allowing multiple completions
+- Missing completion timestamp
+- Event emission before persistence
+- Exception-based error handling
+
+**Depth refactor check** added to verify service encapsulation and proper deep module structure.
 
 ---
 

@@ -33,7 +33,7 @@ This part covers the foundational infrastructure for Phase 2: Test Infrastruct
 **Related Files:** `vitest.config.ts`, `__tests__/utils/test-server.ts`, `__tests__/utils/test-db.ts`
 
 **DDD:** N/A – testing infrastructure.  
-**TDD:** This infrastructure enables all subsequent TDD work.  
+**TDD:** This infrastructure enables all subsequent TDD work. Write tests for slow-query logging configuration and query execution time measurement.  
 **BDD:** Provides the foundation for executable BDD scenarios.  
 **Deep Module:** N/A – infrastructure utilities.
 
@@ -87,10 +87,12 @@ This part covers the foundational infrastructure for Phase 2: Test Infrastruct
 Zod insert/select schemas generated via `drizzle‑zod`.  
 **Related Files:** `lib/db/src/schema/organizations.ts`
 
-**DDD:** Organization is the root of multi‑tenancy. All business tables reference this via `organization_id`.  
-**TDD:** Test SQL generation (columns, unique constraints, GIN index). Test Zod schema rejects invalid plan_type.  
+**DDD:** Organization is the root of multi‑tenancy. All business tables reference this via `organization_id`. **Tenant scoping note:** All queries must be scoped to the current tenant's organization to prevent data cross-contamination.  
+**TDD:** Test SQL generation (columns, unique constraints, GIN index). Test Zod schema rejects invalid plan_type. Test tenant scoping prevents cross-tenant data access.  
 **BDD:** N/A – infrastructure entity.  
-**Deep Module:** Shallow table; the multi‑tenancy logic lives in BaseRepository.
+**Deep Module:** Shallow table; the multi‑tenancy logic lives in BaseRepository.  
+
+**DoD Traceability:** Each subtask verification command provides clear pass/fail criteria that can be traced back to the definition of done requirements.
 
 ### Subtasks:
 - [ ] DB‑ORG‑001.1: Write schema validation test – assert all columns, unique `slug`, and GIN index on `settings`. (AGENT) – `lib/db/src/__tests__/organizations.test.ts`  

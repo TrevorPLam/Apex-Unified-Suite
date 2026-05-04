@@ -29,9 +29,9 @@ This part covers Frontend Authentication including login/register pages, protect
 
 **Subtasks:**
 - [ ] FRONT‑AUTH‑001.1: Create `Login` page with email, password, and organization fields; handle error states inline. (AGENT) – `artifacts/apex‑os/src/pages/login.tsx`  
-  **verification:** Unit test with mocked auth context – form submission calls `login`, shows error message on failure, redirects on success.
+  **verification:** `npm test -- login.test.tsx` – form submission calls `login`, shows error message on failure, redirects on success.
 - [ ] FRONT‑AUTH‑001.2: Create `Register` page with full‑name, email, password, organization name; handle `DuplicateEmail` error on the email field. (AGENT) – `artifacts/apex‑os/src/pages/register.tsx`  
-  **verification:** Unit test with mocked register function.
+  **verification:** `npm test -- register.test.tsx` – validates form, handles duplicate email error.
 - **Blocks:** FRONT‑AUTH‑002 (protected routes point to login).
 
 ---

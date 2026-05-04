@@ -1,6 +1,6 @@
 # TODO-P5-PROJECTS.md – Projects Frontend Integration
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
+This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of Deep Module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
 
 Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
 
@@ -22,6 +22,14 @@ This part covers Projects Data Integration including core project management, pl
 **Status:** ⏳ Not Started  
 **Depends on:** API‑PROJ‑004 (projects green), API‑PROJ‑008 (tasks green).  
 **Definition of Done:** Project list and task views use `useProjectList` and `useTaskList` hooks. Task status displayed from API. All mock data imports removed.
+
+**DDD:** Projects bounded context with Project aggregate root and Task entity. Project is the aggregate root - tasks exist only within projects. Avoid treating individual tasks as separate aggregates.
+
+**TDD:** Write unit tests for `useProjectList` and `useTaskList` hooks to ensure data fetching and state management work as expected.
+
+**Deep Module:** Projects module encapsulates project lifecycle, task management, and planning features. Clean separation between data fetching (hooks), state management, and UI components. Projects aggregate root maintains consistency across all operations.
+
+**Anti-Patterns:** Avoid using a single, monolithic state management solution. Instead, use a combination of hooks and local state to manage project and task data.
 
 **Subtasks:**
 - [ ] FRONT‑PROJ‑001.1: Create hooks and replace mock projects data. (AGENT)  
@@ -52,7 +60,7 @@ This part covers Projects Data Integration including core project management, pl
 - Empty state when no plans exist.  
 - Error handling for duplicate generation (`RecurringWorkDuplicate`).  
 
-**DDD:** This is the PM Scheduler feature, not an appointment read‑out.  
+**DDD:** Projects bounded context with Project aggregate root and Task entity. Project is the aggregate root - tasks exist only within projects. Avoid treating individual tasks as separate aggregates.PM Scheduler feature, not an appointment read‑out.  
 **Related Files:** `artifacts/apex‑os/src/components/projects/SchedulerTab.tsx`
 
 **Subtasks:**
@@ -194,6 +202,18 @@ This part covers Projects Data Integration including core project management, pl
 - Milestone completion (action button → `useUpdateMilestone` mutation).  
 - Time entry log (form → `useCreateTimeEntry` mutation, invalidates budget view).  
 - All mutations show toast feedback on success/failure.
+
+**DDD:** Projects bounded context with aggregate root patterns. Interactive features maintain aggregate consistency - mutations go through proper domain services rather than direct database access.
+
+**TDD:** Unit tests for each mutation hook with optimistic update behavior. Integration tests verify complete user interaction flows from UI click to API response to UI update.
+
+**Deep Module:** Interactive features module encapsulates all user action handling, providing clean separation between UI components and business logic. Centralized mutation handling with consistent error patterns.
+
+**Anti-Patterns:** 
+- Don't bypass optimistic updates for better UX
+- Don't ignore loading states during mutations
+- Don't skip error handling and user feedback
+- Don't create tight coupling between UI components and API structure
 
 **Subtasks:**
 - [ ] FRONT‑INT‑PROJ.1: Wire `useUpdateTask` to task checkboxes and status dropdowns. (AGENT)  

@@ -55,7 +55,13 @@ This file covers the foundational services needed for Phase 4: Email Service w
 - `EmailTemplateEngine` class that renders templates with variable substitution using Handlebars or simple string interpolation.  
 - Template registry that maps template IDs to template files.  
 - Unit tests for each template rendering with sample data.  
-- Integration with `EmailServicePort.sendTemplate()` method.
+- Integration with `EmailServicePort.sendTemplate()` method.  
+**Deep Module:** Encapsulates template rendering logic, variable substitution, and template registry management.  
+**Advanced Code Patterns:** Template engine pattern, registry pattern, proper separation of concerns.  
+**Anti-Patterns:** Avoid hardcoded templates, prevent injection vulnerabilities.  
+**Rules to Follow:** Always validate template variables, escape user input, maintain template versioning.  
+**Out of Scope:** Dynamic template creation, user-defined templates.  
+**Verification:** `pnpm test -- email-templates && pnpm typecheck`
 
 **Templates Required:**
 - `magic-link`: Sends login link with expiry time
@@ -65,8 +71,8 @@ This file covers the foundational services needed for Phase 4: Email Service w
 **Subtasks:**
 - [ ] EMAIL‑TEMPLATES‑001.1: Create template engine and registry. (AGENT) – `template-engine.ts`  
   **verification:** `pnpm typecheck`.
-- [ ] EMAIL‑TEMPLATES‑001.2: Implement magic-link template. (AGENT) – `templates/magic-link.ts`  
-  **verification:** Unit test renders with sample data.
+- [ ] EMAIL‑TEMPLATES‑001.2: Implement magic-link template with proper validation. (AGENT) – `templates/magic-link.ts`  
+  **verification:** Unit test renders with sample data, validates required variables.
 - [ ] EMAIL‑TEMPLATES‑001.3: Implement appointment confirmation template. (AGENT) – `templates/appointment-confirmation.ts`  
   **verification:** Unit test passes.
 - [ ] EMAIL‑TEMPLATES‑001.4: Implement appointment cancellation template. (AGENT) – `templates/appointment-cancellation.ts`  

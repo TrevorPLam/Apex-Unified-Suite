@@ -21,7 +21,9 @@ This part covers Portal Data Integration including firm-side management and clie
 ### [ ] FRONT‑PORTAL‑001a: Firm‑Side Portal Management – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** API‑PORTAL‑004 (portal API green).  
-**Definition of Done:** Firm‑side portal management pages use firm‑side hooks (`useClientList`, `usePortalUpdate`, `useGrantPermission`, etc.). Enable/disable portal per client, manage permissions, branding config, view messages.  
+**Definition of Done:** Firm‑side portal management pages use firm‑side hooks (`useClientList`, `usePortalUpdate`, `useGrantPermission`, etc.). Enable/disable portal per client, manage permissions, branding config, view messages. All mock data imports completely removed from Portal components and hooks. Component tests pass with MSW mocks. Manual testing confirms portal management and client access work correctly.
+
+**Deep Module:** Portal frontend module encapsulates client management, permission handling, and messaging functionality. The module provides a unified interface for portal operations while hiding the complexity of multi-tenant access control, authentication flows, and real-time messaging behind React Query hooks and well-organized components.  
 **Related Files:** `artifacts/apex-os/src/pages/PortalManagement.tsx`
 
 **Subtasks:**
@@ -34,7 +36,9 @@ This part covers Portal Data Integration including firm-side management and clie
 ### [ ] FRONT‑PORTAL‑001b: Client‑Side Portal Access – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** FRONT‑AUTH‑003 (portal auth), API‑PORTAL‑004.  
-**Definition of Done:** Client‑side portal pages (under portal auth guard): dashboard, projects list, invoices, documents, messages. All use client‑side hooks.  
+**Definition of Done:** Client‑side portal pages (under portal auth guard): dashboard, projects list, invoices, documents, messages. All use client‑side hooks. All mock data imports completely removed from client portal components. Component tests pass with MSW mocks. Manual testing confirms client portal functionality and access controls work correctly.
+
+**Deep Module:** Client portal module encapsulates client-specific data access, resource viewing, and messaging within permission boundaries. The module provides a secure interface for client operations while enforcing access controls and hiding the complexity of multi-tenant data isolation behind React Query hooks and permission-aware components.  
 **Related Files:** `artifacts/apex-os/src/pages/portal/ClientDashboard.tsx`
 
 **Subtasks:**
@@ -47,7 +51,21 @@ This part covers Portal Data Integration including firm-side management and clie
 ### [ ] FRONT‑INT‑PORTAL: Portal Interactive Features Wiring
 **Status:** ⏳ Not Started  
 **Depends on:** FRONT‑PORTAL‑001a, FRONT‑PORTAL‑001b.  
-**Definition of Done:** Wiring: firm sends message, client replies (mutations with refetch), permission granting forms, branding config updates. Toast feedback for all.
+**Definition of Done:** Wiring: firm sends message, client replies (mutations with refetch), permission granting forms, branding config updates. Toast feedback for all. All interactive features tested with MSW mocks. Error handling provides clear user feedback. Permission boundaries enforced correctly.
+
+**Deep Module:** Portal interactive features module encapsulates all user interactions, mutation handling, and permission management. The module provides a unified interface for portal operations while hiding the complexity of multi-tenant permissions, real-time messaging, and access control behind well-defined hooks and components.
+
+**TDD:** Integration tests with MSW verify all interactive features work correctly. Tests cover messaging, permission management, branding updates, and access control enforcement. Each interaction is tested for both success and error paths, including permission boundary violations.
+
+**Anti-Patterns (Frontend):**
+- Manual state management instead of React Query
+- Missing permission checks before operations
+- Direct API calls without access control
+- Unhandled mutation errors
+- Inconsistent error handling patterns
+- Not invalidating queries after successful mutations
+- Missing loading states during portal operations
+- Hardcoded permission logic instead of centralized checks
 
 **Subtasks:**
 - [ ] FRONT‑INT‑PORTAL.1: Wire message send/reply mutations. (AGENT)  

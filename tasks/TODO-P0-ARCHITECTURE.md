@@ -40,9 +40,17 @@ This document contains architecture-focused tasks that define boundaries, scope 
 **Depends on:** DOMAIN-003.4  
 **Related Files:** `docs/bounded-contexts.md`, `docs/features/documents.feature`
 
-**DDD:** E-Sign V1 is implemented as an integration adapter within the Documents bounded context, not a standalone context. Delegates to third-party provider (SignWell).  
-**TDD:** N/A – scope decision.  
-**BDD:** E-Sign scenarios added to `documents.feature`.  
+**Advanced Code Patterns:** Integration adapter pattern; third-party API abstraction; configuration-driven provider selection; async signature request lifecycle management.
+**Anti-Patterns:** Direct API calls to third-party services; hardcoded provider credentials; synchronous signature operations; lack of fallback mechanisms.
+**Rules to Follow:**
+- All E-Sign operations must go through integration adapter
+- Provider credentials must be stored in configuration, not code
+- Signature status must be tracked locally
+- All external API calls must be retryable with exponential backoff
+
+**DDD:** E-Sign V1 is implemented as an integration adapter within the Documents bounded context, not a standalone context. Delegates to third-party provider (SignWell).
+**TDD:** N/A – scope decision.
+**BDD:** E-Sign scenarios added to `documents.feature`.
 **Deep Module:** N/A – integration adapter pattern.
 
 ### Subtasks:
@@ -95,9 +103,17 @@ This document contains architecture-focused tasks that define boundaries, scope 
 **Depends on:** DOMAIN-002  
 **Related Files:** `docs/adr/008-real-time-notification-strategy.md`, `docs/adr/009-cross-module-search-strategy.md`, `docs/adr/010-import-export-strategy.md`
 
-**DDD:** Infrastructure services must be designed as bounded-context ports; the ADRs ensure consistency across all business contexts.  
-**TDD:** N/A – documentation task.  
-**BDD:** N/A – infrastructure concern.  
+**Advanced Code Patterns:** Strategy pattern for notification delivery; observer pattern for event-driven notifications; connection pooling for WebSocket connections; message queue for async processing.
+**Anti-Patterns:** Blocking notification delivery; mixed concerns (notification logic embedded in business logic); lack of delivery guarantees; no dead letter queue handling.
+**Rules to Follow:**
+- All notifications must be asynchronous
+- Delivery failures must be logged and retried
+- Real-time notifications must fallback to polling
+- Notification content must be template-driven
+
+**DDD:** Infrastructure services must be designed as bounded-context ports; the ADRs ensure consistency across all business contexts.
+**TDD:** N/A – documentation task.
+**BDD:** N/A – infrastructure concern.
 **Deep Module:** The chosen strategies will become deep modules (e.g., WebSocket gateway hiding connection management).
 
 ### Subtasks:
@@ -125,9 +141,17 @@ This document contains architecture-focused tasks that define boundaries, scope 
 **Blocked By:** DOMAIN-002 (context map established)  
 **Related Files:** `docs/adr/005-api-versioning.md`  
 
-**DDD:** API versioning is a cross-cutting concern that enables bounded context evolution without breaking contracts.  
-**TDD:** N/A – architectural decision.  
-**BDD:** N/A – infrastructure concern.  
+**Advanced Code Patterns:** API gateway pattern; version negotiation; backward compatibility layers; automated API documentation generation; contract testing.
+**Anti-Patterns:** Breaking changes without version bump; mixing versions in same endpoint; lack of deprecation policy; manual documentation updates.
+**Rules to Follow:**
+- All API endpoints must include version prefix
+- Breaking changes require new version
+- Old versions must be maintained for at least one major version
+- API contracts must be automatically documented
+
+**DDD:** API versioning is a cross-cutting concern that enables bounded context evolution without breaking contracts.
+**TDD:** N/A – architectural decision.
+**BDD:** N/A – infrastructure concern.
 **Deep Module:** N/A.
 
 ### Subtasks:
@@ -154,9 +178,17 @@ This document contains architecture-focused tasks that define boundaries, scope 
 **Definition of Done:** ADR accepted, base repository implemented, organizations table defined, all Phase 2 schema tasks updated with `organization_id` column requirement (including identity tables).  
 **Related Files:** `docs/adr/001-multi-tenancy.md`, `lib/db/src/repositories/base-repository.ts`  
 
-**DDD:** Multi‑tenancy is a cross‑cutting architectural concern. The shared‑schema approach keeps all tenant data in one database while enforcing isolation via `organization_id` filters. Every bounded context must respect this column.  
-**TDD:** Repository tests must verify that all queries are automatically scoped to the current tenant.  
-**BDD:** N/A – infrastructure concern.  
+**Advanced Code Patterns:** Repository pattern with automatic tenant scoping; generic CRUD operations; unit of work pattern for transaction management.
+**Anti-Patterns:** Direct database queries without tenant filtering; manual organization_id handling in every query; repository methods that return raw database rows instead of domain entities.
+**Rules to Follow:**
+- All repositories must extend BaseRepository
+- Tenant filtering must be automatic and transparent
+- Repository methods must return domain objects, not raw database rows
+- All database operations must be transactional
+
+**DDD:** Multi‑tenancy is a cross‑cutting architectural concern. The shared‑schema approach keeps all tenant data in one database while enforcing isolation via `organization_id` filters. Every bounded context must respect this column.
+**TDD:** Repository tests must verify that all queries are automatically scoped to the current tenant.
+**BDD:** N/A – infrastructure concern.
 **Deep Module:** The `BaseRepository` is a deep module – simple interface hiding complex tenant‑scoping logic.
 
 ### Subtasks:

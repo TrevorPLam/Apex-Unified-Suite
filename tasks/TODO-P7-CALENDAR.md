@@ -39,18 +39,20 @@ This document contains calendar integration tasks for Google Calendar, Microsoft
 **Out of Scope:**
 - Google Meet integration (handled in INT-VIDEO-003)
 - Google Drive integration (handled in INT-STORAGE-001)
+- Google Workspace admin features and bulk operations
 
 **Rules to Follow:**
-- Use Google Calendar API v3 with proper error handling
-- Implement exponential backoff for rate limits
-- Store OAuth tokens securely with refresh token rotation
-- Follow Google API quota limits (10,000 queries/day per user)
+- Google Calendar API v3: Use proper error handling with exponential backoff for rate limits
+- OAuth Security: Implement PKCE flow with secure token storage and automatic refresh
+- Sync Strategy: Use incremental sync with conflict resolution based on priority rules
+- Quota Management: Respect Google API limits (10,000 queries/day per user) with intelligent batching
+- Webhook Security: Verify webhook signatures and filter events to prevent unnecessary syncs
 
-**Advanced Code Patterns:**
-- OAuth 2.0 PKCE flow for secure authentication
-- Webhook signature verification for Google push notifications
-- Incremental sync using sync tokens
-- Batch API calls for efficiency
+**Deep Module:**
+- Google Calendar API integration with OAuth 2.0 PKCE authentication flow
+- Real-time sync engine with conflict resolution and priority rules
+- Webhook processing pipeline with event filtering and routing
+- Rate limiting and quota management with intelligent backoff strategies
 
 **Anti-Patterns:**
 - Don't store access tokens in localStorage
@@ -92,13 +94,13 @@ curl -X POST http://localhost:8081/integrations/google/calendar/test-oauth
 
 **Subtasks:**
 - [ ] INT‑CALENDAR‑001.1: Implement Google OAuth 2.0 flow with PKCE. (AGENT) – `integrations/google/oauth.ts`  
-  **verification:** OAuth flow works in development with test credentials.
+  **verification:** Unit tests pass for OAuth flow with test credentials.
 - [ ] INT‑CALENDAR‑001.2: Implement Google Calendar API client with CRUD operations. (AGENT) – `integrations/google/calendar-client.ts`  
-  **verification:** Calendar events can be created, updated, and deleted.
+  **verification:** Unit tests pass for calendar event operations.
 - [ ] INT‑CALENDAR‑001.3: Add webhook handler for Google Calendar push notifications. (AGENT) – `integrations/google/webhooks.ts`  
-  **verification:** Webhook events are processed and trigger sync operations.
+  **verification:** Unit tests pass for webhook event processing.
 - [ ] INT‑CALENDAR‑001.4: Implement rate limiting and error handling for Google API. (AGENT)  
-  **verification:** Rate limits are respected and errors are handled gracefully.
+  **verification:** Unit tests pass for rate limiting and error scenarios.
 
 ### [ ] INT‑CALENDAR‑002: Microsoft Graph Calendar Integration
 **Status:** ⏳ Not Started  
@@ -115,16 +117,17 @@ curl -X POST http://localhost:8081/integrations/google/calendar/test-oauth
 - OneDrive integration (handled in INT-STORAGE-001)
 
 **Rules to Follow:**
-- Use Microsoft Graph API v1.0 with proper error handling
-- Implement Microsoft identity platform OAuth 2.0 flow
-- Handle Microsoft API pagination correctly
-- Follow Microsoft API rate limits and throttling
+- Microsoft Graph API v1.0: Use proper error handling with throttling response management
+- Identity Platform: Implement OAuth 2.0 flow with proper token caching and refresh
+- Pagination: Handle Microsoft API pagination correctly with @odata.nextLink
+- Rate Limiting: Follow Microsoft API throttling with retry-after header handling
+- Webhook Security: Validate Microsoft Graph webhooks with proper signature verification
 
-**Advanced Code Patterns:**
-- Microsoft identity platform OAuth 2.0 flow
-- Graph API batch requests for efficiency
-- Delta query for incremental sync
-- Microsoft Graph webhook processing
+**Deep Module:**
+- Microsoft Graph API integration with identity platform authentication
+- Outlook calendar sync engine with Teams meeting integration
+- Delta query implementation for incremental sync efficiency
+- Microsoft-specific event mapping and feature handling
 
 **Anti-Patterns:**
 - Don't ignore Microsoft API throttling responses
@@ -166,13 +169,13 @@ curl -X POST http://localhost:8081/integrations/microsoft/calendar/test-oauth
 
 **Subtasks:**
 - [ ] INT‑CALENDAR‑002.1: Implement Microsoft identity OAuth flow. (AGENT) – `integrations/microsoft/oauth.ts`  
-  **verification:** Microsoft OAuth flow works with Azure AD test app.
+  **verification:** Unit tests pass for Microsoft OAuth flow with Azure AD test app.
 - [ ] INT‑CALENDAR‑002.2: Implement Outlook calendar API client. (AGENT) – `integrations/microsoft/calendar-client.ts`  
-  **verification:** Outlook calendar operations work correctly.
+  **verification:** Unit tests pass for Outlook calendar operations.
 - [ ] INT‑CALENDAR‑002.3: Add Microsoft‑specific event mapping and features. (AGENT)  
-  **verification:** Teams meetings and other Microsoft features integrate properly.
+  **verification:** Unit tests pass for Teams meetings and Microsoft features.
 - [ ] INT‑CALENDAR‑002.4: Implement Microsoft Graph webhook handling. (AGENT) – `integrations/microsoft/webhooks.ts`  
-  **verification:** Outlook calendar changes trigger sync operations.
+  **verification:** Unit tests pass for webhook processing and sync triggering.
 
 ### [ ] INT‑CALENDAR‑003: Apple Calendar Integration
 **Status:** ⏳ Not Started  
@@ -247,6 +250,23 @@ curl -X POST http://localhost:8081/integrations/apple/calendar/test-caldav
   **verification:** Apple Calendar events sync correctly.
 - [ ] INT‑CALENDAR‑003.4: Handle Apple‑specific features and limitations. (AGENT)  
   **verification:** Apple Calendar limitations are documented and handled.
+
+---
+
+## Integration Rules Framework
+
+To avoid rules duplication across all integration tasks, the following common rules framework applies:
+
+### **Common Integration Rules**
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+- **Error Handling**: Implement exponential backoff for rate limits and network errors
+- **Security**: Verify webhook signatures and store credentials securely
+- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage
+- **Logging**: Implement structured logging with security-sensitive data redaction
+
+### **Provider-Specific Rules**
+Each integration task should only include rules specific to that provider, not duplicate the common rules above.
 
 ---
 

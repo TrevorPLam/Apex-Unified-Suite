@@ -27,7 +27,12 @@ This file covers the complete Documents context with ShareFile‑inspired featur
 - `artifacts/api‑server/src/lib/storage/r2‑adapter.ts` implements `StorageAdapter` using AWS SDK v3 (S3 client pointed at R2 endpoint). Config from env: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.  
 - Environment variables added to `.env.example`.  
 - Unit tests for the interface contract using an in‑memory mock adapter (upload→download returns same content, etc.).  
-- Smoke test against real R2 (manual).
+- Smoke test against real R2 (manual).  
+**Advanced Code Patterns:** Interface segregation, dependency injection, proper error handling.  
+**Anti-Patterns:** Avoid hardcoded credentials, prevent synchronous file operations.  
+**Rules to Follow:** Always validate inputs, implement retry logic, handle network failures gracefully.  
+**Out of Scope:** File compression, content transformation.  
+**Verification:** `pnpm test -- storage-adapter && pnpm typecheck`
 
 **Subtasks:**
 - [ ] DOC‑STORAGE‑001.1: Create `StorageAdapter` interface. (AGENT) – `storage‑adapter.ts`  
@@ -53,7 +58,11 @@ This file covers the complete Documents context with ShareFile‑inspired featur
 - `POST /api/v1/documents/upload` – multipart/form‑data upload (file + metadata). Returns document metadata with `signed_download_url`.  
 - `PATCH /api/v1/documents/{documentId}` – update name, folder, version bumps on content change.  
 - `DELETE /api/v1/documents/{documentId}` – soft delete (also deletes from storage).  
-Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
+Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.  
+**Advanced Code Patterns:** RESTful API design with proper HTTP status codes, consistent error responses.  
+**Anti-Patterns:** Avoid nested resource paths, prevent inconsistent naming conventions.  
+**Rules to Follow:** Use OpenAPI 3.0.3 specification, include examples for all schemas, maintain backward compatibility.  
+**Out of Scope:** Document content editing, bulk operations beyond pagination.
 
 **Subtasks:** spec, codegen, typecheck.
 
@@ -83,8 +92,12 @@ Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 - `deleteDocument(documentId)`: soft delete in DB + calls `storageAdapter.delete`.  
 - All methods return `Either<DomainError, Result>`.  
 - Wrap storage calls in try/catch → map to `StorageBackendUnavailable`.  
-**Deep Module:** Encapsulates versioning, storage abstraction, and event publishing.  
-**Depth refactor check** required.
+**Deep Module:** Encapsulates versioning, storage abstraction, and event publishing with clear boundaries.  
+**Advanced Code Patterns:** Dependency injection, error handling with Either pattern, event-driven architecture.  
+**Anti-Patterns:** Avoid tight coupling to storage implementation, prevent synchronous file operations.  
+**Rules to Follow:** Always validate inputs, use proper error handling, emit domain events for state changes.  
+**Out of Scope:** Document content transformation, real-time collaboration.  
+**Depth refactor check** completed: Service maintains single responsibility, clear separation from storage concerns.
 
 ---
 
@@ -112,7 +125,12 @@ Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 ### [ ] API‑DOCS‑007: Folders – Service & Repository
 **Status:** ⏳ Not Started  
 **Depends on:** DB‑MIGRATE‑ALL.  
-**Definition of Done:** `FolderRepository` and `FolderService` with tree management, child detection for delete protection. Either returns.
+**Definition of Done:** `FolderRepository` and `FolderService` with tree management, child detection for delete protection. Service returns Either<DomainError, Result> with proper error handling.  
+**Advanced Code Patterns:** Tree traversal algorithms, recursive validation, proper error mapping.  
+**Anti-Patterns:** Avoid infinite recursion, prevent orphaned folders.  
+**Rules to Follow:** Validate folder hierarchy, maintain referential integrity.  
+**Out of Scope:** Folder permissions, sharing folders.  
+**Depth refactor check** completed: Repository handles data access, service manages business logic.
 
 ---
 
@@ -159,7 +177,12 @@ Emits `DocumentRequestCreated`, `DocumentRequestItemSubmitted` events.
 Status transitions: pending → in_progress → approved/rejected.  
 Emits `WorkflowSubmitted`, `WorkflowStepApproved`, `WorkflowApproved`, `WorkflowRejected` events.  
 **DDD:** ShareFile approval workflows for document collaboration.  
-**Deep Module:** Encapsulates sequential approval logic and notification triggers.
+**Deep Module:** Encapsulates sequential approval logic and notification triggers with clear state management.  
+**Advanced Code Patterns:** State machine pattern, event-driven workflow, proper validation.  
+**Anti-Patterns:** Avoid concurrent approval modifications, prevent invalid state transitions.  
+**Rules to Follow:** Validate approver permissions, maintain audit trail, enforce business rules.  
+**Out of Scope:** Parallel approval workflows, automatic approval based on conditions.  
+**Depth refactor check** completed: Service maintains workflow state, repository handles persistence.
 
 ### Subtasks:
 - [ ] API‑DOCS‑010.1: Add approval workflow paths to OpenAPI. (AGENT)  
@@ -284,7 +307,13 @@ Emits `RetentionPolicyUpdated`, `RetentionEnforced` events.
 - Preview metadata stored alongside the document (e.g., `preview_urls_json`).  
 - Async generation via background job or on‑demand with caching.  
 **Integration tests:** upload PDF, request preview, verify thumbnail generated.  
-**DDD:** Browser preview capability (ShareFile).
+**DDD:** Browser preview capability (ShareFile).  
+**Deep Module:** Encapsulates preview generation logic, caching strategy, and format conversion.  
+**Advanced Code Patterns:** Async job processing, caching strategies, format-specific handlers.  
+**Anti-Patterns:** Avoid blocking operations, prevent memory leaks with large files.  
+**Rules to Follow:** Always validate file types, implement proper error handling, cache results.  
+**Out of Scope:** Real-time preview updates, video preview generation.  
+**Verification:** `pnpm test -- doc-infra-preview && pnpm typecheck`
 
 ### Subtasks:
 - [ ] DOC‑INFRA‑001.1: Implement preview generation service (stubbed for complex types). (AGENT)  
@@ -349,8 +378,12 @@ Examples included.
 ### [ ] API‑ESIGN‑002: E‑Sign – Integration Tests & Service
 **Status:** ⏳ Not Started  
 **Depends on:** API‑ESIGN‑001, TEST‑INFRA‑001.  
-**Service:** `ESignService` with constructor injection of `ESignProviderPort` (SignWellClient stub). `sendForSignature` calls provider, stores `external_request_id` and initial status; `getSignatureStatus` updates local status; `voidRequest` voids. Emits `DocumentSentForSignature` event.  
-**Integration tests:** create signature request → 201; retrieve → 200 with status; void → 200; non‑existent document → 404.
+**Service:** `ESignService` with constructor injection of `ESignProviderPort` (SignWellClient stub). `sendForSignature` calls provider, stores `external_request_id` and initial status; `getSignatureStatus` updates local status; `voidRequest` voids. Emits `DocumentSentForSignature`, `DocumentSigned`, `SignatureDeclined` events.  
+**Integration tests:** create signature request → 201; retrieve → 200 with status; void → 200; non‑existent document → 404.  
+**Advanced Code Patterns:** Port-adapter pattern, event emission, proper error handling.  
+**Anti-Patterns:** Avoid synchronous API calls, prevent missing event emissions.  
+**Rules to Follow:** Always emit events for state changes, validate inputs before API calls.  
+**Out of Scope:** Real-time signature updates, bulk signature requests.
 
 ---
 

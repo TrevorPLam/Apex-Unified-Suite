@@ -31,8 +31,21 @@ This part covers the complete Finance context depth features – advanced functi
 Status transitions: draft → issued → applied/void.  
 Emits `CreditMemoCreated`, `CreditMemoApplied` events.  
 **Integration tests:** create memo, apply to invoice (invoice balance reduced), apply exceeding memo amount → 400, void memo, list by customer.  
-**DDD:** Credit memos reduce open invoice balances (Bill.com feature).  
-**Deep Module:** Encapsulates credit lifecycle, application logic, and balance tracking.
+**TDD:** Integration tests drive credit memo lifecycle management and application logic.  
+**BDD:** Covers "Credit memo creation and application" scenarios.  
+**Deep Module:** Encapsulates credit lifecycle, application logic, and balance tracking.  
+
+**Advanced Code Patterns:**  
+- Credit memo application with partial payment support  
+- Transactional credit application ensuring balance consistency  
+- Credit memo status machine with proper validation  
+- Integration with invoice balance calculations  
+
+**Anti-Patterns:**  
+- Allowing credit memo application exceeding available amount  
+- Missing credit memo status validation  
+- Non-atomic credit application operations  
+- Incorrect balance updates during credit application
 
 ### Subtasks:
 - [ ] API‑FIN‑017.1: Add credit memo paths and schemas to OpenAPI. (AGENT)  
@@ -57,8 +70,18 @@ Emits `CreditMemoCreated`, `CreditMemoApplied` events.
 Status transitions: draft → processing → completed/cancelled.  
 Emits `PaymentRunCreated`, `PaymentRunCompleted` events.  
 **Integration tests:** create run with multiple bills, execute, verify all bills paid and payments recorded; attempt to execute with zero bills → 400; cancel a draft run.  
+**TDD:** Integration tests drive batch payment processing and execution logic.  
+**BDD:** Covers "Batch payment processing for multiple bills" scenarios.  
 **DDD:** Bill.com batch payment processing for efficiency.  
-**Deep Module:** Encapsulates multi‑bill payment orchestration and transactional execution.
+**Event Taxonomy Distinction:** Distinguish between `PaymentRunCreated` (orchestration event) and `PaymentRecorded` (individual payment events).  
+**Deep Module:** Encapsulates multi‑bill payment orchestration and transactional execution.  
+
+**Finance Anti-Patterns:**  
+- Non-atomic batch payment execution causing partial payments  
+- Missing payment run validation allowing invalid bill selections  
+- Incorrect bank account balance updates during batch processing  
+- Missing payment run status tracking and error handling  
+- Incomplete audit trail for batch payment operations
 
 ### Subtasks:
 - [ ] API‑FIN‑018.1: Add payment run paths to OpenAPI. (AGENT)  
@@ -81,8 +104,22 @@ Emits `PaymentRunCreated`, `PaymentRunCompleted` events.
 - `PATCH /api/v1/finance/1099‑tracking/{vendorId}/{year}` – update filing status.  
 - `POST /api/v1/finance/1099‑tracking/export` – generate CSV/PDF export for tax filing (stubbed for now).  
 **Integration tests:** refresh totals, verify amounts correct, update filing status, export.  
+**TDD:** Integration tests drive 1099 calculation and filing workflow logic.  
+**BDD:** Covers "1099 tax preparation and filing" scenarios.  
 **DDD:** US tax compliance feature (Bill.com 1099 tracking).  
-**Deep Module:** Encapsulates payment accumulation and filing workflow.
+**Deep Module:** Encapsulates payment accumulation and filing workflow.  
+
+**Advanced Code Patterns:**  
+- Year-to-date payment calculation with vendor filtering  
+- 1099 eligibility determination based on payment types  
+- Configurable filing status workflows  
+- Export generation with proper tax formatting  
+
+**Anti-Patterns:**  
+- Incorrect payment total calculations for 1099 eligibility  
+- Missing vendor eligibility validation  
+- Hard-coded tax year boundaries without configurability  
+- Incomplete export formatting for tax filing requirements
 
 ### Subtasks:
 - [ ] API‑FIN‑019.1: Add 1099 endpoints to OpenAPI. (AGENT)  
@@ -104,8 +141,22 @@ Emits `PaymentRunCreated`, `PaymentRunCompleted` events.
 - `PATCH /api/v1/finance/reconciliation/{entryId}/flag` – flag an unmatched entry for review.  
 - `GET /api/v1/finance/reconciliation/unmatched` – list all unmatched bank transactions.  
 **Integration tests:** match a transaction, flag an entry, list unmatched.  
+**TDD:** Integration tests drive bank reconciliation workflow and matching logic.  
+**BDD:** Covers "Bank reconciliation and transaction matching" scenarios.  
 **DDD:** Reconciliation workflow for financial accuracy (Bill.com feature).  
-**Deep Module:** Encapsulates matching logic and status management.
+**Deep Module:** Encapsulates matching logic and status management.  
+
+**Advanced Code Patterns:**  
+- Transaction matching algorithms with confidence scoring  
+- Manual reconciliation workflow with audit trail  
+- Unmatched transaction management and flagging  
+- Integration with bank feed data processing  
+
+**Anti-Patterns:**  
+- Missing transaction validation allowing incorrect matches  
+- Incomplete audit trail for reconciliation changes  
+- Hard-coded matching rules without flexibility  
+- Missing reconciliation status tracking
 
 ### Subtasks:
 - [ ] API‑FIN‑020.1: Add reconciliation endpoints to OpenAPI. (AGENT)  
@@ -128,8 +179,22 @@ Emits `PaymentRunCreated`, `PaymentRunCompleted` events.
 - `POST /api/v1/finance/ap‑inbox/{captureId}/reject` – mark as error with reason.  
 - `POST /api/v1/finance/ap‑inbox/upload` – manually upload an invoice file for processing (OCR stub).  
 **Integration tests:** list inbox items, process one into a bill, verify bill created with extracted data, reject an item.  
+**TDD:** Integration tests drive AP inbox processing and bill creation workflow.  
+**BDD:** Covers "AP invoice capture and processing" scenarios.  
 **DDD:** Bill.com‑style AP inbox for invoice capture before bill creation.  
-**Deep Module:** Encapsulates capture lifecycle, OCR integration point, and bill creation logic.
+**Deep Module:** Encapsulates capture lifecycle, OCR integration point, and bill creation logic.  
+
+**Advanced Code Patterns:**  
+- Invoice data extraction with confidence scoring  
+- OCR integration with fallback to manual processing  
+- Configurable extraction rules and validation  
+- Integration with bill creation workflows  
+
+**Anti-Patterns:**  
+- Missing data validation allowing incorrect bill creation  
+- Hard-coded extraction rules without vendor adaptation  
+- Incomplete error handling for OCR failures  
+- Missing audit trail for invoice processing
 
 ### Subtasks:
 - [ ] API‑FIN‑021.1: Add AP inbox endpoints to OpenAPI. (AGENT)  
@@ -151,8 +216,22 @@ Emits `PaymentRunCreated`, `PaymentRunCompleted` events.
 - `GET /api/v1/finance/collections‑activity/summary/{customerId}` – summary of all activity for a customer (last contact, promise status, total overdue).  
 Append‑only – no updates, no deletes.  
 **Integration tests:** log a call, log an email, retrieve summary, filter by outcome.  
+**TDD:** Integration tests drive collections activity tracking and summary aggregation.  
+**BDD:** Covers "Collections activity logging and tracking" scenarios.  
 **DDD:** Collections workbench for AR management (Bill.com feature).  
-**Deep Module:** Encapsulates activity logging and summary aggregation.
+**Deep Module:** Encapsulates activity logging and summary aggregation.  
+
+**Advanced Code Patterns:**  
+- Activity aggregation with customer-level summaries  
+- Configurable outcome tracking and reporting  
+- Promise-to-pay tracking with follow-up reminders  
+- Integration with customer communication history  
+
+**Anti-Patterns:**  
+- Missing activity validation allowing incorrect entries  
+- Incomplete summary calculations for customer views  
+- Hard-coded outcome categories without flexibility  
+- Missing follow-up tracking for promises
 
 ### Subtasks:
 - [ ] API‑FIN‑022.1: Add collections activity endpoints to OpenAPI. (AGENT)  
@@ -173,7 +252,17 @@ Append‑only – no updates, no deletes.
 - `PUT /api/v1/finance/customers/{customerId}/payment‑portal‑config` – upsert configuration. Body: `{ allowed_payment_methods_json, auto_pay_enabled, portal_branding_json?, custom_message? }`.  
 - `PATCH /api/v1/finance/customers/{customerId}/payment‑portal‑config` – partial update.  
 **Integration tests:** set config, retrieve, update allowed methods, enable auto‑pay.  
-**DDD:** Bill.com per‑customer payment portal branding and settings.
+**TDD:** Integration tests drive payment portal configuration management.  
+**BDD:** Covers "Payment portal configuration and branding" scenarios.  
+**DDD:** Bill.com per‑customer payment portal branding and settings.  
+**Deep Module:** Encapsulates payment portal configuration and customer-specific settings.  
+
+**Finance Anti-Patterns:**  
+- Missing payment method validation for customer configurations  
+- Insecure storage of payment portal branding assets  
+- Missing PCI compliance considerations for payment portal  
+- Incorrect auto‑pay logic leading to unauthorized payments  
+- Missing payment portal usage analytics and reporting
 
 ### Subtasks:
 - [ ] API‑FIN‑023.1: Add payment portal config endpoints to OpenAPI. (AGENT)  

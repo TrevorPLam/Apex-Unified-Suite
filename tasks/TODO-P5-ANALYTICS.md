@@ -21,7 +21,13 @@ This part covers Analytics & Settings Data Integration including reporting engin
 ### [ ] FRONT‑ANALYTICS‑001: Reports Engine – Replace Mock Data
 **Status:** ⏳ Not Started  
 **Depends on:** API‑ANALYTICS‑001 (reports engine API).  
-**Definition of Done:** Analytics dashboard uses `useReportsEngine` hook. Report builder UI with drag‑and‑drop chart components. Real-time data aggregation across all business contexts. Export functionality (PDF, CSV, Excel). All mock data removed.
+**Definition of Done:** Analytics dashboard uses `useReportsEngine` hook. Report builder UI with drag‑and‑drop chart components. Real-time data aggregation across all business contexts. Export functionality (PDF, CSV, Excel). All mock data removed.  
+**Deep Module:** Encapsulates report generation logic, chart configuration, and data aggregation with clear API boundaries.  
+**Advanced Code Patterns:** Hook-based state management, drag-and-drop UI, chart composition patterns.  
+**Anti-Patterns:** Avoid hardcoded chart types, prevent data leakage between reports.  
+**Rules to Follow:** Always validate report parameters, implement proper error handling, maintain responsive design.  
+**Out of Scope:** Real-time collaboration on reports, advanced custom visualizations.  
+**Verification:** `npm test -- reports-engine.test.tsx && npm run typecheck`
 
 **Subtasks:**
 - [ ] FRONT‑ANALYTICS‑001.1: Create `useReportsEngine` hook with report generation. (AGENT)  

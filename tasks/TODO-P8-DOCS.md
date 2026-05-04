@@ -41,6 +41,28 @@ This file contains enterprise document management features that build on Phase 4
 
 **Note on scope:** This task covers permission matrices, watermarking, DRM, bulk operations, and audit trails. The visual drag‑and‑drop workflow builder is a distinct feature handled by `ENT‑DOCS‑004`. Retention and archival policies are handled by `ENT‑DOCS‑005`.
 
+**Deep Module:** PermissionMatrix, DocumentDRM, and BulkOperations modules form a cohesive security layer. PermissionMatrix provides fine‑grained access control logic, DocumentDRM implements browser‑level protection mechanisms, and BulkOperations coordinates mass document actions while maintaining security constraints. These modules share security policies and audit logging infrastructure.
+
+**Advanced Code Patterns:**
+- **Policy Engine Pattern:** Centralized permission evaluation with pluggable rule sets for role, document type, and time-based access.
+- **Decorator Pattern:** DRM controls applied as decorators around document access methods without modifying core document logic.
+- **Observer Pattern:** Audit trail observers automatically log all document access events across all security modules.
+- **Command Pattern:** Bulk operations encapsulated as commands with rollback capability and progress tracking.
+
+**Anti‑Patterns:**
+- **Security Bypass:** Never expose direct file system access; always route through permission checks.
+- **Hardcoded DRM Rules:** Avoid browser‑specific DRM implementations; use feature detection and graceful degradation.
+- **Synchronous Bulk Operations:** Never block the UI thread for bulk operations; always use async processing with progress callbacks.
+- **Audit Trail Gaps:** Ensure every security decision point triggers appropriate audit logging.
+
+**Rules to Follow:**
+- All document access must pass through PermissionMatrix validation before any operation.
+- Watermarking must be applied server‑side for downloads and client‑side for viewer rendering.
+- DRM controls must work across all supported browsers with consistent behavior.
+- Bulk operations must implement progress tracking and error recovery mechanisms.
+- Audit trails must capture user identity, timestamp, action type, and document metadata for all events.
+- Security policies must be version‑controlled and auditable for compliance requirements.
+
 **Subtasks:**
 - [ ] ENT‑DOCS‑001.1: Implement advanced permission matrix UI and backend enforcement. (AGENT) – `src/components/documents/enterprise/PermissionMatrix.tsx`  
   **verification:** Permission matrices control access precisely; role‑based, time‑based, and document‑type‑based rules enforced.
@@ -66,6 +88,28 @@ This file contains enterprise document management features that build on Phase 4
 - Performance analytics for workflow efficiency and optimisation.
 
 **Note on scope:** This task covers structured approval workflows and template‑based automation. The visual drag‑and‑drop workflow builder (no‑code design surface) is a distinct feature handled by `ENT‑DOCS‑004`.
+
+**Deep Module:** WorkflowEngine, NotificationEngine, and TemplateManager modules provide comprehensive workflow automation. WorkflowEngine handles state machine logic and conditional routing, NotificationEngine manages multi‑channel notifications with escalation rules, and TemplateManager provides version‑controlled workflow patterns. These modules share workflow state and event infrastructure.
+
+**Advanced Code Patterns:**
+- **State Machine Pattern:** Workflow states and transitions managed through a centralized state machine with persistence.
+- **Strategy Pattern:** Notification strategies (email, SMS, in‑app) pluggable per workflow step.
+- **Template Method Pattern:** Workflow templates define the skeleton structure with customizable approval logic.
+- **Event Sourcing Pattern:** All workflow events stored for audit trails and replay capability.
+
+**Anti‑Patterns:**
+- **Workflow Deadlocks:** Design workflows to prevent circular dependencies and unreachable states.
+- **Notification Spam:** Implement rate limiting and consolidation for workflow notifications.
+- **Template Conflicts:** Ensure template versioning prevents breaking changes to active workflows.
+- **Hardcoded Routing:** Avoid hardcoding approval paths; use configurable rule engines.
+
+**Rules to Follow:**
+- All workflow state changes must be logged with user context and timestamps.
+- Notification delivery must be tracked with retry logic and escalation paths.
+- Workflow templates must support backward compatibility and version migration.
+- Integration events must be idempotent and handle cross‑system failures gracefully.
+- Workflow analytics must track completion rates, bottlenecks, and performance metrics.
+- Approval workflows must support parallel and sequential approval patterns with proper conflict resolution.
 
 **Subtasks:**
 - [ ] ENT‑DOCS‑002.1: Implement custom approval workflows with conditional routing. (AGENT) – `src/components/documents/workflows/ApprovalWorkflows.tsx`  
@@ -122,6 +166,28 @@ This file contains enterprise document management features that build on Phase 4
 **TDD:** Component test validating that dragging and connecting steps produces a valid workflow definition.  
 **BDD:** "As an administrator, I can visually design a custom document workflow without code."
 
+**Deep Module:** WorkflowCanvas, StepLibrary, and ConnectionValidator modules create a comprehensive visual workflow designer. WorkflowCanvas manages the drag‑and‑drop interface and visual representation, StepLibrary provides reusable workflow components with metadata, and ConnectionValidator ensures workflow graph validity and prevents invalid connections. These modules share workflow definition schemas and validation rules.
+
+**Advanced Code Patterns:**
+- **Composite Pattern:** Workflow steps composed into hierarchical structures with parent‑child relationships.
+- **Command Pattern:** Canvas actions (drag, connect, delete) implemented as undoable commands.
+- **Visitor Pattern:** Workflow validation and simulation implemented as visitors traversing the workflow graph.
+- **Factory Pattern:** Step library creates appropriate step components based on type metadata.
+
+**Anti‑Patterns:**
+- **Canvas Performance Issues:** Implement virtualization for large workflow graphs to maintain UI responsiveness.
+- **Invalid Workflows:** Prevent creation of workflows with unreachable steps or infinite loops.
+- **Memory Leaks:** Properly clean up canvas event listeners and component references.
+- **Loss of Draft Work:** Auto‑save workflow drafts with conflict resolution for concurrent editing.
+
+**Rules to Follow:**
+- All workflow steps must have unique identifiers and clear input/output contracts.
+- Canvas rendering must maintain 60fps performance with workflows up to 100 steps.
+- Workflow validation must prevent cycles and ensure all steps are reachable.
+- Step connections must validate type compatibility and data flow requirements.
+- Preview simulations must use sample data without affecting production workflows.
+- Published workflows must undergo comprehensive validation before activation.
+
 **Subtasks:**
 - [ ] ENT‑DOCS‑004.1: Build the visual workflow designer canvas with drag‑and‑drop step library. (AGENT) – `src/components/documents/workflows/WorkflowBuilder.tsx`  
   **verification:** Steps can be dragged onto canvas, connected, and reordered.
@@ -147,6 +213,28 @@ This file contains enterprise document management features that build on Phase 4
 **DDD:** Compliance and data lifecycle management within the Documents bounded context (ShareFile retention feature).  
 **TDD:** Integration test verifying that a retention policy correctly deletes expired files and logs the action.  
 **BDD:** "As a compliance officer, I can set retention policies to automatically manage document lifecycle."
+
+**Deep Module:** RetentionPolicyEngine, ComplianceHoldManager, and ArchiveScheduler modules provide comprehensive document lifecycle management. RetentionPolicyEngine evaluates and applies retention rules with inheritance logic, ComplianceHoldManager manages legal holds and preservation requirements, and ArchiveScheduler coordinates background archival tasks. These modules share policy evaluation infrastructure and audit logging.
+
+**Advanced Code Patterns:**
+- **Rule Engine Pattern:** Retention rules evaluated through a configurable rule engine with priority ordering.
+- **Chain of Responsibility:** Policy evaluation chain supports inheritance, overrides, and exception handling.
+- **Observer Pattern:** Archive events trigger notifications and audit logging across multiple stakeholders.
+- **Scheduler Pattern:** Background tasks scheduled with configurable intervals and retry logic.
+
+**Anti‑Patterns:**
+- **Data Loss:** Never delete documents without comprehensive logging and preview capabilities.
+- **Performance Impact:** Batch retention operations must not impact system performance during business hours.
+- **Policy Conflicts:** Detect and resolve conflicting retention policies before enforcement.
+- **Legal Hold Violations:** Ensure compliance holds override all other retention policies without exception.
+
+**Rules to Follow:**
+- All retention policy changes must be approved and logged with compliance officer sign‑off.
+- Archive operations must preserve document metadata and access logs for regulatory requirements.
+- Policy inheritance must support explicit overrides with clear audit trails.
+- Compliance holds must require multi‑factor authorization for removal or modification.
+- Background enforcement must implement exponential backoff for failed operations.
+- Retention preview must show exact impact analysis before policy enforcement.
 
 **Subtasks:**
 - [ ] ENT‑DOCS‑005.1: Build retention policy management interface (create, edit, delete policies per folder). (AGENT) – `src/components/documents/enterprise/RetentionPolicyManager.tsx`  

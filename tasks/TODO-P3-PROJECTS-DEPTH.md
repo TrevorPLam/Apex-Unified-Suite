@@ -32,14 +32,55 @@ All operations scoped to the authenticated user. Emits `MyWeekUpdated` event.
 **DDD:** Per‑user planning state, separate from canonical task status (PROJ‑DOM‑003).  
 **Deep Module:** Encapsulates personal planning logic, carry‑over rules, and ordering.
 
+**Rules to Follow:**
+- All operations scoped to authenticated user
+- Personal planning separate from task status
+- Carry-over logic respects task completion
+- Ordering preserved within buckets
+- Event emission for planning changes
+
+**Advanced Code Patterns:**
+- User-scoped data isolation
+- Planning bucket state machine
+- Event-driven carry-over automation
+- Ordering preservation algorithms
+
+**Anti-Patterns:**
+- Mixing planning state with task status
+- Global planning data (not user-scoped)
+- Manual carry-over without automation
+- Missing event emission
+
+**TDD:** Write failing integration tests before implementation. Tests must verify all planning operations, carry-over logic, and event emission.  
+**BDD:** Enables "As a user, I can plan my week and carry over incomplete tasks" scenarios.
+
 ### Subtasks:
 - [ ] API‑PROJ‑013.1: Add My Week endpoints to OpenAPI spec. (AGENT)  
-  **verification:** Codegen passes.
-- [ ] API‑PROJ‑013.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑013.3: Implement `MyWeekService` and repository. (AGENT)  
+  **verification:** Spec validates; codegen passes.
+- [ ] API‑PROJ‑013.2: Write integration tests (red). (AGENT) – `artifacts/api-server/__tests__/api/projects/my-week.test.ts`  
+  **verification:** Tests fail (no implementation).
+- [ ] API‑PROJ‑013.3: Implement `MyWeekService` and repository. (AGENT) – `services/projects/my-week-service.ts`  
   **verification:** Unit tests pass.
-- [ ] API‑PROJ‑013.4: Create routes, run tests to green. (AGENT)
+- [ ] API‑PROJ‑013.4: Create routes, run tests to green. (AGENT) – `routes/projects/my-week.ts`  
+  **verification:** All tests pass.
+
+**Rules to Follow:**
+- All subtasks must have specific file paths
+- Tests must fail before implementation (TDD red phase)
+- Service encapsulates planning logic complexity
+- Event emission verified in tests
+
+**Advanced Code Patterns:**
+- TDD red-green-refactor cycle
+- Service layer encapsulation
+- Event-driven architecture
+- User-scoped data access
+
+**Anti-Patterns:**
+- Missing file paths in subtasks
+- Writing implementation before tests
+- Shallow service without encapsulation
+- Missing event emission tests
 
 ---
 
@@ -56,6 +97,27 @@ All operations scoped to the authenticated user. Emits `MyWeekUpdated` event.
 **Integration tests:** create lanes, move task between lanes, reorder within lane, delete lane (tasks reassigned).  
 **DDD:** Board lanes and queue behaviour are core PM workflow (PROJ‑DOM‑002).  
 **Deep Module:** Service hides lane management and complex reordering logic.
+
+**Rules to Follow:**
+- Lane operations must preserve task integrity
+- Position updates must be atomic
+- Queue lanes enforce ownership rules
+- Soft delete for lanes (tasks preserved)
+- Bulk reorder operations transactional
+
+**Advanced Code Patterns:**
+- Board state management
+- Atomic position updates
+- Queue ownership enforcement
+- Transactional bulk operations
+
+**Anti-Patterns:**
+- Non-atomic position updates
+- Hard deletion of lanes with tasks
+- Missing queue ownership validation
+- Inconsistent board state
+
+**TDD:** Write failing integration tests before implementation. Tests must cover lane creation, task movement, bulk reordering, and queue behavior.
 
 ### Subtasks:
 - [ ] API‑PROJ‑014.1: Add board endpoints to OpenAPI. (AGENT)  

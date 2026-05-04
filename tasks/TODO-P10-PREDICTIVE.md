@@ -60,8 +60,48 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - The model feeds into the waitlist automation: high no‑show probability appointments can be proactively double‑booked with waitlist invitees.
 
 **DDD:** The no‑show prediction model is owned by the Appointments bounded context; it consumes data from `no_show_log` and `appointments` tables.  
-**TDD:** Unit test for the risk scoring model with known training data; verify that high‑risk clients from seed data receive higher scores.  
+**TDD:** Unit test for the risk scoring model with known training data; integration test verifying that overbooking recommendations maximize utilisation without excessive double‑booking; performance test verifying predictions complete within 2 seconds.  
 **BDD:** "As a service provider, the system predicts which appointments are likely to be no‑shows so I can proactively manage my schedule."
+
+**Deep Module:** No-show prediction system with machine learning models, risk scoring, overbooking optimization, and behavior analysis. The module encapsulates prediction algorithms, risk assessment patterns, overbooking strategies, and client behavior tracking while providing simple interfaces for appointment scheduling optimization.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different prediction models (logistic regression, random forest, neural networks)
+- Observer pattern for prediction result notifications
+- Factory pattern for creating risk scoring models per appointment type
+- Command pattern for overbooking optimization commands
+- Machine learning integration for adaptive prediction models
+- Event-driven architecture for prediction workflows
+
+**Anti-Patterns:**
+- Do not rely on single prediction model without ensemble methods
+- Avoid overfitting models to recent appointment patterns
+- Do not ignore confidence intervals when making scheduling decisions
+- Avoid training models on biased or unrepresentative appointment data
+- Do not cache prediction scores without proper invalidation
+
+**Advanced Code Patterns:**
+- Repository pattern for prediction data persistence
+- State machine for prediction lifecycle management
+- Decorator pattern for adding prediction to appointment operations
+- Caching strategies for prediction model optimization
+- Queue management for batch prediction updates
+- Feedback loop implementation for model improvement
+
+**Anti-Patterns:**
+- Do not block appointment operations with synchronous predictions
+- Avoid storing sensitive client data in prediction logs
+- Do not ignore user feedback on prediction accuracy
+- Avoid complex prediction rules without clear business value
+- Do not bypass overbooking limits for any user role
+
+**Rules to Follow:**
+- Predictions must complete within 2 seconds for standard appointment datasets
+- Risk scores must be displayed to users for all appointment predictions
+- Model accuracy must be validated monthly against actual no-show data
+- Overbooking recommendations must respect capacity constraints
+- All prediction features must work offline with cached models
+- Manual overrides must always be available for scheduling decisions
 
 **Subtasks:**
 - [ ] PREDICT‑002.1: Implement no‑show prediction models trained on historical appointment and no‑show log data. (AGENT) – `src/analytics/noshow/NoShowPrediction.tsx`  

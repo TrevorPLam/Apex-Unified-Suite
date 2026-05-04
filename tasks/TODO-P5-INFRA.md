@@ -78,13 +78,13 @@ This part covers Frontend Infrastructure including React Query configuration, er
 
 **Subtasks:**
 - [ ] FRONT‑INFRA‑003.1: Create MSW handlers for auth endpoints (register, login, refresh, logout). (AGENT) – `src/mocks/handlers.ts`  
-  **verification:** Handlers return proper mock responses matching OpenAPI schema.
+  **verification:** `npm test -- auth-handlers.test.ts` - handlers return proper mock responses matching OpenAPI schema.
 - [ ] FRONT‑INFRA‑003.2: Set up MSW server configuration for browser and node environments. (AGENT) – `src/mocks/server.ts`  
-  **verification:** Server starts and stops correctly in test setup.
+  **verification:** `npm test -- msw-server.test.ts` - server starts and stops correctly in test setup.
 - [ ] FRONT‑INFRA‑003.3: Configure MSW in test setup file (`setupTests.ts`). (AGENT)  
-  **verification:** Component tests can run with mocked API responses.
+  **verification:** `npm test -- msw-setup.test.tsx` - component tests can run with mocked API responses.
 - [ ] FRONT‑INFRA‑003.4: Add mock handlers for key business endpoints (CRM leads, projects, invoices, appointments). (AGENT)  
-  **verification:** Integration tests with MSW pass without real backend.
+  **verification:** `npm test -- business-handlers.test.ts` - integration tests with MSW pass without real backend.
 - **Blocks:** All Phase 5 integration testing tasks (FRONT‑INT‑* series).
 
 ---

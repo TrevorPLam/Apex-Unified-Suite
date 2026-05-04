@@ -41,6 +41,46 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **TDD:** Unit test with known lead data verifying that engaging leads score higher than inactive leads.  
 **BDD:** "As a sales rep, I can see which leads are hot based on their engagement score and prioritise my outreach."
 
+**Deep Module:** Lead scoring and health scoring engine with configurable models, real-time scoring updates, and historical tracking. The module encapsulates scoring algorithms, factor weighting systems, score visualization, and scoring history management while providing simple interfaces for CRM intelligence features.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different scoring models (demographic, engagement, behavioral)
+- Observer pattern for real-time score updates on relevant events
+- Factory pattern for creating configurable scoring rules
+- Command pattern for scoring rule configuration changes
+- Machine learning integration for adaptive scoring models
+- Event-driven architecture for score recalculation triggers
+
+**Anti-Patterns (AI):**
+- Do not train scoring models on biased historical data
+- Avoid black box scoring - always provide factor breakdowns
+- Do not ignore concept drift in scoring model performance
+- Avoid overfitting scoring models to specific time periods
+- Do not use scoring models without regular validation
+
+**Advanced Code Patterns:**
+- Repository pattern for scoring data persistence
+- State machine for score lifecycle management
+- Adapter pattern for different ML model providers
+- Decorator pattern for adding scoring features to CRM entities
+- Visitor pattern for score calculation across different entity types
+- Caching strategies for high-frequency scoring operations
+
+**Anti-Patterns:**
+- Avoid synchronous scoring calculations that block UI
+- Do not cache scores without proper invalidation
+- Avoid hard-coded scoring factors in business logic
+- Do not ignore user feedback on score accuracy
+- Avoid complex scoring rules without admin interface
+
+**Rules to Follow:**
+- All scoring models must be explainable with factor breakdowns
+- Score updates must complete within 500ms of triggering events
+- Scoring rules must be configurable by non-technical admins
+- Historical scoring data must be retained for at least 2 years
+- Score accuracy must be validated quarterly against business outcomes
+- All scoring features must work offline with cached models
+
 **Subtasks:**
 - [ ] AI‑CRM‑001.1: Implement lead scoring engine with configurable factors and weights. (AGENT) – `services/crm/lead‑scoring‑service.ts`  
   **verification:** Engine produces scores that correlate with engagement; configurable factors work.
@@ -68,6 +108,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **TDD:** Unit test for attribution model verifying correct revenue allocation across sources.  
 **BDD:** "As a sales manager, I can see which lead sources produce the highest revenue and which reps are performing best."
 
+**Deep Module:** Advanced CRM analytics engine with weighted pipeline calculations, attribution modeling, and cohort analysis. The module encapsulates analytics algorithms, data aggregation patterns, visualization systems, and performance metrics while providing simple interfaces for CRM business intelligence.
+
+**Advanced Code Patterns:**
+- Strategy pattern for different attribution models (first-touch, last-touch, linear, time-decay)
+- Observer pattern for real-time analytics updates
+- Factory pattern for creating different analytics report types
+- Data aggregation pipeline patterns for cohort analysis
+- Caching strategies for complex analytics calculations
+- Event-driven architecture for analytics data updates
+
+**Anti-Patterns:**
+- Avoid real-time analytics calculations that block database operations
+- Do not cache analytics data without proper refresh strategies
+- Avoid complex analytics queries without proper indexing
+- Do not present analytics without proper context and explanations
+- Avoid analytics features without proper data validation
+
+**Rules to Follow:**
+- All analytics reports must load within 3 seconds
+- Analytics data must be refreshed at least hourly
+- Attribution models must be configurable by business users
+- Cohort analysis must track at least 24 months of data
+- Performance metrics must be validated against actual business results
+- All analytics features must work with historical data snapshots
+
 **Subtasks:**
 - [ ] AI‑CRM‑002.1: Implement weighted pipeline calculation and visualisation. (AGENT) – `services/crm/pipeline‑analytics‑service.ts`  
   **verification:** Weighted values calculated correctly; pipeline chart renders.
@@ -93,6 +158,31 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **DDD:** CRM data quality is a cross‑cutting concern within the CRM bounded context.  
 **TDD:** Unit test verifying that a lead with no activity for 60 days triggers a stale record alert.  
 **BDD:** "As a CRM administrator, I am alerted when data quality degrades so I can take corrective action."
+
+**Deep Module:** Data quality monitoring system with stale record detection, completeness scoring, and operational dashboard. The module encapsulates quality algorithms, monitoring patterns, alert systems, and data completeness analysis while providing simple interfaces for maintaining CRM data integrity.
+
+**Advanced Code Patterns:**
+- Observer pattern for real-time data quality monitoring
+- Strategy pattern for different quality check algorithms
+- Factory pattern for creating quality metrics and alerts
+- Command pattern for data quality remediation actions
+- Event-driven architecture for quality issue detection
+- Caching strategies for quality score calculations
+
+**Anti-Patterns:**
+- Do not block data operations with quality checks
+- Avoid over-alerting that creates alert fatigue
+- Do not cache quality scores without proper refresh
+- Avoid complex quality rules without business validation
+- Do not ignore user feedback on quality metrics
+
+**Rules to Follow:**
+- Quality alerts must be delivered within 5 minutes of detection
+- Data completeness scores must be updated hourly
+- Stale record thresholds must be configurable per entity type
+- Quality metrics must be retained for at least 1 year
+- All quality features must work with large datasets (>1M records)
+- Quality monitoring must not impact system performance
 
 **Subtasks:**
 - [ ] AI‑CRM‑003.1: Implement stale record detection with configurable thresholds per record type. (AGENT) – `services/crm/data‑quality‑service.ts`  

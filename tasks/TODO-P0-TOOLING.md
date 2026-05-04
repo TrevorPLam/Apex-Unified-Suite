@@ -12,11 +12,14 @@ This document contains tooling and infrastructure tasks that enable development 
 **Blocks:** All development tasks  
 **Blocked By:** none  
 **Related Files:** `README.md`, `.env.example`, `.prettierrc`  
-**Advanced Code Patterns:** Centralised environment variable documentation; consistent code formatting.  
-**Anti-Patterns:** Missing `.env.example` (devs guessing variables), no README (onboarding chaos).  
-**Rules to Follow:**  
-- `README.md` must explain the project, setup, and architecture highlights.  
-- `.env.example` must document every required variable.
+**Advanced Code Patterns:** Centralised environment variable validation; type-safe configuration management; environment-specific overrides; configuration schema evolution.
+**Anti-Patterns:** Missing `.env.example` (devs guessing variables); no README (onboarding chaos); hardcoded environment variables; runtime configuration errors.
+**Rules to Follow:**
+- `README.md` must explain the project, setup, and architecture highlights
+- `.env.example` must document every required variable with descriptions
+- All environment variables must be validated at startup
+- Configuration must be type-safe with Zod schemas
+- Environment-specific validation rules must be enforced
 
 **DDD:** N/A – project scaffolding, but the README should mention the domain and bounded contexts.  
 **TDD:** N/A.  
@@ -30,11 +33,11 @@ This document contains tooling and infrastructure tasks that enable development 
 - [ ] TOOLING-001.1: Write `README.md` with project overview, quick start, architecture summary, and link to bounded contexts. (AGENT) – `README.md`  
   **Verification:** `README.md` exists and covers all required sections.
 - [ ] TOOLING-001.2: Create `.env.example` and environment variable validation. Create Zod schema for `process.env` and validate at server startup. List all required variables: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `PORTAL_JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `ESIGN_PROVIDER_API_KEY`, `ESIGN_PROVIDER_BASE_URL`, `MAGIC_LINK_EXPIRY_MINUTES`, `PORTAL_JWT_EXPIRY_HOURS`, etc. (AGENT) – `.env.example`, `src/lib/env-validation.ts`  
-  **Verification:** `.env.example` lists all required variables with descriptions; server fails fast with clear error messages for missing/invalid variables.
+  **Verification:** `.env.example` lists all required variables with descriptions; server fails fast with clear error messages for missing/invalid variables; `pnpm run build:validate-config` passes.
 - [ ] TOOLING-001.3: Add `.prettierrc` with project‑wide rules (semi: true, singleQuote: true, trailingComma: 'all'). (AGENT) – `.prettierrc`  
   **Verification:** `pnpm prettier --check src/` runs without errors after configuration.
 - [ ] TOOLING-001.4 (AGENT): Add environment variables for new services: `REDIS_URL` (if caching/real‑time component chosen), `MEILISEARCH_URL` or `TYPESENSE_URL` (if external search engine chosen in ADR), `WS_PORT` (if WebSocket server runs separately). Update `.env.example` accordingly.  
-  **Verification:** All new variables documented.
+  **Verification:** All new variables documented; configuration validation passes.
 
 ---
 
@@ -68,7 +71,7 @@ This document contains tooling and infrastructure tasks that enable development 
 - [ ] TOOLING-002.3: Enable `strictFunctionTypes: true` in `tsconfig.base.json`. (AGENT) – `tsconfig.base.json`  
   **Verification:** Flag enabled; function type errors resolved.
 - [ ] TOOLING-002.4: Run full workspace typecheck and fix all errors. (AGENT)  
-  **Verification:** `pnpm run typecheck` passes without errors.
+  **Verification:** `pnpm run typecheck` passes without errors; `pnpm run build:typescript` optimized for CI caching; build times improve by >20%.
 
 ---
 
@@ -113,12 +116,14 @@ This document contains tooling and infrastructure tasks that enable development 
 **Blocks:** All database schema tasks  
 **Blocked By:** DEP-001.4  
 **Related Files:** `package.json` (root and relevant workspaces), `lib/db/src/__tests__/zod-compat.test.ts`  
-**Advanced Code Patterns:** Dependency pinning to avoid silent type inference breakage.  
-**Anti-Patterns:** Floating dependency versions that can introduce incompatibilities without notice.  
-**Rules to Follow:**  
-- Verify compatibility BEFORE changing any version pin.  
-- If Zod 3.25.76 + drizzle-zod 0.8.3 tests pass, document compatibility and do not change the pin.  
-- The verification test must generate Zod schemas from a representative Drizzle table and compile cleanly.
+**Advanced Code Patterns:** Semantic versioning with automated compatibility testing; dependency pinning strategies; automated vulnerability scanning; semantic release workflows.
+**Anti-Patterns:** Floating dependency versions that can introduce incompatibilities; manual dependency management; lack of compatibility testing; ignoring security advisories.
+**Rules to Follow:**
+- Verify compatibility BEFORE changing any version pin
+- All dependency changes must pass automated compatibility tests
+- Security vulnerabilities must be addressed within 30 days
+- Version pins must include exact versions, not ranges
+- Compatibility matrix must be documented for all major dependencies
 
 **DDD:** N/A – technical plumbing to keep the validation layer (Zod) aligned with the persistence layer (Drizzle).  
 **TDD:**  

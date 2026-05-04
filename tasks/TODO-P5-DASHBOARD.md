@@ -21,13 +21,30 @@ This part covers Dashboard data integration, replacing mock data with real API h
 ### [ ] FRONT‑DASH‑001: Dashboard – Replace Mock Data with API Hooks
 **Status:** ⏳ Not Started  
 **Depends on:** API‑DASH‑001 (dashboard aggregation endpoint).  
-**Definition of Done:** `src/pages/Dashboard.tsx` fetches real data from the `API‑DASH‑001` endpoint using a React Query hook. All mock data imports (`mockData.metrics`, etc.) are removed except for fallback states.  
+**Definition of Done:** `artifacts/apex-os/src/pages/Dashboard.tsx` fetches real data from the `API‑DASH‑001` endpoint using a React Query hook. All mock data imports (`mockData.metrics`, etc.) are completely removed from Dashboard component and related hooks. Component tests pass with MSW mocks. Manual testing confirms all metrics display correctly with proper loading and error states.  
 **Related Files:** `artifacts/apex-os/src/pages/Dashboard.tsx`, `artifacts/apex-os/src/hooks/useDashboard.ts`
 
 **DDD:** Dashboard is a read‑only aggregation view across bounded contexts.  
-**TDD:** Use MSW to mock the API‑DASH‑001 response and verify component renders data.  
-**BDD:** "As a user, I can see my business metrics on the dashboard."  
-**Deep Module:** N/A – frontend view.
+**Deep Module:** Dashboard frontend module encapsulates metric aggregation, polling logic, and error handling. The module provides a unified interface for displaying cross-context business metrics while hiding the complexity of API calls, data transformation, and state management behind React Query hooks and well-organized components.
+
+**TDD:** Use MSW to mock the API‑DASH‑001 response and verify component renders data. Test loading states, error states, and data refresh scenarios.
+
+**BDD:** "As a user, I can see my business metrics on the dashboard."
+
+**Advanced Code Patterns:**
+- React Query for data fetching and caching
+- Automatic polling with configurable intervals
+- Error boundaries with retry mechanisms
+- Skeleton loading states for better UX
+- Optimistic UI updates for real-time feel
+
+**Anti-Patterns:**
+- Direct API calls in components (use hooks instead)
+- Mock data in production builds
+- Missing error handling
+- Hardcoded metric configurations
+- Not using React Query caching features
+- Missing loading states during data fetching
 
 **Subtasks:**
 - [ ] FRONT‑DASH‑001.1: Implement `useDashboard` hook calling `API‑DASH‑001` with period parameter. (AGENT) – `src/hooks/useDashboard.ts`  
@@ -37,7 +54,7 @@ This part covers Dashboard data integration, replacing mock data with real API h
 - [ ] FRONT‑DASH‑001.3: Remove all `mockData` imports from `Dashboard.tsx`. (AGENT)  
   **verification:** File has no remaining mock data references.
 - [ ] FRONT‑DASH‑001.4: Test 30‑second polling refresh works via React Query `refetchInterval`. (AGENT)  
-  **verification:** Data refreshes automatically; pause button stops refresh.
+  **verification:** `npm test -- dashboard-polling.test.tsx` - data refreshes automatically; pause button stops refresh.
 
 ---
 

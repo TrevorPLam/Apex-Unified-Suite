@@ -90,17 +90,55 @@ Examples included for each endpoint.
 - All queries use organization‑scoped data aggregation  
 - Methods return `Either<DomainError, Result>`  
 - **Caching:** Report results cached for 15 minutes to improve performance  
-- **Deep Module:** Service hides complex SQL aggregation logic behind simple interface
+**Deep Module:** Service encapsulates complex aggregation logic, query optimization, and caching strategy behind simple interface
+
+**Rules to Follow:**
+- All aggregation queries must be organization-scoped
+- Cache invalidation on data changes
+- Query optimization for large datasets
+- Result pagination for performance
+- Admin authorization required
+
+**Advanced Code Patterns:**
+- Complex SQL aggregation patterns
+- Multi-level caching strategy
+- Query result optimization
+- Organization data isolation
+
+**Anti-Patterns:**
+- Global data aggregation (no scoping)
+- Missing pagination on large datasets
+- Inefficient queries (N+1 problems)
+- Missing cache invalidation
 
 **Subtasks:**
 - [ ] API‑ANALYTICS‑003.1: Implement `AnalyticsRepository` with soft delete. (AGENT) – `lib/db/src/repositories/analytics.ts`  
   **verification:** Unit tests for repository pass.
-- [ ] API‑ANALYTICS‑003.2: Implement `AnalyticsService` with aggregation logic and caching. (AGENT) – `analytics-service.ts`  
+- [ ] API‑ANALYTICS‑003.2: Implement `AnalyticsService` with aggregation logic and caching. (AGENT) – `services/analytics/analytics-service.ts`  
   **verification:** Unit tests with mocked DB pass.
 - [ ] API‑ANALYTICS‑003.3: Write unit tests for all service methods (success + error paths). (AGENT)  
   **verification:** All tests green.
 - [ ] API‑ANALYTICS‑003.4: Depth refactor check: method count ≤ 8, service encapsulates aggregation complexity, no `throw`. (AGENT)  
   **verification:** Manual inspection + `pnpm typecheck`.
+
+**Rules to Follow:**
+- Method count limited to 8 for maintainability
+- Service must encapsulate multiple aggregation concerns
+- All methods return Result<T, DomainError>
+- No exception throwing in service layer
+- Organization scoping enforced in all queries
+
+**Advanced Code Patterns:**
+- Deep module encapsulation
+- Result pattern for error handling
+- Caching strategy implementation
+- Complex aggregation queries
+
+**Anti-Patterns:**
+- Shallow service with single aggregation type
+- Exception-based error handling
+- Missing organization scoping
+- Direct database access without abstraction
 
 ---
 

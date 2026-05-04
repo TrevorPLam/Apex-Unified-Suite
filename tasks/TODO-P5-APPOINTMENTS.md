@@ -27,8 +27,13 @@ This part covers Appointments UI Integration including firm-side management, cli
 - Quick actions: confirm, cancel (with reason), view detail.  
 - Click appointment → detail slide‑out with client info, status, history.  
 - Empty/loading/error states.  
-
-**DDD:** Appointments bounded context frontend; completely independent of Projects.  
+**DDD:** Appointments bounded context frontend; completely independent of Projects with clear domain boundaries.  
+**Deep Module:** Encapsulates appointment management logic, calendar integration, and state management with clear API boundaries.  
+**Advanced Code Patterns:** Calendar integration, state management with hooks, modal/slide-out patterns.  
+**Anti-Patterns:** Avoid direct API calls in components, prevent calendar library coupling.  
+**Rules to Follow:** Always validate appointment data, implement proper error handling, maintain responsive design.  
+**Out of Scope:** Real-time collaboration, advanced scheduling algorithms.  
+**Verification:** `npm test -- appointments.test.tsx && npm run typecheck`  
 **Related Files:** `artifacts/apex-os/src/pages/Appointments.tsx`
 
 **Subtasks:**

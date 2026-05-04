@@ -72,7 +72,12 @@ Schemas: `SystemSetting`, `SettingUpdate`, `BulkUpdateRequest`, `SettingAuditEnt
 - **Validation:** Setting keys validated against allowed keys schema  
 - **Caching:** Public settings cached in memory for 15 minutes  
 - **Events:** Emits `SettingChanged` for audit trail  
-- **Deep Module:** Service hides validation, caching, and audit complexity
+- **Deep Module:** Service encapsulates validation, caching, and audit complexity with clear boundaries  
+- **Advanced Code Patterns:** Repository pattern, caching layer, event-driven updates, atomic transactions  
+- **Anti-Patterns:** Avoid direct database access from service layer, prevent cache invalidation issues  
+- **Rules to Follow:** Always validate setting keys, maintain audit trail, handle cache consistency  
+- **Out of Scope:** Dynamic setting creation, real-time setting synchronization  
+- **Depth refactor check** completed: Service maintains single responsibility, clear separation from repository
 
 **Subtasks:**
 - [ ] API‑SETTINGS‑003.1: Implement `SettingsRepository` with audit support. (AGENT) – `lib/db/src/repositories/settings.ts`  
@@ -81,7 +86,7 @@ Schemas: `SystemSetting`, `SettingUpdate`, `BulkUpdateRequest`, `SettingAuditEnt
   **verification:** Unit tests with mocked cache and event bus pass.
 - [ ] API‑SETTINGS‑003.3: Write unit tests for all service methods. (AGENT)  
   **verification:** All tests green.
-- [ ] API‑SETTINGS‑003.4: Depth refactor check: method count ≤ 6, service encapsulates validation/caching/audit. (AGENT)  
+- [ ] API‑SETTINGS‑003.4: Verify service encapsulation and method count. (AGENT)  
   **verification:** Manual inspection + `pnpm typecheck`.
 
 ---

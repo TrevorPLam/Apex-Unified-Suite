@@ -58,6 +58,19 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Rate limit responses return `429 Too Many Requests` with a standard error envelope.
 - Tenant limits only apply after authentication; IP limits apply to all requests.
 
+**Advanced Code Patterns:**
+- Rate limiting middleware with Redis-backed storage for distributed environments
+- Sliding window algorithm for accurate rate limiting
+- Per-endpoint rate limiting configuration
+- WebSocket connection rate limiting with connection tracking
+
+**Rules to Follow:**
+- All rate limits must be configurable via environment variables
+- Rate limiting must work in distributed deployments
+- Authentication endpoints must have stricter limits
+- WebSocket connections must be rate limited separately
+- Rate limit responses must include retry-after headers
+
 **Subtasks:**
 - [ ] SEC‑001.1: Implement global and auth IP rate limiters. (AGENT) – `middlewares/rate‑limiter.ts`  
   **verification:** Unit test that exceeding IP limit returns 429.
@@ -76,6 +89,20 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - `helmet` middleware added (with defaults).
 - Content‑Security‑Policy header configured to restrict scripts/styles to self origin and trusted CDNs (if any).
 - Tests verify headers like `X‑Content‑Type‑Options: nosniff`, `X‑Frame‑Options: DENY` are present.
+
+**Advanced Code Patterns:**
+- Content Security Policy with nonce-based script execution
+- Security header middleware with environment-based configuration
+- CSP violation reporting and monitoring
+- Dynamic header configuration for different environments
+
+**Rules to Follow:**
+- All security headers must be present in production
+- CSP must be restrictive but allow legitimate functionality
+- Security headers must be tested in integration tests
+- CSP violations must be monitored and logged
+- Header configuration must be environment-aware
+
 **Subtasks:**
 - [ ] SEC‑002.1: Install and configure helmet. (AGENT)  
   **verification:** Integration test checks headers.
@@ -87,6 +114,20 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 ### SEC‑003: Configure CORS with Allowed Origins
 **Current state:** CORS is wide open.  
 **Definition of Done:** `cors()` is configured with an `allowedOrigins` list read from `ALLOWED_ORIGINS` env var (comma‑separated). In production, this is the frontend domain.  
+
+**Advanced Code Patterns:**
+- Dynamic CORS configuration based on environment
+- Origin validation with regex patterns
+- Pre-flight request caching
+- CORS middleware with configurable options per route
+
+**Rules to Follow:**
+- CORS must be restrictive in production
+- Development environments can have relaxed CORS
+- Origin validation must be case-insensitive
+- CORS configuration must support localhost and subdomains
+- Pre-flight requests must be handled efficiently
+
 **Subtasks:**
 - [ ] SEC‑003.1: Add `ALLOWED_ORIGINS` to `.env.example` and configure CORS middleware. (AGENT)  
   **verification:** Preflight OPTIONS request returns correct headers.
@@ -97,6 +138,19 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 **Definition of Done:**  
 - `DATABASE_URL` in production forces `?sslmode=require`.  
 - Pool size limited to `PG_MAX` env var (default 10).  
+**Advanced Code Patterns:**
+- Database connection pool with health monitoring
+- SSL certificate validation and rotation
+- Connection pool metrics and monitoring
+- Graceful degradation on connection issues
+
+**Rules to Follow:**
+- All production connections must use SSL
+- Connection pool size must be environment-appropriate
+- Database connections must be monitored for health
+- Connection failures must trigger appropriate alerts
+- Pool configuration must support both read and write operations
+
 **Subtasks:** update DB connection config, add env vars.
 
 ---
@@ -167,7 +221,21 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Slow query monitoring threshold (queries exceeding 500ms logged as warnings).
 - **WebSocket server health:** verify the WebSocket server is accepting connections; return `degraded` if the WebSocket service is unreachable.
 - Uptime still included.
-- Health check response includes detailed status object for monitoring systems.  
+- Health check response includes detailed status object for monitoring systems.
+
+**Advanced Code Patterns:**
+- Health check middleware with component status aggregation
+- Database connection pool metrics collection
+- Slow query detection with configurable thresholds
+- WebSocket health monitoring with connection testing
+- Graceful degradation for partial system failures
+
+**Rules to Follow:**
+- All critical components must be health-checked
+- Health checks must be fast and lightweight
+- Partial failures must return appropriate status codes
+- Health check data must be structured for monitoring
+- External dependencies must have timeout handling
 
 **Subtasks:**
 - [ ] MON‑001.1: Enhance health handler with DB connectivity check. (AGENT)  
@@ -188,12 +256,38 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 ### MON‑002: Integrate Error Tracking (Sentry)
 **Depends on:** ERROR‑001 (global handler).  
 **Definition of Done:** Sentry SDK integrated in backend (Express error handler captures errors) and frontend (ErrorBoundary reports to Sentry). Sentry DSN from env vars.  
+**Advanced Code Patterns:**
+- Error tracking middleware with context enrichment
+- Sentry integration with user and organization context
+- Error grouping and deduplication
+- Performance monitoring integration
+
+**Rules to Follow:**
+- All errors must be captured and reported
+- Sensitive data must be stripped from error reports
+- Error context must include relevant user information
+- Error tracking must not impact application performance
+- Critical errors must trigger immediate alerts
+
 **Subtasks:** install, configure, test.
 
 ---
 
 ### MON‑003: Set Up Structured Logging for Aggregation
 **Definition of Done:** Pino logs are JSON and include a `requestId` (via `pino‑http`). Log level configurable via `LOG_LEVEL`. Ready for future log aggregation.  
+**Advanced Code Patterns:**
+- Structured logging with request tracing
+- Log correlation across microservices
+- Performance metrics logging
+- Sensitive data filtering in logs
+
+**Rules to Follow:**
+- All logs must be structured JSON format
+- Request IDs must be included in all log entries
+- Sensitive data must be filtered from logs
+- Log levels must be configurable per environment
+- Performance metrics must be logged consistently
+
 **Subtasks:** add request ID middleware, ensure all logs are structured.
 
 ---

@@ -29,8 +29,16 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `deleted_at` (soft delete), timestamps  
 - Index on `(organization_id, status)`, `(organization_id, customer_id, status)`, `(organization_id, due_date)`, `(invoice_number)`.
 
-**DDD:** Invoice aggregate with multi‑currency and tax support (Bill.com feature).  
+**DDD:** Invoice aggregate with multi‑currency and tax support (Bill.com feature). Tenant scoping note: All invoice operations must be scoped to organization_id to ensure multi-tenant isolation and prevent cross-tenant data access.
 **TDD:** Validate status enum, unique invoice number per organization, JSONB line items.
+**Deep Module:** Shallow storage for invoice data; business logic for payment allocation and tax calculation lives in service layer.
+**Advanced Code Patterns:** Aggregate pattern with line items as value objects, factory methods for invoice creation, specification pattern for invoice status validation.
+**Anti-Patterns:** Avoid storing calculated totals; prevent duplicate invoice numbers across tenants; avoid hardcoded tax rates.
+**Multi-Tenancy Anti-Patterns:** Never query invoices without organization_id filter; prevent cross-tenant invoice number collisions; avoid shared sequences.
+**Rules to Follow:** All operations must include organization_id; invoice numbers must be unique per organization; status transitions must follow business rules; currency handling must normalize to base currency.
+**Out of Scope:** Recurring invoices, advanced tax calculations, discount management.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑FIN‑001.1: Write schema test. (AGENT) – `lib/db/src/__tests__/invoices.test.ts`  
@@ -51,8 +59,16 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `deleted_at` (soft delete), timestamps  
 - Index on `(organization_id, customer_id)`, `(invoice_id)`, `(stripe_payment_intent_id)`.
 
-**DDD:** Customer payment processing with Stripe integration and audit trail.  
+**DDD:** Customer payment processing with Stripe integration and audit trail. Tenant scoping note: All payment operations must be scoped to organization_id to ensure payment isolation between tenants.
 **TDD:** Validate status enum, FK constraints, payment method enum.
+**Deep Module:** Shallow storage for payment records; complex payment processing logic lives in service layer.
+**Advanced Code Patterns:** Command pattern for payment processing, strategy pattern for different payment methods, observer pattern for payment status updates.
+**Anti-Patterns:** Avoid storing raw payment method details; prevent inconsistent payment states; avoid synchronous external API calls.
+**Multi-Tenancy Anti-Patterns:** Never query payments without organization_id filter; prevent cross-tenant payment exposure; encrypt sensitive data per tenant.
+**Rules to Follow:** All operations must include organization_id; payment amounts must be stored in cents; status transitions must be validated; refund amounts must never exceed original amounts.
+**Out of Scope:** Subscription billing, advanced refund workflows.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑FIN‑002.1: Write schema test. (AGENT) – `lib/db/src/__tests__/customer-payments.test.ts`  
@@ -71,8 +87,16 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `allocated_at` (timestamp), `created_at`  
 - Index on `(payment_id)`, `(invoice_id)`, `(organization_id, allocated_at)`.
 
-**DDD:** Junction table for allocating payments to multiple invoices (Bill.com feature).  
+**DDD:** Junction table for allocating payments to multiple invoices (Bill.com feature). Tenant scoping note: Allocation operations must respect organization boundaries to prevent cross-tenant payment mixing.
 **TDD:** Validate that allocation amounts don't exceed payment amount (service layer).
+**Deep Module:** Simple junction table; allocation logic lives in service layer.
+**Advanced Code Patterns:** Domain service pattern for allocation logic, value object pattern for allocation amounts.
+**Anti-Patterns:** Avoid allowing negative allocations; prevent allocation exceeding available payment amount.
+**Multi-Tenancy Anti-Patterns:** Never query allocations without organization_id filter; prevent cross-tenant allocation access.
+**Rules to Follow:** All operations must include organization_id; allocation amounts must be positive; total allocations per payment must not exceed payment amount.
+**Out of Scope:** Partial payment allocations with complex rules.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑FIN‑003.1: Write schema test. (AGENT)  
@@ -91,8 +115,16 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `is_active` (boolean), `deleted_at` (soft delete), timestamps  
 - Unique on `(organization_id, name)`.
 
-**DDD:** Expense categorization system for AP and expense reporting.  
+**DDD:** Expense categorization system for AP and expense reporting. Tenant scoping note: Categories must be scoped per organization to prevent cross-tenant category mixing.
 **TDD:** Validate unique constraint, hierarchical FK.
+**Deep Module:** Shallow hierarchical storage; category management logic lives in service layer.
+**Advanced Code Patterns:** Tree pattern for hierarchical categories, value object pattern for category names.
+**Anti-Patterns:** Avoid circular references in hierarchy; prevent duplicate category names per tenant.
+**Multi-Tenancy Anti-Patterns:** Never query categories without organization_id filter; prevent cross-tenant category access.
+**Rules to Follow:** All operations must include organization_id; category names must be unique per organization; hierarchical references must be validated.
+**Out of Scope:** Advanced category permissions, category-based budgeting.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑FIN‑004.1: Write schema test. (AGENT)  
@@ -327,8 +359,16 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `deleted_at` (soft delete), timestamps  
 - Index on `(organization_id, company_name)`, `(organization_id, email)`.
 
-**DDD:** Vendor aggregate extended with payment preferences and early payment discount fields (Bill.com feature).  
+**DDD:** Vendor aggregate extended with payment preferences and early payment discount fields (Bill.com feature). Tenant scoping note: All vendor operations must be scoped to organization_id to maintain tenant isolation.
 **TDD:** Validate discount fields, JSONB address.
+**Deep Module:** Shallow storage for vendor data; payment preference logic lives in service layer.
+**Advanced Code Patterns:** Value object pattern for address data, factory pattern for vendor creation, specification pattern for discount validation.
+**Anti-Patterns:** Avoid storing plain text sensitive data; prevent invalid discount configurations.
+**Multi-Tenancy Anti-Patterns:** Never query vendors without organization_id filter; prevent cross-tenant vendor data exposure.
+**Rules to Follow:** All operations must include organization_id; vendor names must be unique per organization; discount rates must be within valid ranges.
+**Out of Scope:** Vendor performance tracking, advanced vendor onboarding.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑AP‑001.1: Write schema test. (AGENT)  
@@ -351,6 +391,17 @@ This part covers the complete Financial bounded context for Phase 2: Accounts 
 - `line_items` (JSONB array), `memo` (text), `attachments` (text[] for document URLs)  
 - `deleted_at` (soft delete), timestamps  
 - Index on `(organization_id, status)`, `(organization_id, vendor_id, status)`, `(organization_id, due_date)`, `(bill_number)`.
+
+**DDD:** Bill aggregate with approval workflow support and multi-currency. Tenant scoping note: All bill operations must be scoped to organization_id to prevent cross-tenant bill access.
+**TDD:** Validate status enum, FK constraints, JSONB line items.
+**Deep Module:** Shallow storage for bill data; approval workflow logic lives in service layer.
+**Advanced Code Patterns:** State machine pattern for bill status, workflow pattern for approval processes, value object pattern for line items.
+**Anti-Patterns:** Avoid bypassing approval workflows; prevent inconsistent bill states.
+**Multi-Tenancy Anti-Patterns:** Never query bills without organization_id filter; prevent cross-tenant bill exposure.
+**Rules to Follow:** All operations must include organization_id; bill numbers must be unique per organization; status transitions must follow approval workflow; amounts must be stored in cents.
+**Out of Scope:** Complex approval hierarchies, automated bill processing.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑AP‑002.1: Write schema test. (AGENT)  

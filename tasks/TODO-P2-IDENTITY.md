@@ -28,10 +28,17 @@ Zod insert/select schemas generated via `drizzle‑zod`.
 **Anti-Patterns:** Storing plain text passwords; exposing password hash in API responses.  
 **Related Files:** `lib/db/src/schema/users.ts`, `lib/db/src/schema/index.ts`
 
-**DDD:** The `User` aggregate belongs to the Identity & Access bounded context. The `organization_id` enforces multi‑tenant isolation.  
-**TDD:** Write a test that the schema generates correct SQL (columns, FK, unique constraint, index). Then implement. Test that Zod insert schema rejects invalid email and missing required fields.  
-**BDD:** Users appear in registration/login scenarios from `auth.feature`.  
-**Deep Module:** The table is shallow; the repository and service layers encapsulate complex queries.
+**DDD:** The `User` aggregate belongs to the Identity & Access bounded context. The `organization_id` enforces multi‑tenant isolation. Tenant scoping note: All user operations must be scoped to organization_id to ensure proper tenant isolation and prevent cross-tenant user access.
+**TDD:** Write a test that the schema generates correct SQL (columns, FK, unique constraint, index). Then implement. Test that Zod insert schema rejects invalid email and missing required fields.
+**BDD:** Users appear in registration/login scenarios from `auth.feature`.
+**Deep Module:** The table is shallow; the repository and service layers encapsulate complex queries and authentication logic.
+**Advanced Code Patterns:** Repository pattern with multi-tenancy support, factory methods for user creation, value object pattern for user status.
+**Anti-Patterns:** Storing plain text passwords; exposing password hash in API responses; bypassing organization scoping.
+**Multi-Tenancy Anti-Patterns:** Never query users without organization_id filter; prevent cross-tenant user enumeration; avoid shared user sequences.
+**Rules to Follow:** All operations must include organization_id; passwords must be hashed with Argon2id; email uniqueness must be scoped per organization; user status transitions must be validated.
+**Out of Scope:** Social login integration, advanced user profile management.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑001.1: Write schema validation test (TDD red). (AGENT) – `lib/db/src/__tests__/users.test.ts`  
@@ -51,10 +58,17 @@ Zod insert/select schemas generated via `drizzle‑zod`.
 Zod schemas generated.  
 **Related Files:** `lib/db/src/schema/roles.ts`
 
-**DDD:** Role is a value object in the Identity domain; can be tenant‑specific or global.  
-**TDD:** Test SQL generation and Zod schema.  
-**BDD:** Roles appear in permission‑related scenarios.  
-**Deep Module:** Shallow DB representation.
+**DDD:** Role is a value object in the Identity domain; can be tenant‑specific or global. Tenant scoping note: All role operations must be scoped to organization_id to maintain proper tenant isolation.
+**TDD:** Test SQL generation and Zod schema.
+**BDD:** Roles appear in permission‑related scenarios.
+**Deep Module:** Shallow DB representation; role assignment logic lives in service layer.
+**Advanced Code Patterns:** Value object pattern for roles, specification pattern for role validation.
+**Anti-Patterns:** Avoid hardcoded role names; prevent role duplication across tenants.
+**Multi-Tenancy Anti-Patterns:** Never query roles without organization_id filter; prevent cross-tenant role access.
+**Rules to Follow:** All operations must include organization_id; role names must be unique per organization; role assignments must be validated.
+**Out of Scope:** Hierarchical role structures, dynamic role creation.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑002.1: Write schema test. (AGENT) – `lib/db/src/__tests__/roles.test.ts`  
@@ -70,10 +84,17 @@ Zod schemas generated.
 **Definition of Done:** `lib/db/src/schema/permissions.ts` with `id`, `name` (text UNIQUE), `description`. Global‑only, no `organization_id` (permissions are system‑wide).  
 **Related Files:** `lib/db/src/schema/permissions.ts`
 
-**DDD:** Permission is a fine‑grained policy element; not tenant‑specific.  
-**TDD:** Same as above.  
-**BDD:** Permissions are checked in "I can…" scenarios.  
-**Deep Module:** Shallow.
+**DDD:** Permission is a fine‑grained policy element; not tenant‑specific. Global permissions are shared across all tenants for system-wide consistency.
+**TDD:** Same as above.
+**BDD:** Permissions are checked in "I can…" scenarios.
+**Deep Module:** Shallow storage; permission checking logic lives in authorization service.
+**Advanced Code Patterns:** Specification pattern for permission checks, value object pattern for permissions.
+**Anti-Patterns:** Avoid creating tenant-specific permissions; prevent permission duplication.
+**Multi-Tenancy Anti-Patterns:** N/A - permissions are global by design.
+**Rules to Follow:** Permission names must be unique globally; permission assignments must be validated; permission checks must be efficient.
+**Out of Scope:** Dynamic permission creation, resource-based permissions.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑003.1: Write schema test. (AGENT)  
@@ -88,10 +109,17 @@ Zod schemas generated.
 **Definition of Done:** `user_roles` table with foreign keys to `users.id` and `roles.id`, plus unique constraint on `(user_id, role_id)`. Uses the `organization_id` from the user for extra safety (or rely on user's organization).  
 **Related Files:** `lib/db/src/schema/user_roles.ts`
 
-**DDD:** Many‑to‑many association between Users and Roles.  
-**TDD:** Test that FK constraints are generated and duplicate pairs are rejected.  
-**BDD:** Indirect.  
-**Deep Module:** Shallow.
+**DDD:** Many‑to‑many association between Users and Roles. Junction table maintains assignment relationships within tenant boundaries.
+**TDD:** Test that FK constraints are generated and duplicate pairs are rejected.
+**BDD:** Indirect - supports role assignment scenarios.
+**Deep Module:** Simple junction table; assignment validation logic lives in service layer.
+**Advanced Code Patterns:** Association pattern, domain service pattern for assignment validation.
+**Anti-Patterns:** Avoid duplicate assignments; prevent orphaned assignments.
+**Multi-Tenancy Anti-Patterns:** Never query assignments without organization_id filter; prevent cross-tenant role assignments.
+**Rules to Follow:** All operations must include organization_id via user FK; unique constraint prevents duplicate assignments; assignments must respect user and role scoping.
+**Out of Scope:** Time-based role assignments, assignment history tracking.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑004.1: Write schema test. (AGENT)  
@@ -110,10 +138,17 @@ Zod schemas generated.
 - `lib/db/src/seed/identity.ts` inserts an admin user (hashed password), at least one role ("admin", "user"), and the admin‑role assignment, all tied to the organization created in the organizations seed.  
 **Related Files:** `lib/db/drizzle.config.ts`, `lib/db/src/seed/identity.ts`
 
-**DDD:** Seed data populates the Identity context with initial aggregates.  
-**TDD:** Integration tests (AUTH‑002) will verify the admin login.  
-**BDD:** "Admin can log in after fresh install."  
-**Deep Module:** N/A.
+**DDD:** Seed data populates the Identity context with initial aggregates. Migration generates the database schema for all identity tables.
+**TDD:** Integration tests (AUTH‑002) will verify the admin login.
+**BDD:** "Admin can log in after fresh install."
+**Deep Module:** N/A - infrastructure task.
+**Advanced Code Patterns:** Migration pattern with rollback support, data seeding pattern with proper password hashing.
+**Anti-Patterns:** Avoid plain text passwords in seed data; prevent hardcoded admin credentials.
+**Multi-Tenancy Anti-Patterns:** Migration must preserve organization boundaries; seed data must be organization-scoped.
+**Rules to Follow:** All migrations must be reversible; seed data must use properly hashed passwords; admin user must be associated with organization; role assignments must be validated.
+**Out of Scope:** Complex seeding scenarios, dynamic seed data generation.
+**Size:** Appropriate - focused migration and seeding.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑005.1: Add migration script for identity tables (or part of combined migration). (AGENT)  
@@ -150,10 +185,17 @@ Zod schemas generated.
 
 **Related Files:** `lib/db/src/schema/refresh-tokens.ts`
 
-**DDD:** RefreshToken is a value object in the Identity domain with family tracking for security.  
-**TDD:** Test token rotation, family grouping, and revocation logic.  
-**BDD:** Enables "refresh token rotation" and "detect token reuse" security scenarios.  
-**Deep Module:** Shallow DB representation with security constraints.
+**DDD:** RefreshToken is a value object in the Identity domain with family tracking for security. Supports secure token rotation and reuse detection.
+**TDD:** Test token rotation, family grouping, and revocation logic.
+**BDD:** Enables "refresh token rotation" and "detect token reuse" security scenarios.
+**Deep Module:** Overuse on shallow components - this table contains complex security logic that should be encapsulated in service layer rather than exposed through shallow DB operations. The family tracking and rotation logic represents deep domain behavior that belongs in RefreshTokenService.
+**Advanced Code Patterns:** Value object pattern for tokens, family tracking pattern for rotation, specification pattern for token validation.
+**Anti-Patterns:** Never store plain text tokens; prevent token reuse attacks; avoid token leakage through logs.
+**Multi-Tenancy Anti-Patterns:** Never query tokens without organization_id filter; prevent cross-tenant token access; encrypt tokens per-organization.
+**Rules to Follow:** All operations must include organization_id; tokens must be hashed; family tracking must prevent reuse; expired tokens must be cleaned up.
+**Out of Scope:** Advanced token analytics, cross-device token synchronization.
+**Size:** Appropriate - focused table definition.
+**Subtasks:** All subtasks include specific file paths and executable verification commands.
 
 ### Subtasks:
 - [ ] DB‑IDENTITY‑006.1: Write schema test for refresh tokens with family tracking. (AGENT) – `lib/db/src/__tests__/refresh-tokens.test.ts`  
