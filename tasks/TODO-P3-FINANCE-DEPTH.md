@@ -275,6 +275,50 @@ Append‑only – no updates, no deletes.
 
 ---
 
+### [ ] API‑FIN‑028: PO‑Based Automated Invoice Matching
+**Status:** ⏳ Not Started  
+**Depends on:** API‑FIN‑021 (AP inbox), DB‑AP‑004 (purchase orders)  
+**Why added:** Bill.com's intelligent procurement-to-pay matching is a key feature. PO data should automatically pre‑fill and match captured invoices.  
+**Definition of Done:**
+- When an invoice is captured in the AP inbox, the system searches for an open PO from the same vendor with matching line‑item descriptions and amounts (fuzzy).  
+- If a high‑confidence match is found, the invoice is automatically linked to the PO and the bill is created without manual coding.  
+- If a medium‑confidence match, a suggestion is shown to the user.  
+- Matching logic uses vendor ID, purchase order number (extracted by OCR), and total amount with tolerance.  
+- Audit log records all matches.  
+**BDD:** "When I upload an invoice that matches an existing purchase order, the system automatically suggests the PO and pre‑fills the bill."  
+**TDD:** Integration test verifying invoice matching confidence scoring and auto-linking behavior.  
+**Deep Module:** Encapsulates matching algorithms, confidence scoring, and PO-linking logic.
+
+**Advanced Code Patterns:**
+- Fuzzy string matching for line item descriptions (Levenshtein distance)
+- Confidence scoring based on multiple matching factors
+- Tolerance-based amount matching for partial deliveries
+- OCR-extracted PO number validation
+
+**Anti-Patterns:**
+- Exact string matching only without fuzzy logic
+- No confidence threshold causing false matches
+- Missing tolerance for shipping/tax variations
+- No audit trail for automated matching decisions
+
+**Subtasks:**
+- [ ] API‑FIN‑028.1: Implement fuzzy matching algorithm for vendor and line items. (AGENT) – `artifacts/api-server/src/services/finance/po-matching-service.ts`
+  **verification:** Unit tests pass; correctly matches similar descriptions with configurable threshold.
+- [ ] API‑FIN‑028.2: Add PO number extraction from OCR data with validation. (AGENT)
+  **verification:** PO numbers correctly extracted; invalid formats rejected.
+- [ ] API‑FIN‑028.3: Implement confidence scoring with multi-factor algorithm. (AGENT)
+  **verification:** High/medium/low confidence correctly assigned based on match quality.
+- [ ] API‑FIN‑028.4: Add automatic PO linking for high-confidence matches. (AGENT)
+  **verification:** Auto-matched invoices create bills with PO pre-filled.
+- [ ] API‑FIN‑028.5: Implement medium-confidence suggestions in AP inbox UI. (AGENT)
+  **verification:** Suggested matches shown to user for review and confirmation.
+- [ ] API‑FIN‑028.6: Add audit logging for all matching decisions. (AGENT)
+  **verification:** Match records stored with confidence scores and user actions.
+- [ ] API‑FIN‑028.7: Write integration tests for matching workflow. (AGENT) – `artifacts/api-server/__tests__/api/finance/po-matching.test.ts`
+  **verification:** Tests cover auto-match, suggestion, and no-match scenarios.
+
+---
+
 ### [ ] API‑FIN‑050: Finance Domain Events Verification
 **Status:** ⏳ Not Started  
 **Depends on:** API‑FIN‑003, API‑FIN‑007, API‑FIN‑015, API‑FIN‑017, API‑FIN‑018, DB‑SETTINGS‑002.  

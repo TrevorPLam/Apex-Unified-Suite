@@ -324,6 +324,75 @@ All operations have request/response schemas (`Lead`, `LeadCreate`, `LeadUpdate`
 
 ---
 
+### API‑CRM‑036: Site & Event Tracking – Client‑Side Snippet & Backend
+**Status:** ⏳ Not Started  
+**Depends on:** DB‑CRM‑* (contact identification)  
+**Why added:** ActiveCampaign's JavaScript snippet tracks page visits and events, feeding into scoring and automations. This is a prerequisite for meaningful scoring/automation.  
+**Definition of Done:**
+- A lightweight JS snippet that can be embedded on external websites, which sends anonymous page views with a `tracking_id`.  
+- Backend endpoints: `POST /api/v1/tracking/pageview` and `POST /api/v1/tracking/event` with a cookie‑based `tracking_id`.  
+- When the contact is later identified (via form or email click), the tracking data is linked to the contact record.  
+- Integration with scoring engine (API‑CRM‑034).  
+**BDD:** "When a contact visits the pricing page, their site tracking record is updated and can be used to trigger an automation."  
+**TDD:** Integration test verifying tracking data collection and contact linking.  
+**Deep Module:** Encapsulates tracking data collection, anonymous identity management, and contact association.
+
+**Advanced Code Patterns:**
+- Lightweight JavaScript snippet with async loading
+- Cookie-based anonymous tracking ID with localStorage fallback
+- Event queue for batch sending to reduce API calls
+- Contact identification bridge linking tracking to CRM
+
+**Anti-Patterns:**
+- Heavy tracking script impacting page performance
+- No consent management for tracking
+- Missing data retention controls
+- Synchronous tracking calls blocking page load
+
+**JavaScript Snippet Example:**
+```javascript
+// Minimal tracking snippet
+(function() {
+  var t = window.apex = window.apex || [];
+  t.methods = ['page', 'event'];
+  t.factory = function(e) { return function() { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } };
+  for (var i = 0; i < t.methods.length; i++) {
+    var e = t.methods[i];
+    t[e] = t.factory(e);
+  }
+  t.load = function(apiKey) {
+    var script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://cdn.apex.com/t.js?id=' + apiKey;
+    document.head.appendChild(script);
+  };
+})();
+apex.load('YOUR_API_KEY');
+apex.page('Pricing Page', { path: window.location.pathname });
+```
+
+**Subtasks:**
+- [ ] API‑CRM‑036.1: Design lightweight tracking snippet with async loading. (AGENT) – `lib/tracking/snippet.js`
+  **verification:** Snippet loads asynchronously; <5KB minified; no render blocking.
+- [ ] API‑CRM‑036.2: Implement `POST /api/v1/tracking/pageview` endpoint. (AGENT) – `artifacts/api-server/src/routes/crm/tracking.ts`
+  **verification:** Endpoint accepts pageview data; returns 204; cookie set with tracking_id.
+- [ ] API‑CRM‑036.3: Implement `POST /api/v1/tracking/event` endpoint. (AGENT)
+  **verification:** Custom events accepted with name and properties.
+- [ ] API‑CRM‑036.4: Add cookie-based tracking ID generation and management. (AGENT)
+  **verification:** Tracking ID persists across sessions; localStorage fallback works.
+- [ ] API‑CRM‑036.5: Create tracking data storage schema. (AGENT) – `lib/db/src/migrations/tracking_events.sql`
+  **verification:** Table stores pageviews and events with tracking_id; retention policy configured.
+- [ ] API‑CRM‑036.6: Implement contact identification bridge. (AGENT) – `artifacts/api-server/src/services/crm/tracking-link-service.ts`
+  **verification:** When contact identified, tracking data linked via tracking_id.
+- [ ] API‑CRM‑036.7: Add event queue in snippet for batch sending. (AGENT)
+  **verification:** Events queued and sent in batches; reduces API calls.
+- [ ] API‑CRM‑036.8: Integrate tracking data with scoring engine. (AGENT)
+  **verification:** Page visits and events contribute to contact score.
+- [ ] API‑CRM‑036.9: Write integration tests for tracking workflow. (AGENT) – `artifacts/api-server/__tests__/api/crm/tracking.test.ts`
+  **verification:** Tests cover pageview, event, and contact linking scenarios.
+
+---
+
 ## Common CRM Core Sections
 
 **Rules to Follow:**  

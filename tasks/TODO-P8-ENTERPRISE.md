@@ -30,6 +30,7 @@ This file contains cross-cutting enterprise features that span multiple domains 
 **Enterprise Finance (Bill.com‑style)**
 - [ ] ENT‑FIN‑001 – Multi‑Entity AP/AR (Cross‑Entity Payments)
 - [ ] ENT‑FIN‑002 – Spend Analytics & Anomaly Detection
+- [ ] ENT‑FIN‑003 – Accountant Management Console (Multi‑Client Control)
 
 **Multi‑Tenancy**
 - [ ] ENT‑MULTI‑001 – Advanced Multi‑Tenant Architecture
@@ -360,6 +361,83 @@ This file contains cross-cutting enterprise features that span multiple domains 
 - [ ] ENT‑FIN‑002.4: Add alert configuration and notification delivery. (AGENT)  
   **verification:** Finance managers receive notifications when spend anomalies are detected.
 - **Depends on:** API‑FIN‑004, API‑FIN‑016, API‑AP‑008.
+
+### [ ] ENT‑FIN‑003: Accountant Management Console (Multi‑Client Control)
+**Status:** ⏳ Not Started  
+**Depends on:** ENT‑FIN‑001 (multi‑entity), API‑SETTINGS‑004  
+**Why added:** Bill.com's Accountant Console allows a single practitioner to manage AP/AR for multiple client organisations from one place. Not yet scoped.  
+**Definition of Done:**
+- A new route group under `/api/v1/accountant` available to users with the "accountant" role.  
+- `GET /api/v1/accountant/clients` – list all accessible client organisations.  
+- Switch context: the authenticated accountant can impersonate a client organisation for all subsequent requests (via `X‑Act‑As‑Org` header or similar). This must be audited heavily.  
+- Consolidated dashboard showing key KPIs (overdue invoices, bills pending approval) across all clients.  
+- Ability to push settings, approval workflows, and templates to multiple clients.  
+**BDD:** "As an accountant, I can log into a single dashboard and see which of my clients have overdue invoices, then switch into their organisation to pay bills on their behalf."  
+**TDD:** Integration test verifying accountant role permissions, client switching, and audit logging.  
+**Deep Module:** Encapsulates multi-client management, context switching, and consolidated reporting.
+
+**Advanced Code Patterns:**  
+- Multi-tenant context switching with audit trails  
+- Role-based access control for accountant operations  
+- Consolidated data aggregation across client organizations  
+- Template and workflow propagation mechanisms  
+
+**Anti-Patterns:**  
+- Missing audit trails for client switching  
+- Unrestricted access to client data without proper permissions  
+- Hard-coded client lists without dynamic discovery  
+- Missing security controls for cross-client operations  
+
+**Database Schema:**  
+```sql
+-- Accountant-client relationships
+CREATE TABLE accountant_clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  accountant_id UUID NOT NULL REFERENCES users(id),
+  client_organization_id UUID NOT NULL REFERENCES organizations(id),
+  access_level VARCHAR(20) NOT NULL DEFAULT 'read_write', -- 'read_only', 'read_write', 'admin'
+  granted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  granted_by UUID REFERENCES users(id),
+  expires_at TIMESTAMP WITH TIME ZONE,
+  is_active BOOLEAN DEFAULT true,
+  UNIQUE(accountant_id, client_organization_id)
+);
+
+-- Accountant activity audit log
+CREATE TABLE accountant_activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  accountant_id UUID NOT NULL REFERENCES users(id),
+  client_organization_id UUID NOT NULL REFERENCES organizations(id),
+  action_type VARCHAR(50) NOT NULL, -- 'login', 'context_switch', 'data_access', 'settings_push'
+  action_details JSONB,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+**API Endpoints:**  
+- `GET /api/v1/accountant/clients` - List accessible client organizations
+- `POST /api/v1/accountant/switch-client` - Switch to client context
+- `GET /api/v1/accountant/dashboard` - Consolidated KPI dashboard
+- `POST /api/v1/accountant/push-settings` - Push settings to multiple clients
+- `GET /api/v1/accountant/activity-log` - Audit trail of accountant actions
+
+**Security Requirements:**  
+- All accountant actions must be logged with full audit trail
+- Client switching requires explicit authentication and authorization
+- Accountant role must be granted by organization administrators
+- Cross-client data access must be strictly controlled and audited
+- Session management must support secure context switching
+
+**Frontend Components:**  
+- Accountant dashboard with client overview
+- Client switcher interface with visual indicators
+- Consolidated KPI widgets across all clients
+- Settings propagation interface
+- Activity log viewer for audit trails
+
+---
 
 ---
 

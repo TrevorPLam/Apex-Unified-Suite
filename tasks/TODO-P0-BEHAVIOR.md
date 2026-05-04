@@ -52,7 +52,7 @@ This document contains tasks for defining system behavior through BDD features a
   **Verification:** ≥8 scenarios, all mapped to finance domain errors.
 - [ ] DOMAIN-003.12 (NEW/AGENT): Expand Portal feature file (`docs/features/portal.feature`) to include payment portal access, document request list from client side. (AGENT)
   **Verification:** ≥5 scenarios.
-- [ ] DOMAIN-003.5a: For every feature file, verify that all negative scenarios align with domain error types to be defined in ERROR-002-EXT. Add a cross-reference comment in the feature file. (AGENT)
+- [ ] DOMAIN-003.5a: For every feature file, verify that all negative scenarios align with domain error types to be defined in ERROR-003. Add a cross-reference comment in the feature file. (AGENT)
   **Verification:** All negative scenarios list expected domain error code (e.g., `InvalidStageTransition`, `DuplicateEmail`).
 - [ ] DOMAIN-003.6 (HUMAN): Review and approve all feature files for alignment with stakeholder goals.
   **Verification:** All feature files approved.
@@ -61,7 +61,7 @@ This document contains tasks for defining system behavior through BDD features a
 
 ---
 
-## [ ] ERROR-002-EXT: Extend Domain Error Catalog (Planning)  
+## [ ] ERROR-003: Extend Domain Error Catalog (Planning)  
 **Status:** ⏳ Not Started  
 **Current state:** The original error taxonomy (ERROR-002 in P1) only covers basic contexts. New feature depth requires many additional error codes.  
 **Definition of Done:** A comprehensive list of new domain error codes for Appointments, advanced Finance, advanced Documents, and CRM/Projects depth is produced and added to a shared spec (`docs/error-catalog-extended.md`). This list will be used to extend the actual error classes in P1 (ERROR-002.6).  
@@ -76,12 +76,12 @@ This document contains tasks for defining system behavior through BDD features a
 **Event Flow Map:** Error events must be defined for cross-context communication (e.g., LeadConversionFailed event emitted by CRM, consumed by Analytics).
 
 ### Subtasks:
-- [ ] ERROR-002-EXT.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
-- [ ] ERROR-002-EXT.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
-- [ ] ERROR-002-EXT.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
-- [ ] ERROR-002-EXT.1 (AGENT): Extract all negative scenario error codes from the expanded feature files and compile them into a master list. Ensure coverage for Appointments (NoShowRecorded, WaitlistFull, EventTypeNotFound, BookingLimitReached, etc.), Finance (CreditMemoNotFound, PaymentRunNotFound, CurrencyMismatch, ReconciliationFailed, etc.), Documents (ApprovalAlreadySubmitted, DocumentRetentionPrevented, ShareLinkExpired, etc.), CRM (LeadConversionFailed, DuplicateMergeFailed, etc.), and Projects (SchedulerConflict, RecurringWorkDuplicate, etc.). – `docs/error-catalog-extended.md`
+- [ ] ERROR-003.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
+- [ ] ERROR-003.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
+- [ ] ERROR-003.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
+- [ ] ERROR-003.1 (AGENT): Extract all negative scenario error codes from the expanded feature files and compile them into a master list. Ensure coverage for Appointments (NoShowRecorded, WaitlistFull, EventTypeNotFound, BookingLimitReached, etc.), Finance (CreditMemoNotFound, PaymentRunNotFound, CurrencyMismatch, ReconciliationFailed, etc.), Documents (ApprovalAlreadySubmitted, DocumentRetentionPrevented, ShareLinkExpired, etc.), CRM (LeadConversionFailed, DuplicateMergeFailed, etc.), and Projects (SchedulerConflict, RecurringWorkDuplicate, etc.). – `docs/error-catalog-extended.md`
   **Verification:** File exists, all domain errors mapped to scenarios.
-- [ ] ERROR-002-EXT.2 (HUMAN): Review and approve the extended error catalog.
+- [ ] ERROR-003.2 (HUMAN): Review and approve the extended error catalog.
   **Verification:** Approved.
   **Blocks:** P1 ERROR-002.6.
 

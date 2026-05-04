@@ -107,3 +107,70 @@ components:
 - **Blocks:** Future API expansion tasks (Phase 4+).
 
 ---
+
+### API‑CROSS‑001: Cross‑Module Bulk Operations Infrastructure
+**Status:** ⏳ Not Started  
+**Depends on:** AUTH‑008  
+**Why added:** All reference platforms (especially Bill.com and ActiveCampaign) heavily use bulk operations (batch approve, bulk send, bulk move, bulk delete). Current plan has scattered implementations but no unified infrastructure.  
+**Definition of Done:**
+- Generic bulk operation endpoint: `POST /api/v1/bulk` with body `{ operations: [{ method, path, body? }] }`.  
+- The endpoint executes each operation independently and returns a summary of successes/failures.  
+- Common validation: all operations must belong to the same organisation.  
+- Rate limiting per organisation per second to avoid abuse.  
+- Auditing: each bulk operation is logged as a single audit entry.  
+**BDD:** "I can approve 20 bills at once by sending a single API request."  
+**TDD:** Integration test verifying bulk operations execute correctly with partial failure handling.  
+**Deep Module:** Encapsulates bulk operation orchestration, parallel execution, and result aggregation.
+
+**Advanced Code Patterns:**
+- Parallel operation execution with concurrency limits
+- Partial failure handling with detailed error reporting
+- Request validation and normalization
+- Atomic audit logging for bulk operations
+
+**Anti-Patterns:**
+- Sequential execution causing slow bulk operations
+- No partial failure handling (all-or-nothing)
+- Missing rate limiting causing abuse
+- No audit trail for bulk actions
+
+**API Specification:**
+```yaml
+POST /api/v1/bulk
+Request:
+  {
+    "operations": [
+      { "method": "PATCH", "path": "/api/v1/finance/invoices/123", "body": { "status": "approved" } },
+      { "method": "PATCH", "path": "/api/v1/finance/invoices/124", "body": { "status": "approved" } }
+    ]
+  }
+
+Response:
+  {
+    "summary": {
+      "total": 2,
+      "succeeded": 2,
+      "failed": 0
+    },
+    "results": [
+      { "index": 0, "status": 200, "data": { ... } },
+      { "index": 1, "status": 200, "data": { ... } }
+    ]
+  }
+```
+
+**Subtasks:**
+- [ ] API‑CROSS‑001.1: Add bulk endpoint to OpenAPI spec. (AGENT) – `lib/api-spec/openapi.yaml`
+  **verification:** Spec validates; bulk operation schema defined.
+- [ ] API‑CROSS‑001.2: Implement BulkOperationService with parallel execution. (AGENT) – `artifacts/api-server/src/services/infrastructure/bulk-operation-service.ts`
+  **verification:** Unit tests pass; handles parallel execution with configurable concurrency.
+- [ ] API‑CROSS‑001.3: Add organization validation for all operations. (AGENT)
+  **verification:** Rejects bulk requests mixing organizations; validates auth for each operation.
+- [ ] API‑CROSS‑001.4: Implement rate limiting for bulk endpoint. (AGENT) – `artifacts/api-server/src/middleware/bulk-rate-limit.ts`
+  **verification:** Rate limits enforced per organization; returns 429 when exceeded.
+- [ ] API‑CROSS‑001.5: Add bulk operation audit logging. (AGENT)
+  **verification:** Each bulk operation logged with operation count and summary.
+- [ ] API‑CROSS‑001.6: Write integration tests for bulk operations. (AGENT) – `artifacts/api-server/__tests__/api/infrastructure/bulk-operations.test.ts`
+  **verification:** Tests cover success, partial failure, rate limiting, and validation errors.
+
+---

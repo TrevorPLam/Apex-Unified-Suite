@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "consolidate-skills": "node scripts/consolidate-skills.cjs",
-    "consolidate-docs": "node scripts/consolidate-docs.cjs"
+    "consolidate-docs": "node scripts/consolidate-docs.cjs",
+    "consolidate-tasks": "node scripts/consolidate-tasks.cjs"
   },
   "private": true,
   "devDependencies": {

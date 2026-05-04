@@ -199,6 +199,50 @@ This part covers Finance Data Integration including invoices, payments, budgets,
 
 ---
 
+### [ ] FRONT‑FIN‑009: Mobile Swipe‑to‑Approve / Reason‑on‑Denial UI
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑FIN‑001, MOBILE‑FIN‑001  
+**Why updated:** Bill.com's mobile approval UX is a best practice – swipe right to approve, swipe left to deny with mandatory reason. The current approach uses button-based action.  
+**Definition of Done:**
+- Implement swipe gestures on bill/invoice list items in the mobile PWA.  
+- Swipe right triggers `useUpdateInvoice` mutation with status "approved".  
+- Swipe left opens a modal requiring a rejection reason; only on submit is the mutation called.  
+- Undo option for accidental swipes (5‑second timeout).  
+- Same interaction available in the desktop UI as a progressive enhancement.  
+**BDD:** "On my phone, I can quickly approve an invoice by swiping right, or deny it by swiping left and writing a short reason."  
+**TDD:** Component test verifying swipe gestures trigger correct mutations and undo functionality works.  
+**Deep Module:** Encapsulates swipe gesture handling, mutation triggering, and undo state management.
+
+**Advanced Code Patterns:**
+- Touch gesture recognition with hammer.js or native React touch events
+- Optimistic UI with rollback for undo functionality
+- Progressive enhancement for desktop mouse-based swiping
+- Accessible swipe alternatives for keyboard users
+
+**Anti-Patterns:**
+- No visual feedback during swipe gesture
+- Missing undo functionality for accidental actions
+- Swipe conflicts with scroll on mobile
+- No accessible alternative for non-touch users
+
+**Subtasks:**
+- [ ] FRONT‑FIN‑009.1: Implement swipe gesture detection on mobile list items. (AGENT) – `mobile/src/components/finance/SwipeableInvoiceItem.tsx`
+  **verification:** Swipe right/left detected; visual feedback shows during swipe.
+- [ ] FRONT‑FIN‑009.2: Wire swipe-right to approve mutation with optimistic update. (AGENT)
+  **verification:** Swipe right immediately shows approved state; API call follows.
+- [ ] FRONT‑FIN‑009.3: Implement swipe-left rejection modal with reason input. (AGENT)
+  **verification:** Swipe left opens modal; reason required before rejection sent.
+- [ ] FRONT‑FIN‑009.4: Add 5-second undo toast with rollback functionality. (AGENT)
+  **verification:** Undo button appears after swipe; clicking restores previous state.
+- [ ] FRONT‑FIN‑009.5: Add progressive desktop swipe with mouse drag. (AGENT)
+  **verification:** Desktop users can drag to swipe; same behavior as mobile.
+- [ ] FRONT‑FIN‑009.6: Add keyboard-accessible approve/reject alternatives. (AGENT)
+  **verification:** Keyboard users can tab to approve/reject buttons; no swipe required.
+- [ ] FRONT‑FIN‑009.7: Component test with MSW for all interaction modes. (AGENT)
+  **verification:** Tests cover swipe, click, and keyboard flows.
+
+---
+
 ## Cross-References
 
 ### Dependencies on Other Files

@@ -89,6 +89,52 @@ This part covers Frontend Infrastructure including React Query configuration, er
 
 ---
 
+### [ ] FRONT‑INFRA‑004: Undo / Soft‑Delete UX Pattern
+**Status:** ⏳ Not Started  
+**Depends on:** FRONT‑INFRA‑001  
+**Why added:** All reference platforms use undo/soft-delete with a grace period for recoverability. The UI should consistently provide "Undo" toasts after destructive actions.  
+**Definition of Done:**
+- A generic `useUndoableMutation` hook that wraps any mutation and, after a soft‑delete or status change, shows a toast with an "Undo" button for 10 seconds.  
+- The undo action calls the API to restore the entity (or reverse the status change).  
+- At minimum, apply this hook to all soft‑delete actions across CRM, Projects, Finance, Documents, Assets, and Appointments.  
+**BDD:** "When I delete a lead, a toast appears with 'Undo' for 10 seconds. Clicking it restores the lead."  
+**TDD:** Component test verifying undo toast appears and restore API is called on undo.  
+**Deep Module:** Encapsulates undo state management, toast notification, and mutation reversal logic.
+
+**Advanced Code Patterns:**
+- Optimistic deletion with rollback capability
+- Countdown timer with visual progress
+- Mutation queue with cancel/retry logic
+- Persistent undo state across navigation
+
+**Anti-Patterns:**
+- No undo for destructive actions
+- Short timeout without visual indicator
+- No keyboard shortcut for undo
+- Undo action fails silently
+
+**Subtasks:**
+- [ ] FRONT‑INFRA‑004.1: Create `useUndoableMutation` hook with toast integration. (AGENT) – `artifacts/apex-os/src/hooks/useUndoableMutation.ts`
+  **verification:** Hook returns mutate function, undo callback, and status; unit tests pass.
+- [ ] FRONT‑INFRA‑004.2: Implement countdown timer component for undo toast. (AGENT) – `artifacts/apex-os/src/components/UndoToast.tsx`
+  **verification:** Timer shows 10s countdown; visual progress indicator works.
+- [ ] FRONT‑INFRA‑004.3: Apply undo pattern to CRM lead soft-delete. (AGENT) – `artifacts/apex-os/src/components/crm/LeadList.tsx`
+  **verification:** Deleting lead shows undo toast; clicking restores lead.
+- [ ] FRONT‑INFRA‑004.4: Apply undo pattern to CRM contact soft-delete. (AGENT)
+  **verification:** Same undo behavior for contacts.
+- [ ] FRONT‑INFRA‑004.5: Apply undo pattern to Project delete. (AGENT)
+  **verification:** Undo works for project deletion.
+- [ ] FRONT‑INFRA‑004.6: Apply undo pattern to Finance invoice delete. (AGENT)
+  **verification:** Undo works for invoice soft-delete.
+- [ ] FRONT‑INFRA‑004.7: Apply undo pattern to Documents file delete. (AGENT)
+  **verification:** Undo works for document soft-delete.
+- [ ] FRONT‑INFRA‑004.8: Add keyboard shortcut (Ctrl+Z) for undo when toast active. (AGENT)
+  **verification:** Pressing Ctrl+Z triggers undo action.
+- [ ] FRONT‑INFRA‑004.9: Write component tests for undo workflow. (AGENT) – `artifacts/apex-os/src/hooks/__tests__/useUndoableMutation.test.tsx`
+  **verification:** Tests cover mutation, undo, timeout expiration, and keyboard shortcut.
+
+---
+
 ## Cross-References
 
 ### Dependencies on Other Files

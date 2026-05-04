@@ -27,6 +27,7 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - [ ] SEC‑002 – Add Security Headers (Helmet) & CSP
 - [ ] SEC‑003 – Configure CORS with Allowed Origins
 - [ ] SEC‑004 – Enable Database SSL & Connection Pool Limits
+- [ ] SEC‑005 – Threat Detection Alerts for Unusual Document Access
 
 ### Database Security
 - [ ] DB‑RLS‑FIN‑001 – Re‑evaluate Row Level Security for Financial Data  
@@ -152,6 +153,79 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - Pool configuration must support both read and write operations
 
 **Subtasks:** update DB connection config, add env vars.
+
+---
+
+### SEC‑005: Threat Detection Alerts for Unusual Document Access
+**Status:** ⏳ Not Started  
+**Depends on:** MON‑002 (Sentry), API‑DOCS‑013  
+**Why added:** ShareFile's threat detection for atypical access patterns (e.g., user downloading many files in a short time, IP change, repeated failed attempts) is a key enterprise security feature.  
+**Definition of Done:**
+- A service that analyses audit logs for document access in near‑real‑time.  
+- Configurable rules: number of downloads per hour, new IP within a session, repeated failed authorization attempts on share links.  
+- When a rule is triggered, create a security alert and notify the organisation's admin via email/in‑app.  
+- UI: a "Security Alerts" tab in the Settings → Audit section showing open alerts and resolution actions.  
+**BDD:** "As an admin, I am alerted when a user downloads more than 50 documents in 10 minutes."  
+**TDD:** Integration test verifying threat detection rules trigger alerts correctly.  
+**Deep Module:** Encapsulates threat detection logic, rule evaluation, and alert management.
+
+**Advanced Code Patterns:**  
+- Real-time audit log analysis with sliding windows  
+- Configurable threat detection rules with condition evaluation  
+- Alert escalation and notification workflows  
+- Security event correlation and pattern recognition  
+
+**Anti-Patterns:**  
+- Missing configurable thresholds causing false positives  
+- No audit trail for threat detection decisions  
+- Hard-coded detection rules without flexibility  
+- Missing admin interface for alert management  
+
+**Database Schema:**  
+```sql
+-- Security alerts table
+CREATE TABLE security_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES organizations(id),
+  alert_type VARCHAR(50) NOT NULL, -- 'bulk_download', 'ip_change', 'failed_attempts'
+  severity VARCHAR(20) NOT NULL DEFAULT 'medium', -- 'low', 'medium', 'high', 'critical'
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  entity_type VARCHAR(50), -- 'user', 'document', 'share_link'
+  entity_id UUID,
+  metadata JSONB, -- Additional context (IP address, download count, etc.)
+  status VARCHAR(20) NOT NULL DEFAULT 'open', -- 'open', 'investigating', 'resolved', 'false_positive'
+  assigned_to UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  resolved_at TIMESTAMP WITH TIME ZONE,
+  resolved_by UUID REFERENCES users(id)
+);
+
+-- Threat detection rules configuration
+CREATE TABLE threat_detection_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES organizations(id),
+  rule_name VARCHAR(100) NOT NULL,
+  rule_type VARCHAR(50) NOT NULL, -- 'bulk_download', 'ip_change', 'failed_attempts'
+  threshold_value INTEGER NOT NULL,
+  time_window_minutes INTEGER NOT NULL DEFAULT 60,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+**API Endpoints:**  
+- `GET /api/v1/security/alerts` - List security alerts with filtering
+- `POST /api/v1/security/alerts/{alertId}/resolve` - Mark alert as resolved
+- `GET /api/v1/security/threat-rules` - List threat detection rules
+- `PUT /api/v1/security/threat-rules/{ruleId}` - Update threat detection rules
+
+**Frontend Components:**  
+- Security alerts dashboard with filtering and search
+- Alert detail view with investigation actions
+- Threat detection rules configuration interface
+- Real-time alert notifications in admin panel
 
 ---
 

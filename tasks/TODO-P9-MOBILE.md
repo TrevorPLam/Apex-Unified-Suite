@@ -320,3 +320,45 @@ Each subtask/task should direct specfic commands to be utilized through the proc
 - **Depends on:** FRONT‑FIN‑001, FRONT‑FIN‑004.
 
 ---
+
+### [ ] MOBILE‑ASSETS‑001: Mobile Barcode Scanning for Asset Check‑In/Out
+**Status:** ⏳ Not Started  
+**Depends on:** MOBILE‑001, API‑ASSETS‑005  
+**Why updated:** AssetTiger's core field workflow relies on barcode scanning. Current mobile tasks mention scanning but don't define the API or UI specifics for assets.  
+**Definition of Done:**
+- `GET /api/v1/assets/by‑barcode/{barcode}` – quick lookup endpoint for status and basic info.  
+- Mobile UI: a "Scan" tab that opens the camera, scans a barcode, and immediately shows the asset.  
+- From the scanned asset screen, user can check‑out/check‑in with a single tap.  
+**BDD:** "I can scan a laptop's barcode, see that it's currently checked out to John, and check it back in."  
+**TDD:** Integration test verifying barcode lookup API and mobile scan workflow.  
+**Deep Module:** Encapsulates barcode scanning, asset lookup, and check-in/out workflow in mobile context.
+
+**Advanced Code Patterns:**
+- Camera integration with react-native-camera or expo-camera
+- Barcode decoding with ML Kit or ZXing
+- Offline barcode cache for assets recently viewed
+- Quick action buttons for common workflows post-scan
+
+**Anti-Patterns:**
+- No offline support requiring constant connectivity
+- Slow camera initialization blocking UI
+- No flashlight/torch control for low-light scanning
+- Missing haptic feedback for successful scan
+
+**Subtasks:**
+- [ ] MOBILE‑ASSETS‑001.1: Implement barcode lookup API endpoint. (AGENT) – `artifacts/api-server/src/routes/assets/by-barcode.ts`
+  **verification:** `npm test -- --testPathPattern=barcode-lookup` passes; returns asset by barcode.
+- [ ] MOBILE‑ASSETS‑001.2: Add camera integration with barcode scanning. (AGENT) – `mobile/src/assets/BarcodeScanner.tsx`
+  **verification:** Camera opens; barcodes detected; haptic feedback on scan.
+- [ ] MOBILE‑ASSETS‑001.3: Build scanned asset detail view with status. (AGENT) – `mobile/src/assets/ScannedAssetScreen.tsx`
+  **verification:** Asset info displayed; checkout status visible; assignee shown.
+- [ ] MOBILE‑ASSETS‑001.4: Implement single-tap check-out/check-in actions. (AGENT)
+  **verification:** Tap action executes API call; UI updates optimistically.
+- [ ] MOBILE‑ASSETS‑001.5: Add offline asset cache for recent scans. (AGENT) – `mobile/src/assets/AssetCache.ts`
+  **verification:** Recently scanned assets viewable offline; syncs on reconnect.
+- [ ] MOBILE‑ASSETS‑001.6: Add torch control and scan history. (AGENT)
+  **verification:** Flashlight toggle works; scan history persists locally.
+- [ ] MOBILE‑ASSETS‑001.7: Write integration tests for scan workflow. (AGENT) – `mobile/e2e/barcode-scan.spec.ts`
+  **verification:** E2E test covers scan → view → check-in flow.
+
+---

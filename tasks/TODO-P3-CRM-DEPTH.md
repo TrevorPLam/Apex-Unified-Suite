@@ -313,6 +313,62 @@ Similarly for contacts and companies.
 
 ---
 
+### [ ] API‑CRM‑034: Rules‑Based Lead/Deal Scoring (No ML)
+**Status:** ⏳ Not Started  
+**Depends on:** API‑CRM‑005, API‑CRM‑017  
+**Why updated:** ActiveCampaign provides a no‑code scoring interface that is a primary CRM feature; it doesn't require machine learning. The original plan placed it entirely in P10 AI.  
+**Definition of Done:**
+- `POST /api/v1/crm/scoring-rules` – create a scoring rule (e.g., "Add 10 points when contact opens an email", "Subtract 5 points when email bounces").  
+- `GET /api/v1/crm/scoring-rules` – list rules.  
+- `PATCH /api/v1/crm/scoring-rules/{ruleId}` – update rule.  
+- `DELETE /api/v1/crm/scoring-rules/{ruleId}` – soft delete.  
+- Scoring engine evaluates rules synchronously on relevant events (email opened, page visited, form submitted) and updates the `score` field on the lead/contact/deal.  
+- Score history is stored in a `score_log` table (with timestamp, rule that fired, and value).  
+- UI: a table‑based rule builder where non‑technical users can add conditions and assign point values.  
+**BDD:** "As a sales manager, I can set up scoring rules so that leads who visit the pricing page get an extra 20 points."  
+**TDD:** Unit test verifying that when an email open event arrives, the scoring engine increments the score by the configured value.  
+**Deep Module:** Encapsulates scoring rule evaluation, score calculation, and history tracking.  
+
+**Advanced Code Patterns:**  
+- Event-driven scoring evaluation with real-time updates  
+- Configurable rule conditions with flexible field matching  
+- Score history tracking with audit trail capabilities  
+- Batch scoring recalculation for rule changes  
+
+**Anti-Patterns:**  
+- Synchronous scoring evaluation blocking main operations  
+- Missing score history causing audit trail gaps  
+- Hard-coded scoring logic without rule flexibility  
+- Incomplete event handling for scoring triggers
+
+---
+
+### [ ] API‑CRM‑035: Deal Automation Triggers on Field‑Change Events
+**Status:** ⏳ Not Started  
+**Depends on:** API‑CRM‑017, AUTO‑CRM‑001  
+**Why updated:** ActiveCampaign's deal automations can fire on owner change, pipeline stage change, value change, or expected close date change. Currently, only stage‑based automations are described.  
+**Definition of Done:**
+- Extend `AUTO‑CRM‑001` rules engine to accept triggers for: `deal.owner_changed`, `deal.value_changed`, `deal.expected_close_date_changed`, `deal.stage_changed`.  
+- When a deal is updated via `PATCH`, the service publishes specific domain events (`DealOwnerChanged`, `DealValueChanged`, etc.).  
+- Automation rules listen to these events and create tasks, send emails, or update fields.  
+**BDD:** "When a deal's owner is changed, automatically reassign all linked follow‑up tasks to the new owner."  
+**TDD:** Integration test verifying that deal field changes trigger appropriate automation rules.  
+**Deep Module:** Encapsulates deal event emission and automation trigger handling.  
+
+**Advanced Code Patterns:**  
+- Domain event emission for deal field changes  
+- Event-driven automation rule evaluation  
+- Transactional consistency between deal updates and event emission  
+- Configurable automation triggers with field-specific logic  
+
+**Anti-Patterns:**  
+- Missing event emission for deal field changes  
+- Inconsistent automation trigger handling across field types  
+- Synchronous automation processing blocking deal updates  
+- Incomplete audit trail for automation triggers
+
+---
+
 ### [ ] API‑CRM‑050: CRM Domain Events Verification
 **Status:** ⏳ Not Started  
 **Depends on:** All CRM services, DB‑SETTINGS‑002.  

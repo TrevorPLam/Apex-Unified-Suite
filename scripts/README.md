@@ -55,3 +55,66 @@ SKILL.md
 - Automatically sorts skills alphabetically
 
 **Dependencies**: None (uses Node.js built-in modules only)
+
+### consolidate-tasks.cjs
+
+**Purpose**: Consolidates all TODO-*.md task files from the `tasks/` directory into a single master `TASKS-MASTER.md` file in the repository root.
+
+**Features**:
+
+- Automatically discovers all TODO-*.md files in the tasks directory
+- Generates a table of contents organized by priority level (P0-P10)
+- Preserves original file content and structure
+- Calculates completion statistics and task counts
+- Adds generation timestamp and file metadata
+- Provides regeneration instructions
+
+**Usage**:
+
+```bash
+# Run directly
+node scripts/consolidate-tasks.cjs
+
+# Or use the convenience script
+pnpm run consolidate-tasks
+```
+
+**Output**: Creates `TASKS-MASTER.md` in the repository root with:
+
+- Overview section with project statistics
+- Table of contents organized by priority
+- Full content of each task file in code blocks
+- File metadata (size, modification date, line count)
+- Regeneration instructions
+
+**File Structure**:
+
+```text
+TASKS-MASTER.md
+├── Header with generation info and statistics
+├── Overview and priority legend
+├── Table of Contents (by priority)
+├── Task Files Documentation (70 files)
+│   ├── Priority 0 (Foundation)
+│   ├── Priority 1 (Core Infrastructure)
+│   ├── Priority 2 (Domain Foundations)
+│   └── ... (remaining priorities)
+└── Footer with regeneration instructions
+```
+
+**Statistics Generated**:
+
+- Total task files and individual tasks
+- Completion rate tracking
+- Priority level distribution
+- Document size and metadata
+
+**Notes**:
+
+- This is a generated file - do not edit directly
+- Edit individual TODO-*.md files in the `tasks/` directory instead
+- Script handles CommonJS/ES module compatibility
+- Automatically sorts files by priority then alphabetically
+- Preserves original formatting and structure
+
+**Dependencies**: None (uses Node.js built-in modules only)

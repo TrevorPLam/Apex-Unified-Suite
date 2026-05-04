@@ -287,6 +287,44 @@ This part covers Documents Data Integration including file management, workflows
 
 ---
 
+### [ ] FRONT‑DOCS‑011: Document Template Builder (Word‑based)
+**Status:** ⏳ Not Started  
+**Depends on:** API‑DOCS‑004, DOC‑STORAGE‑001  
+**Why updated:** ShareFile allows users to create Word‑based templates with autofill fields that map to CRM or other data. Currently missing.  
+**Definition of Done:**
+- `POST /api/v1/document‑templates` – upload a .docx file as a template, with optional field mappings (e.g., `{{contact.name}}` maps to `contacts.full_name`).  
+- `GET /api/v1/document‑templates/{templateId}/render` – generate a new document by substituting mapped fields with actual data from a given entity (contact, deal, project).  
+- Frontend: a "Templates" tab in the Documents module that lists available templates, and a "New from Template" action on entity detail pages.  
+**BDD:** "When I click 'New from Template' on a contact, a pre‑filled document is generated with the contact's name and company."  
+**TDD:** Integration test verifying template upload, field mapping, and document generation with real data.  
+**Deep Module:** Encapsulates template management, field mapping logic, and document generation workflow.
+
+**Advanced Code Patterns:**  
+- Word document parsing and template variable extraction  
+- Dynamic field mapping with validation  
+- Document generation with data substitution  
+- Template management with versioning  
+
+**Anti-Patterns:**  
+- Missing field validation allowing invalid template variables  
+- Hard-coded entity mappings without flexibility  
+- No template preview before generation  
+- Missing error handling for malformed Word documents  
+
+**Frontend Components:**  
+- Template upload component with drag-and-drop  
+- Field mapping interface with autocomplete  
+- Template gallery with preview thumbnails  
+- "New from Template" action buttons on entity pages  
+
+**API Integration:**  
+- Template upload and storage endpoints  
+- Field extraction and mapping validation  
+- Document generation with data substitution  
+- Template listing and management  
+
+---
+
 ### [ ] FRONT‑INT‑DOCS: Documents Interactive Features Wiring
 **Status:** ⏳ Not Started  
 **Depends on:** FRONT‑DOCS‑001 through FRONT‑DOCS‑010.  

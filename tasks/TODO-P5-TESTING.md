@@ -65,6 +65,50 @@ This part covers E2E Testing, Data Migration & Validation, Feature Flags, Consum
 
 ---
 
+### [ ] FRONT‑TEST‑001: Platform‑Wide Activity Feed Component
+**Status:** ⏳ Not Started  
+**Depends on:** API‑SETTINGS‑004 (audit logs), DB‑SETTINGS‑002  
+**Why added:** Karbon and ActiveCampaign maintain a single, unified activity timeline across all entities. Current audit UI is per‑context. A cross‑module feed is needed for true executive visibility.  
+**Definition of Done:**
+- `GET /api/v1/activity‑feed` – returns a merged, paginated list of audit log entries filtered by organisation, with entity type icons and links.  
+- Frontend: an "Activity" page under Dashboard that displays this feed with infinite scroll.  
+- Drill‑down: clicking an entry navigates to the relevant entity's detail page.  
+**BDD:** "I can see a single timeline of everything happening in my firm – from lead conversions to project completions to bill approvals."  
+**TDD:** Component test verifying activity feed renders mixed entity types correctly.  
+**Deep Module:** Encapsulates activity aggregation, entity type normalization, and drill-down navigation.
+
+**Advanced Code Patterns:**
+- Unified activity aggregation from multiple bounded contexts
+- Entity type icons and color coding for visual distinction
+- Infinite scroll with cursor-based pagination
+- Real-time updates via WebSocket for new activities
+
+**Anti-Patterns:**
+- Separate activity feeds per module without unified view
+- Missing entity type context causing confusion
+- No drill-down capability from activity items
+- Slow loading without pagination
+
+**Subtasks:**
+- [ ] FRONT‑TEST‑001.1: Create `GET /api/v1/activity-feed` endpoint with aggregation logic. (AGENT) – `artifacts/api-server/src/routes/settings/activity-feed.ts`
+  **verification:** Endpoint returns paginated audit entries with entity metadata; `pnpm test -- activity-feed.test.ts` passes.
+- [ ] FRONT‑TEST‑001.2: Implement entity type icon mapping component. (AGENT) – `artifacts/apex-os/src/components/activity/EntityIcon.tsx`
+  **verification:** Correct icons render for each entity type (lead, contact, invoice, project, etc.).
+- [ ] FRONT‑TEST‑001.3: Build ActivityFeed component with infinite scroll. (AGENT) – `artifacts/apex-os/src/components/activity/ActivityFeed.tsx`
+  **verification:** Scroll loads more entries; loading state shown; no duplicate requests.
+- [ ] FRONT‑TEST‑001.4: Add drill-down navigation to entity pages. (AGENT)
+  **verification:** Clicking activity item navigates to correct entity detail page.
+- [ ] FRONT‑TEST‑001.5: Create Activity page under Dashboard. (AGENT) – `artifacts/apex-os/src/pages/Activity.tsx`
+  **verification:** Page accessible from dashboard nav; shows full activity feed.
+- [ ] FRONT‑TEST‑001.6: Add filtering by entity type and date range. (AGENT)
+  **verification:** Filters applied to feed; URL query params synced with filters.
+- [ ] FRONT‑TEST‑001.7: Implement real-time updates via WebSocket. (AGENT)
+  **verification:** New activities appear without page refresh.
+- [ ] FRONT‑TEST‑001.8: Write component tests with MSW. (AGENT) – `artifacts/apex-os/src/components/activity/__tests__/ActivityFeed.test.tsx`
+  **verification:** Tests cover feed rendering, infinite scroll, and drill-down.
+
+---
+
 ## Data Migration & Validation
 
 ### [ ] MIGRATION‑001: Data Seeding Validation

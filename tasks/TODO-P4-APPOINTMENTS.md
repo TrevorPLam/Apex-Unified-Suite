@@ -205,6 +205,53 @@ Emits `NoShowRecorded` domain event.
 
 ---
 
+### [ ] API‑APPT‑020: Shared vs. Team Event Type Configuration
+**Status:** ⏳ Not Started  
+**Depends on:** API‑APPT‑011  
+**Why updated:** Calendly distinguishes between Shared event types (quick setup, no admin lock) and Team event types (admin managed). Our event type config doesn't capture this.  
+**Definition of Done:**
+- Add field `ownership_type` (enum: personal/shared/team) to the event types table.  
+- `POST /api/v1/appointments/event‑types` accepts the new field.  
+- When `ownership_type=shared`, the event type is visible to all members of the organisation but not locked by admin.  
+- When `ownership_type=team`, the admin‑managed sections apply (as defined in ENT‑APPT‑001).  
+- UI updates to show different configuration panels based on ownership type.  
+**BDD:** "A team member can create a Shared event type that everyone can see, without needing admin approval."  
+**TDD:** Integration test verifying ownership type behavior and visibility rules.  
+**Deep Module:** Encapsulates event type ownership logic and permission management.  
+
+**Advanced Code Patterns:**  
+- Enum-based ownership type validation  
+- Permission-based visibility filtering  
+- Admin lock enforcement for team event types  
+- Shared event type discovery across organization  
+
+**Anti-Patterns:**  
+- Missing ownership validation allowing unauthorized access  
+- Inconsistent visibility rules across ownership types  
+- Hard-coded ownership logic without flexibility  
+- Missing admin controls for team event types  
+
+**Database Schema Update:**  
+```sql
+ALTER TABLE event_types 
+ADD COLUMN ownership_type VARCHAR(20) NOT NULL DEFAULT 'personal' 
+CHECK (ownership_type IN ('personal', 'shared', 'team'));
+
+-- Update existing event types to default to 'personal'
+UPDATE event_types SET ownership_type = 'personal' WHERE ownership_type IS NULL;
+
+-- Index for filtering by ownership type
+CREATE INDEX idx_event_types_ownership ON event_types(organization_id, ownership_type, deleted_at);
+```
+
+**API Updates:**  
+- Extend event type creation/update payload with `ownership_type` field
+- Add visibility filtering in list endpoints based on user permissions
+- Implement admin-only operations for team event types
+- Add shared event type discovery for organization members
+
+---
+
 ## Progress Tracking
 
 ### Overall Status
