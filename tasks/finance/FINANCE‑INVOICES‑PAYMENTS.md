@@ -482,6 +482,46 @@ grep -r "exchange_rate" lib/db/src/schema/
 
 ---
 
+## Document Delivery
+
+### [ ] API‑FIN‑023: Invoice PDF Generation
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** Invoices cannot be rendered or downloaded as branded PDFs.
+**Size:** Medium
+
+**Description:** Generate branded invoice PDFs, store or cache the rendered artifact, and return secure download URLs for internal and portal consumers.
+
+**Depends on:** `finance/FINANCE‑INVOICES‑PAYMENTS.md → API‑FIN‑004`, `documents/DOCUMENTS‑MANAGEMENT.md → DOC‑STORAGE‑001`
+**Blocks:** `finance/FINANCE‑INVOICES‑PAYMENTS.md → FRONT‑FIN‑009`, `finance/FINANCE‑MULTI‑ENTITY.md → FRONT‑FIN‑006`
+**Related Files:** `artifacts/api‑server/src/services/finance/invoice‑pdf‑service.ts`, `lib/api‑spec/openapi.yaml`
+
+**Definition of Done**
+- [ ] Endpoint exists to request or retrieve invoice PDF output
+- [ ] Rendered PDF includes branding, tax, totals, and payment instructions
+- [ ] Cached file retrieval respects organization and portal access boundaries
+
+### [ ] FRONT‑FIN‑009: Invoice PDF Download & Preview
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** Finance users cannot preview or download invoice PDFs.
+**Size:** Small
+
+**Description:** Add invoice preview and download actions to the finance UI, using the generated PDF endpoint and clear loading/error states.
+
+**Depends on:** `finance/FINANCE‑INVOICES‑PAYMENTS.md → API‑FIN‑023`
+**Blocks:** [N/A]
+**Related Files:** `artifacts/apex‑os/src/pages/Finance.tsx`, `artifacts/apex‑os/src/components/finance/InvoiceDetail.tsx`
+
+### Subtasks
+- [ ] API‑FIN‑023.1 (AGENT): Define the PDF render service and storage strategy.
+- [ ] API‑FIN‑023.2 (AGENT): Add the PDF generation endpoint and authorization tests.
+- [ ] FRONT‑FIN‑009.1 (AGENT): Add preview/download actions and handling for cached generation status.
+
+---
+
 ## Frontend Integration
 
 ### [ ] FRONT‑FIN‑001: Invoices & Payments – Replace Mock Data

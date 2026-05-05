@@ -6,6 +6,33 @@ This file contains architecture‑focused tasks that define boundaries, scope de
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| ARCH‑008 | Data residency ADR | [N/A] |
+| ARCH‑009 | OpenTelemetry observability ADR | [N/A] |
+| ARCH‑010 | Encryption-at-rest strategy ADR | [N/A] |
+| ARCH‑011 | Multi-environment deployment ADR | [N/A] |
+| ARCH‑012 | NIST SSDF alignment ADR | [N/A] |
+| ARCH‑013 | EU Cyber Resilience Act compliance ADR | [N/A] |
+| ARCH‑014 | Engagement lifecycle scoping ADR | [N/A] |
+| ARCH‑015 | Data sovereignty vs. residency ADR | [N/A] |
+| ARCH‑016 | ISO 27001 alignment note | [N/A] |
+
+### Subtasks
+- [ ] ARCH‑008.1 (AGENT): Draft regional deployment and org-region tagging decision record.
+- [ ] ARCH‑009.1 (AGENT): Document tracing, OTLP, and vendor-neutral collector decisions.
+- [ ] ARCH‑010.1 (AGENT): Document key hierarchy and envelope encryption strategy.
+- [ ] ARCH‑011.1 (AGENT): Document dev/staging/prod promotion strategy.
+- [ ] ARCH‑012.1 (AGENT): Map SSDF controls to current and planned engineering practices.
+- [ ] ARCH‑013.1 (AGENT): Document CRA/SBOM implications and disclosure requirements.
+- [ ] ARCH‑014.1 (AGENT): Define engagement lifecycle boundaries and deferral criteria.
+- [ ] ARCH‑015.1 (AGENT): Document sovereignty vs residency distinction for regulated tenants.
+- [ ] ARCH‑016.1 (HUMAN): Review ISO 27001 overlap and future-certification posture.
+
+---
+
 ## [ ] ARCH‑007: Define Appointments (Calendly‑style) vs. PM Scheduler Boundary
 **Status:** ⏳ Not Started
 **Actor:** MIXED

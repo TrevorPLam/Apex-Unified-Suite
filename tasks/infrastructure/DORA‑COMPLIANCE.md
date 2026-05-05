@@ -65,7 +65,7 @@ Align the incident classification system (from INCIDENT‑RESPONSE.md) with DORA
 - **Regulatory reporting templates** for DORA major incident notifications: initial notification (within 4 hours), intermediate report (within 72 hours), and final report (within 1 month).
 - **Integration** with the existing SOC 2 incident response process so a single incident workflow satisfies both regimes.
 
-**Depends on:** `INCIDENT‑RESPONSE.md` (incident response plan exists)  
+**Depends on:** `infrastructure/INCIDENT‑RESPONSE.md → IR‑001` (incident response plan exists)  
 **Blocks:** `DORA‑003`
 
 **Related Files:** `docs/dora/incident‑classification.md`, `docs/dora/regulatory‑reporting‑templates.md`
@@ -109,7 +109,7 @@ Establish an annual digital operational resilience testing program that includes
 
 All test results must be documented, reviewed, and made available to regulators and auditors upon request.
 
-**Depends on:** `DORA‑001` (risk register identifies critical systems), `DORA‑002` (incident classification), `DR‑005` (restore drill), `INCIDENT‑RESPONSE.md`, `PENETRATION‑TESTING.md`  
+**Depends on:** `DORA‑001` (risk register identifies critical systems), `DORA‑002` (incident classification), `DR‑005` (restore drill), `infrastructure/INCIDENT‑RESPONSE.md → IR‑001`, `security/PENETRATION‑TESTING.md → PENTEST‑001`  
 **Blocks:** None
 
 **Related Files:** `docs/dora/resilience‑testing‑policy.md`, `artifacts/api‑server/src/jobs/resilience‑test‑runner.ts`
@@ -141,7 +141,7 @@ pnpm --filter @workspace/api‑server test -- resilience‑scenarios.test.ts
 **Status:** ⏳ Not Started  
 **Actor:** MIXED  
 **Priority:** 🔴 Critical  
-**Current State:** Vendor risk management is planned (VENDOR‑RISK‑MANAGEMENT.md) but not yet implemented. DORA adds specific ICT third‑party requirements.  
+**Current State:** Vendor risk management now has a dedicated owner file in `infrastructure/VENDOR‑RISK‑MANAGEMENT.md`, but DORA-specific ICT oversight work remains unimplemented.  
 **Size:** Medium  
 
 **Description:**  
@@ -151,7 +151,7 @@ Enhance the vendor risk management program to meet DORA Articles 28‑31 require
 - **Annual Reviews:** Conduct annual security and resilience reviews of all critical ICT providers, including collecting their SOC 2 Type II reports, ISO 27001 certificates, and DORA compliance statements.
 - **Concentration Risk:** Assess concentration risk (e.g., over‑reliance on a single cloud provider) and document mitigation strategies.
 
-**Depends on:** `VENDOR‑RISK‑MANAGEMENT.md` (vendor inventory exists)  
+**Depends on:** `infrastructure/VENDOR‑RISK‑MANAGEMENT.md → VRM‑001` (vendor inventory exists)  
 **Blocks:** None
 
 **Related Files:** `docs/dora/ict‑provider‑oversight.md`
@@ -197,7 +197,7 @@ Enhance the existing audit logging system to meet DORA requirements:
   - Third‑party API calls (Stripe, Plaid, cloud provider management APIs).
   - Security incidents and responses.
 
-**Depends on:** `infrastructure/SETTINGS‑AUDIT.md → DB‑SETTINGS‑002`, `API‑AUDIT‑001`, `DR‑002` (backup infrastructure)  
+**Depends on:** `infrastructure/SETTINGS‑AUDIT.md → DB‑SETTINGS‑002`, `infrastructure/SETTINGS‑AUDIT.md → API‑AUDIT‑001`, `infrastructure/DISASTER‑RECOVERY.md → DR‑002` (backup infrastructure)  
 **Blocks:** None
 
 **Related Files:** `artifacts/api‑server/src/services/audit/audit‑immutability‑service.ts`, `infra/audit‑log‑archival/`

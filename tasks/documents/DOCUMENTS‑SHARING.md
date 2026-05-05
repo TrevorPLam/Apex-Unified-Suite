@@ -6,6 +6,21 @@ This file covers advanced document features within the Document Management bound
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| API‑DOCS‑012 | Document version comparison endpoint | `documents/DOCUMENTS‑SHARING.md → API‑DOCS‑014` |
+| API‑DOCS‑015 | E-signature template CRUD | `documents/DOCUMENTS‑SHARING.md → API‑DOCS‑010` |
+| API‑ESIGN‑005 | eIDAS SES/AES/QES support planning and API flags | `documents/DOCUMENTS‑SHARING.md → API‑DOCS‑015` |
+
+### Subtasks
+- [ ] API‑DOCS‑012.1 (AGENT): Define compare request/response contract and diff format.
+- [ ] API‑DOCS‑015.1 (AGENT): Add reusable template CRUD for signature workflows.
+- [ ] API‑ESIGN‑005.1 (AGENT): Define signature assurance levels and capability flags.
+
+---
+
 ## API – Secure Share Links
 
 ### [ ] API‑DOCS‑013: Secure Share Link API

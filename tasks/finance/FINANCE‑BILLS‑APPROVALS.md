@@ -180,6 +180,31 @@ pnpm run typecheck
 
 ---
 
+### [ ] API‑AP‑009: Three‑Way Matching Engine
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** Bills can be approved without matching against a purchase order and receipt.
+**Size:** Medium
+
+**Description:** Validate vendor bills against purchase orders and received items with tolerance rules, exception handling, and auto-approval when values remain within policy.
+
+**Depends on:** `finance/FINANCE‑BILLS‑APPROVALS.md → DB‑AP‑002`, `DB‑AP‑004`, `API‑FIN‑006`
+**Blocks:** [N/A]
+**Related Files:** `artifacts/api‑server/src/services/ap/three‑way‑matching‑service.ts`, `docs/finance/three‑way‑matching.md`
+
+**Definition of Done**
+- [ ] Matching compares bill lines to PO lines and receipt state
+- [ ] Tolerance thresholds are configurable and exceptions are explicit
+- [ ] Auto-approval path is logged and auditable
+
+### Subtasks
+- [ ] API‑AP‑009.1 (AGENT): Define the matching inputs, tolerance policy, and exception outputs.
+- [ ] API‑AP‑009.2 (AGENT): Implement the matching service and approval hooks.
+- [ ] API‑AP‑009.3 (AGENT): Add tests for exact match, within tolerance, and mismatch scenarios.
+
+---
+
 ## API – Bills (AP)
 
 ### [ ] API‑FIN‑005: Bills (AP) – Expand OpenAPI Spec

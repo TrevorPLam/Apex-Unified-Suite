@@ -6,6 +6,23 @@ This file covers advanced Finance features spanning multiple entity support, cre
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| API‑AR‑001 | Customers – Expand OpenAPI Spec | `finance/FINANCE‑MULTI‑ENTITY.md → DB‑AR‑001` |
+| API‑AR‑002 | Customers – Integration Tests (Red) | `finance/FINANCE‑MULTI‑ENTITY.md → API‑AR‑001`, `infrastructure/DATABASE.md → TEST‑INFRA‑001` |
+| API‑AR‑003 | Customers – Service & Repository (credit limit, payment term defaults) | `finance/FINANCE‑MULTI‑ENTITY.md → API‑AR‑002` |
+| API‑AR‑004 | Customers – Routes & Green Tests | `finance/FINANCE‑MULTI‑ENTITY.md → API‑AR‑003` |
+
+### Subtasks
+- [ ] API‑AR‑001.1 (AGENT): Add customer CRUD schemas and endpoints to the OpenAPI contract.
+- [ ] API‑AR‑002.1 (AGENT): Write red integration tests for customer list, create, update, and archive flows.
+- [ ] API‑AR‑003.1 (AGENT): Define customer service rules for credit limits and default payment terms.
+- [ ] API‑AR‑004.1 (AGENT): Wire customer routes and run the API test suite to green.
+
+---
+
 ## Database – Customers
 
 ### [ ] DB‑AR‑001: Define Customers Table
@@ -646,7 +663,7 @@ pnpm --filter @workspace/apex‑os test -- Dashboard1099.test.tsx
 
 **Description:** Branded customer‑facing payment portal: magic‑link login, dashboard of open invoices, payment page with ACH/card method selection, payment history with receipts, auto‑pay enrollment toggle.
 
-**Depends on:** `finance/FINANCE‑MULTI‑ENTITY.md → API‑FIN‑023`, `API‑AR‑008`, `infrastructure/AUTH.md → FRONT‑AUTH‑003`
+**Depends on:** `finance/FINANCE‑INVOICES‑PAYMENTS.md → API‑FIN‑023`, `API‑AR‑008`, `infrastructure/AUTH.md → FRONT‑AUTH‑003`
 **Blocks:** [N/A]
 **Related Files:** `artifacts/apex‑os/src/pages/portal/PaymentPortal.tsx`
 

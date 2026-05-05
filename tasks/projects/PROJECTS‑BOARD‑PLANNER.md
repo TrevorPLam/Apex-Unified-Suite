@@ -6,6 +6,19 @@ This file covers Kanban board lanes and task reordering, the “My Week” perso
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| API‑PROJ‑021 | Recurring work plans API – CRUD and manual trigger generation | `projects/PROJECTS‑BOARD‑PLANNER.md → DB‑PROJ‑004` |
+| FRONT‑PROJ‑010 | Gantt timeline view with dependency arrows and drag adjustment | `projects/PROJECTS‑CORE.md → API‑PROJ‑022`, `projects/PROJECTS‑BOARD‑PLANNER.md → API‑PROJ‑014` |
+
+### Subtasks
+- [ ] API‑PROJ‑021.1 (AGENT): Define recurring plan endpoints and manual generation action.
+- [ ] FRONT‑PROJ‑010.1 (AGENT): Design Gantt interactions, dependency arrows, and critical-path highlighting.
+
+---
+
 ## Database – Board Lanes, Recurring Plans, Time & Budget
 
 ### [ ] DB‑PROJ‑004: Define Recurring Work Plans Table

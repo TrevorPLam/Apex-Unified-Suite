@@ -6,6 +6,19 @@ This file covers infrastructure tasks for continuous integration/deployment, pro
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| JOB‑INFRA‑001.6 | Dead letter queue storage with retry metadata and TTL | `infrastructure/DEVOPS.md → JOB‑INFRA‑001` |
+| JOB‑INFRA‑001.7 | DLQ dashboard and replay controls | `infrastructure/DEVOPS.md → JOB‑INFRA‑001.6` |
+
+### Subtasks
+- [ ] JOB‑INFRA‑001.6.1 (AGENT): Define failed-job retention, metadata, and expiry rules.
+- [ ] JOB‑INFRA‑001.7.1 (AGENT): Add replay and dismiss workflow requirements for the operations UI.
+
+---
+
 ## [ ] CI‑001: CI/CD Pipeline with GitHub Actions
 **Status:** ⏳ Not Started
 **Actor:** AGENT

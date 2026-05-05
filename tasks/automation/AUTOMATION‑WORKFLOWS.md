@@ -466,7 +466,7 @@ pnpm run typecheck
 
 **Description:** Implement a scheduled background job that automatically processes all active recurring work plans daily, generates tasks from their linked blueprint templates, and prevents duplicate generation.
 
-**Depends on:** `projects/PROJECTS‑BOARD‑PLANNER.md → API‑PROJ‑022`, `AUTO‑PROJ‑001`, `infrastructure/DEVOPS.md → JOB‑INFRA‑001`
+**Depends on:** `projects/PROJECTS‑CORE.md → API‑PROJ‑022`, `AUTO‑PROJ‑001`, `infrastructure/DEVOPS.md → JOB‑INFRA‑001`
 **Blocks:** [N/A]
 **Related Files:** `artifacts/api‑server/src/services/automation/projects/recurring‑work‑scheduler.ts`
 

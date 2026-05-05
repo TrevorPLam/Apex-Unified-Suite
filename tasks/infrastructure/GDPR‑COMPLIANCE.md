@@ -346,7 +346,7 @@ pnpm run typecheck
 **Description:**  
 Ensure that every GDPR‑related operation (export request, erasure request, consent change, DROP import) is recorded in both the `gdpr_requests` table (for internal tracking) and the `audit_logs` table (for auditor review). The `gdpr_requests` table must be queryable by regulators via a dedicated admin page.
 
-**Depends on:** `GDPR‑001`, `GDPR‑002`, `GDPR‑003`, `infrastructure/SETTINGS‑AUDIT.md → DB‑SETTINGS‑002`, `API‑AUDIT‑001`  
+**Depends on:** `GDPR‑001`, `GDPR‑002`, `GDPR‑003`, `infrastructure/SETTINGS‑AUDIT.md → DB‑SETTINGS‑002`, `infrastructure/SETTINGS‑AUDIT.md → API‑AUDIT‑001`  
 **Blocks:** None
 
 **Related Files:** `artifacts/api‑server/src/services/gdpr/gdpr‑audit‑log.ts`, `artifacts/apex‑os/src/components/admin/GDPRRequestLog.tsx`

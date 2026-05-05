@@ -8,7 +8,76 @@ This file covers project template management (CRUD with versioning, template ins
 
 ## Database – Templates
 
-*(Schema definitions for `project_templates` and `template_versions` are defined in the original Phase 2 schema tasks and are referenced here by their API tasks. No new schema tasks are introduced in this file.)*
+### [ ] DB‑PROJ‑010: Define Project Templates Table
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No `project_templates` table exists. Reusable project structure is stored only in frontend mock data.
+**Size:** Small
+
+**Description:** Define the `project_templates` table as the root persistence layer for reusable project blueprints. The record stores template metadata plus JSON snapshots for default lanes, tasks, and milestones without creating live project rows.
+
+**Depends on:** `infrastructure/DATABASE.md → DB‑ORG‑001`, `infrastructure/AUTH.md → DB‑IDENTITY‑001`
+**Blocks:** `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑011`, `API‑PROJ‑016`
+**Related Files:** `lib/db/src/schema/projects/project_templates.ts`, `lib/db/src/__tests__/project‑templates.test.ts`
+
+**Definition of Done**
+- [ ] Columns: `id` (uuid PK), `organization_id` (FK), `title` (text NOT NULL), `description` (text nullable), `default_lanes` (jsonb NOT NULL default `[]`), `default_tasks` (jsonb NOT NULL default `[]`), `default_milestones` (jsonb NOT NULL default `[]`), `is_public` (boolean NOT NULL default `false`), `current_version` (integer NOT NULL default `1`), `created_by` (uuid nullable FK → users), `deleted_at` (timestamp nullable), `created_at`, `updated_at`
+- [ ] Indexes: `(organization_id, is_public)`, `(organization_id, title)`
+- [ ] Zod schemas and types exported; template defaults validated as arrays
+- [ ] Unit tests pass
+- [ ] `pnpm run typecheck` passes
+
+**Verification**
+```bash
+pnpm --filter @workspace/db test -- project‑templates.test.ts
+pnpm run typecheck
+```
+
+### Subtasks
+- [ ] DB‑PROJ‑010.0.25 (AGENT): Read DB‑ORG‑001 and DB‑IDENTITY‑001. No action – pause.
+- [ ] DB‑PROJ‑010.1 (AGENT): Write failing schema test. **File:** `lib/db/src/__tests__/project‑templates.test.ts` **Verification:** RED.
+- [ ] DB‑PROJ‑010.2 (AGENT): Implement table, JSONB fields, Zod schemas, and exports. **Verification:** GREEN; `pnpm typecheck` clean.
+- [ ] DB‑PROJ‑010.3 (HUMAN): Final review and sign‑off. **Verification:** Approved.
+
+---
+
+### [ ] DB‑PROJ‑011: Define Template Versions Table
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No immutable template version snapshots exist. Template history and rollback are blocked.
+**Size:** Small
+
+**Description:** Define the `template_versions` table – append‑only snapshots of a template definition at each version so template changes remain auditable and safe to instantiate later.
+
+**Depends on:** `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑010`
+**Blocks:** `projects/PROJECTS‑TEMPLATES.md → API‑PROJ‑016`
+**Related Files:** `lib/db/src/schema/projects/template_versions.ts`, `lib/db/src/__tests__/template‑versions.test.ts`
+
+**Definition of Done**
+- [ ] Columns: `id` (uuid PK), `organization_id` (FK), `template_id` (uuid FK → project_templates), `version` (integer NOT NULL), `snapshot` (jsonb NOT NULL), `created_by` (uuid nullable FK → users), `created_at`
+- [ ] Indexes: unique `(template_id, version)`, `(organization_id, created_at)`
+- [ ] Snapshot stores the full template definition at that version
+- [ ] Zod schemas and types exported; insert schema omits generated timestamps
+- [ ] Unit tests pass
+- [ ] `pnpm run typecheck` passes
+
+**Rules to Follow**
+- `template_versions` is append‑only; rows are never updated or deleted
+- `snapshot` must contain template metadata plus all default lane/task/milestone definitions needed for deterministic instantiation
+
+**Verification**
+```bash
+pnpm --filter @workspace/db test -- template‑versions.test.ts
+pnpm run typecheck
+```
+
+### Subtasks
+- [ ] DB‑PROJ‑011.0.25 (AGENT): Read DB‑PROJ‑010 and confirm snapshot contents. No action – pause.
+- [ ] DB‑PROJ‑011.1 (AGENT): Write failing schema test. **File:** `lib/db/src/__tests__/template‑versions.test.ts` **Verification:** RED.
+- [ ] DB‑PROJ‑011.2 (AGENT): Implement append‑only table, unique version constraint, and exports. **Verification:** GREEN; `pnpm typecheck` clean.
+- [ ] DB‑PROJ‑011.3 (HUMAN): Final review and sign‑off. **Verification:** Approved.
 
 ---
 
@@ -23,7 +92,7 @@ This file covers project template management (CRUD with versioning, template ins
 
 **Description:** Implement project template CRUD with versioning and soft delete. Templates define a reusable project structure (default lanes, default tasks, milestone schema) without creating live projects.
 
-**Depends on:** `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑006` (project_templates + template_versions), `infrastructure/AUTH.md → AUTH‑008`, `infrastructure/EVENT‑BUS.md → EVENT‑001`, `infrastructure/AUTH.md → ERROR‑002`
+**Depends on:** `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑010`, `DB‑PROJ‑011`, `infrastructure/AUTH.md → AUTH‑008`, `infrastructure/EVENT‑BUS.md → EVENT‑001`, `infrastructure/AUTH.md → ERROR‑002`
 **Blocks:** `projects/PROJECTS‑TEMPLATES.md → API‑PROJ‑017`
 **Related Files:** `lib/api‑spec/openapi.yaml`, `lib/db/src/repositories/projects/templates.ts`, `artifacts/api‑server/src/services/projects/template‑service.ts`, `artifacts/api‑server/src/routes/projects/templates.ts`
 
@@ -65,7 +134,7 @@ pnpm typecheck
 ---
 
 ### Subtasks
-- [ ] API‑PROJ‑016.0.25 (AGENT): Read DB‑PROJ‑006 schema and versioning strategy. *No action – pause.*
+- [ ] API‑PROJ‑016.0.25 (AGENT): Read DB‑PROJ‑010 and DB‑PROJ‑011 schema tasks and versioning strategy. *No action – pause.*
 - [ ] API‑PROJ‑016.0.5 (AGENT): Research Drizzle `sql` template literal for atomic version increment and JSONB column storage. *Document findings briefly.*
 - [ ] API‑PROJ‑016.1 (AGENT): Add template spec endpoints to `openapi.yaml`.
   **File(s):** `lib/api‑spec/openapi.yaml`

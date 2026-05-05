@@ -84,7 +84,7 @@ pnpm typecheck
 **Status:** ⏳ Not Started
 **Actor:** AGENT
 **Priority:** 🟠 High
-**Current State:** The codebase has **no `README.md`** at root, **no `.env.example`**, and **no `.prettierrc`** — these files are completely missing. A `scripts/README.md` exists but does not serve as a project‑level README.
+**Current State:** The codebase has **no `README.md`** at root, **no `.env.example`**, and **no `.prettierrc`** — these files are completely missing. There is also **no `scripts/README.md`**, so root scaffolding still has no canonical entrypoint.
 **Size:** Medium
 
 **Description:** Create `README.md`, `.env.example`, and `.prettierrc` at the repository root. Implement Zod‑based environment variable validation in the API server to fail fast on missing/invalid config.
@@ -144,6 +144,31 @@ pnpm prettier --check src/
   **File(s):** `.env.example`, `artifacts/api‑server/src/lib/env‑validation.ts`
   **Verification:** All new variables documented; configuration validation passes with optional variables absent.
 - [ ] TOOLING‑001.5 (HUMAN): Final review and sign‑off. **Verification:** Approved.
+
+---
+
+## [ ] TOOLING‑005: Directory Scaffolding for Planned Modules
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** Many task files reference future directories that do not yet exist, making implementation starts slower and less consistent.
+**Size:** Small
+
+**Description:** Create the empty-but-owned directory structure referenced throughout the backlog for services, repositories, middleware, tests, seed data, and ADR/docs paths so future implementation work starts from a consistent scaffold.
+
+**Depends on:** `foundation/TOOLING.md → TOOLING‑001`
+**Blocks:** [N/A]
+**Related Files:** `artifacts/api‑server/src/services/`, `lib/db/src/repositories/`, `docs/adr/`, `artifacts/api‑server/src/__tests__/`
+
+**Definition of Done**
+- [ ] Every referenced top-level implementation path from active task docs exists
+- [ ] Directory ownership is documented where ambiguous between app, lib, and docs surfaces
+- [ ] Scaffolding does not create generated-code targets or placeholder business logic files
+
+### Subtasks
+- [ ] TOOLING‑005.1 (AGENT): Inventory directories referenced across task docs that do not yet exist.
+- [ ] TOOLING‑005.2 (AGENT): Create the approved scaffold directories without adding placeholder implementation code.
+- [ ] TOOLING‑005.3 (HUMAN): Review the scaffold list for naming consistency and ownership.
 
 ---
 

@@ -6,6 +6,18 @@ This file covers Stripe integration for payment processing, ACH/wire via Treasur
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| PCI‑DSS‑001 | Define PCI DSS scope, SAQ path, and evidence collection requirements | `integrations/INTEGRATION‑STRIPE.md → INT‑PAYMENT‑001` |
+
+### Subtasks
+- [ ] PCI‑DSS‑001.1 (MIXED): Document cardholder-data boundaries and chosen SAQ scope.
+- [ ] PCI‑DSS‑001.2 (MIXED): Define evidence collection cadence for annual compliance review.
+
+---
+
 ## [ ] INT‑PAYMENT‑001: Stripe Payment Integration
 **Status:** ⏳ Not Started
 **Actor:** AGENT
@@ -70,7 +82,7 @@ pnpm run typecheck
 - [ ] INT‑PAYMENT‑001.0.25 (AGENT): Read Stripe API documentation (Payment Intents, Subscriptions, Webhooks, Stripe Elements). *No action – pause.*
 - [ ] INT‑PAYMENT‑001.0.5 (AGENT): Research Stripe Node.js SDK v17+ and `2026‑04‑22` API version changes. *Document findings briefly.*
 - [ ] INT‑PAYMENT‑001.1 (AGENT): Install Stripe SDK and configure with `STRIPE_SECRET_KEY` and API version pinning.
-  **File(s):** `integrations/stripe/index.ts`, `artifacts/api‑server/.env.example`
+  **File(s):** `integrations/stripe/index.ts`, `.env.example`
   **Verification:** `pnpm run typecheck` passes; Stripe client initialises without errors.
 - [ ] INT‑PAYMENT‑001.2 (AGENT): Implement Payment Intent creation, confirmation, cancellation with idempotency key support.
   **File(s):** `integrations/stripe/payment‑intents.ts`

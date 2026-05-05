@@ -6,6 +6,17 @@ This file contains the cross‑cutting API tasks for in‑app notifications, cro
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| FRONT‑NOTIF‑001 | Notification bell with unread badge, dropdown list, and mark-all-read | `infrastructure/NOTIFICATIONS.md → API‑NOTIF‑001` |
+
+### Subtasks
+- [ ] FRONT‑NOTIF‑001.1 (AGENT): Design the bell component, unread state, and navigation behavior.
+
+---
+
 ## [ ] API‑NOTIF‑001: In‑App Notification Endpoints
 **Status:** ⏳ Not Started
 **Actor:** AGENT

@@ -6,6 +6,21 @@ This file covers the Client Portal bounded context: database schemas for portal 
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| DB‑PORTAL‑006 | Portal client tasks junction table | `portal/PORTAL‑ACCESS.md → DB‑PORTAL‑001` |
+| API‑PORTAL‑005 | Client task endpoints for portal users | `portal/PORTAL‑ACCESS.md → DB‑PORTAL‑006` |
+| FRONT‑PORTAL‑002 | Client task view with status badges and actions | `portal/PORTAL‑ACCESS.md → API‑PORTAL‑005` |
+
+### Subtasks
+- [ ] DB‑PORTAL‑006.1 (AGENT): Define task linkage, notes, assignment, and status tracking columns.
+- [ ] API‑PORTAL‑005.1 (AGENT): Add client task endpoints and authorization checks.
+- [ ] FRONT‑PORTAL‑002.1 (AGENT): Build the client-facing task list and action controls.
+
+---
+
 ## Database Schemas
 
 ### [ ] DB‑PORTAL‑001: Define Portal Clients Table

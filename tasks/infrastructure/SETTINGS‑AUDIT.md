@@ -6,6 +6,21 @@ This file covers the System Settings and Audit Log bounded contexts: database sc
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| API‑PREF‑001 | User preferences API | `infrastructure/SETTINGS‑AUDIT.md → DB‑SETTINGS‑001` |
+| FRONT‑PREF‑001 | User preferences panel | `infrastructure/SETTINGS‑AUDIT.md → API‑PREF‑001` |
+| FRONT‑AUDIT‑001 | Audit log viewer | `infrastructure/SETTINGS‑AUDIT.md → API‑AUDIT‑001` |
+
+### Subtasks
+- [ ] API‑PREF‑001.1 (AGENT): Define preferences schema and update endpoints.
+- [ ] FRONT‑PREF‑001.1 (AGENT): Add the user preferences panel in the authenticated UI.
+- [ ] FRONT‑AUDIT‑001.1 (AGENT): Design audit filters, JSON diff expansion, and export actions.
+
+---
+
 ## System Settings – Database
 
 ### [ ] DB‑SETTINGS‑001: Define System Settings Table

@@ -6,6 +6,18 @@ This file covers the database schema foundations, multi‑tenancy anchor (Organi
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| DB‑RLS‑FIN‑001 | Expand PostgreSQL RLS to all tenant-scoped tables and standardize session context | `infrastructure/DATABASE.md → DB‑ORG‑001` |
+
+### Subtasks
+- [ ] DB‑RLS‑FIN‑001.1 (AGENT): Inventory all tenant-scoped tables missing RLS coverage.
+- [ ] DB‑RLS‑FIN‑001.2 (AGENT): Standardize policy generation and session context wiring.
+
+---
+
 ## [ ] DB‑ORG‑001: Define Organizations Table
 **Status:** ⏳ Not Started
 **Actor:** AGENT

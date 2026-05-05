@@ -6,6 +6,21 @@ This file contains the foundational service interfaces and implementations for e
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| EMAIL‑TRACK‑001 | Email open/click tracking with event storage | `infrastructure/EMAIL‑STORAGE.md → EMAIL‑SERVICE‑001` |
+| EMAIL‑TRACK‑002 | Email engagement dashboard and bounce classification | `infrastructure/EMAIL‑STORAGE.md → EMAIL‑TRACK‑001` |
+
+Shared inbox management and triage delegation are owned in `integrations/EMAIL‑INGESTION.md` as `EMAIL‑INGEST‑004` and `EMAIL‑INGEST‑005` so inbound-mail behavior stays in one file.
+
+### Subtasks
+- [ ] EMAIL‑TRACK‑001.1 (AGENT): Define tracking pixel, link-rewrite, and event schema requirements.
+- [ ] EMAIL‑TRACK‑002.1 (AGENT): Define dashboard metrics and engagement classifications.
+
+---
+
 ## [ ] EMAIL‑SERVICE‑001: Email Service Interface & Implementation
 **Status:** ⏳ Not Started
 **Actor:** MIXED
@@ -17,7 +32,7 @@ This file contains the foundational service interfaces and implementations for e
 
 **Depends on:** [N/A]
 **Blocks:** `infrastructure/EMAIL‑STORAGE.md → EMAIL‑TEMPLATES‑001`, `portal/PORTAL‑ACCESS.md → PORTAL‑AUTH‑001`, `appointments/APPOINTMENTS‑BOOKING.md → API‑APPT‑003`, `documents/DOCUMENTS‑MANAGEMENT.md → API‑DOCS‑010`
-**Related Files:** `artifacts/api‑server/src/lib/email/email‑service.ts`, `artifacts/api‑server/src/lib/email/smtp‑provider.ts`, `artifacts/api‑server/src/lib/email/mock‑provider.ts`, `artifacts/api‑server/.env.example`
+**Related Files:** `artifacts/api‑server/src/lib/email/email‑service.ts`, `artifacts/api‑server/src/lib/email/smtp‑provider.ts`, `artifacts/api‑server/src/lib/email/mock‑provider.ts`, `.env.example`
 
 **Definition of Done**
 - [ ] `EmailServicePort` interface with methods: `sendEmail(to, subject, body, html?)`, `sendTemplate(to, templateId, variables)`
@@ -65,7 +80,7 @@ pnpm run typecheck
   **File(s):** `artifacts/api‑server/src/lib/email/mock‑provider.ts`
   **Verification:** `pnpm run typecheck` — no errors.
 - [ ] EMAIL‑SERVICE‑001.4 (AGENT): Write contract tests for both providers; add SMTP env vars to `.env.example`.
-  **File(s):** `artifacts/api‑server/src/__tests__/lib/email/email‑service.test.ts`, `artifacts/api‑server/.env.example`
+  **File(s):** `artifacts/api‑server/src/__tests__/lib/email/email‑service.test.ts`, `.env.example`
   **Verification:** `pnpm --filter @workspace/api‑server test -- email‑service` → all green.
 - [ ] EMAIL‑SERVICE‑001.5 (HUMAN): Manual SMTP integration test with a real provider (Mailpit locally or SendGrid sandbox). Verify email arrives with correct subject and sender. **Verification:** Email arrives in inbox.
 - [ ] EMAIL‑SERVICE‑001.6 (HUMAN): Final review and sign‑off. **Verification:** Approved.

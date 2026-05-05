@@ -6,6 +6,23 @@ This file contains all tasks related to CRM Lead management: database schema, AP
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| DB‑CRM‑012 | Add `lead_score` column and index on `(organization_id, lead_score DESC)` | `crm/CRM‑LEADS.md → DB‑CRM‑001` |
+| API‑CRM‑031 | Lead scoring rules CRUD | `crm/CRM‑LEADS.md → API‑CRM‑005` |
+| API‑CRM‑032 | Score computation engine and `LeadScoreChanged` event | `crm/CRM‑LEADS.md → API‑CRM‑031` |
+| FRONT‑INT‑CRM.4 | Owner assignment dropdown for lead/contact/deal detail panels | `crm/CRM‑LEADS.md → FRONT‑CRM‑001`, `crm/CRM‑DEALS.md → FRONT‑CRM‑003` |
+
+### Subtasks
+- [ ] DB‑CRM‑012.1 (AGENT): Extend the leads schema and related tests for `lead_score`.
+- [ ] API‑CRM‑031.1 (AGENT): Define scoring rule shapes and CRUD endpoints.
+- [ ] API‑CRM‑032.1 (AGENT): Implement score recalculation triggers and event emission.
+- [ ] FRONT‑INT‑CRM.4.1 (AGENT): Add owner selection UI with optimistic update behavior.
+
+---
+
 ## Database Schema
 
 ### [ ] DB‑CRM‑001: Define Leads Table

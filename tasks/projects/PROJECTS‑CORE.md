@@ -6,6 +6,21 @@ This file covers the core Project Management bounded context: projects, tasks, m
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| DB‑PROJ‑008 | Task dependencies metadata on the tasks table (`depends_on`, `dependency_type`, `lag_days`) | `projects/PROJECTS‑CORE.md → DB‑PROJ‑002` |
+| API‑PROJ‑022 | Task dependency CRUD with circular-reference detection and cascade handling | `projects/PROJECTS‑CORE.md → API‑PROJ‑005`, `projects/PROJECTS‑CORE.md → DB‑PROJ‑008` |
+| API‑PROJ‑023 | Dependency-constrained scheduling validation and conflict warnings | `projects/PROJECTS‑CORE.md → API‑PROJ‑022` |
+
+### Subtasks
+- [ ] DB‑PROJ‑008.1 (AGENT): Extend the tasks schema, tests, and dependency enum coverage.
+- [ ] API‑PROJ‑022.1 (AGENT): Define dependency CRUD contracts and cycle-detection behavior.
+- [ ] API‑PROJ‑023.1 (AGENT): Define scheduling-feasibility checks and warning payloads.
+
+---
+
 ## Database Schemas
 
 ### [ ] DB‑PROJ‑001: Define Projects Table
@@ -18,7 +33,7 @@ This file covers the core Project Management bounded context: projects, tasks, m
 **Description:** Define the `projects` table – the root aggregate for the Projects bounded context. Supports lifecycle status tracking, owner assignment, template linkage, and soft delete.
 
 **Depends on:** `infrastructure/DATABASE.md → DB‑ORG‑001`, `infrastructure/AUTH.md → DB‑IDENTITY‑001`
-**Blocks:** `projects/PROJECTS‑CORE.md → DB‑PROJ‑002`, `DB‑PROJ‑003`, `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑004`, `projects/PROJECTS‑BOARD‑PLANNER.md → DB‑PROJ‑005`, `projects/PROJECTS‑CORE.md → DB‑PROJ‑006`, `DB‑PROJ‑007`, `API‑PROJ‑001`
+**Blocks:** `projects/PROJECTS‑CORE.md → DB‑PROJ‑002`, `DB‑PROJ‑003`, `projects/PROJECTS‑BOARD‑PLANNER.md → DB‑PROJ‑005`, `projects/PROJECTS‑CORE.md → DB‑PROJ‑006`, `DB‑PROJ‑007`, `API‑PROJ‑001`
 **Related Files:** `lib/db/src/schema/projects/projects.ts`, `lib/db/src/__tests__/projects‑projects.test.ts`
 
 **Definition of Done**
@@ -63,7 +78,7 @@ pnpm run typecheck
 **Description:** Define the `tasks` table – child entity of projects. Supports subtask nesting (max 1 level deep), board positioning via `lane_id` and `position`, scoped statuses, and soft delete.
 
 **Depends on:** `projects/PROJECTS‑CORE.md → DB‑PROJ‑001`, `infrastructure/AUTH.md → DB‑IDENTITY‑001`
-**Blocks:** `projects/PROJECTS‑TEMPLATES.md → DB‑PROJ‑004`, `projects/PROJECTS‑CORE.md → DB‑PROJ‑006`, `API‑PROJ‑005`
+**Blocks:** `projects/PROJECTS‑CORE.md → DB‑PROJ‑006`, `API‑PROJ‑005`
 **Related Files:** `lib/db/src/schema/projects/tasks.ts`, `lib/db/src/__tests__/projects‑tasks.test.ts`
 
 **Definition of Done**

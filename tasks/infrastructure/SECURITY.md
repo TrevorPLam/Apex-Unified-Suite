@@ -6,6 +6,31 @@ This file covers security hardening, real‑time infrastructure, and monitoring 
 
 ---
 
+## Backlog Additions – 2026‑05‑05
+
+| Task ID | Description | Depends On |
+|---------|-------------|------------|
+| WS‑DLQ‑001 | Webhook dead letter queue with replay and alerting | `infrastructure/DEVOPS.md → JOB‑INFRA‑001.6` |
+| SEC‑006 | WAF/DDoS protection ADR | [N/A] |
+| SEC‑007 | Tenant-isolation automated test suite | `infrastructure/RBAC.md → RBAC‑001`, `infrastructure/DATABASE.md → DB‑ORG‑001` |
+| SEC‑008 | Incident response plan and breach notification cross-reference | `infrastructure/INCIDENT‑RESPONSE.md → IR‑001`, `IR‑002` |
+| SEC‑009 | Vendor risk management cross-reference | `infrastructure/VENDOR‑RISK‑MANAGEMENT.md → VRM‑001` |
+| SEC‑010 | Cyber insurance readiness evidence | `infrastructure/SECURITY.md → SEC‑008` |
+| SEC‑011 | Tiered rate limiting by plan | `infrastructure/FEATURE‑FLAGS.md → API‑FLAG‑003` |
+| SEC‑012 | Circuit breaker integration in health and security posture | `infrastructure/RESILIENCE.md → RESILIENCE‑001` |
+
+### Subtasks
+- [ ] WS‑DLQ‑001.1 (AGENT): Define failed-webhook storage, replay, and alert thresholds.
+- [ ] SEC‑006.1 (HUMAN): Document WAF/DDoS provider decision and baseline controls.
+- [ ] SEC‑007.1 (AGENT): Add cross-tenant attack scenarios to CI test coverage.
+- [ ] SEC‑008.1 (AGENT): Align security backlog with the incident response documents.
+- [ ] SEC‑009.1 (AGENT): Cross-reference security controls with vendor risk review obligations.
+- [ ] SEC‑010.1 (HUMAN): Define cyber insurance evidence checklist and renewal cadence.
+- [ ] SEC‑011.1 (AGENT): Define plan-tier rate limits and enforcement points.
+- [ ] SEC‑012.1 (AGENT): Expose breaker state through health and operational diagnostics.
+
+---
+
 ## Rate Limiting & Security Headers
 
 ### [ ] SEC‑001: Add Rate Limiting to Express App (Per‑IP & Per‑Tenant)
@@ -203,7 +228,7 @@ curl -X OPTIONS -H "Origin: http://localhost:5173" -H "Access-Control-Request-Me
 - [ ] SEC‑003.0.25 (AGENT): Read the current `app.ts` and identify where CORS middleware should be placed. *No action — pause.*
 - [ ] SEC‑003.0.5 (AGENT): Research `cors` package v2.8.5 and best practices for origin allowlisting in production. *Document findings briefly.*
 - [ ] SEC‑003.1 (AGENT): Add `ALLOWED_ORIGINS` to `.env.example` and configure CORS middleware with origin validation.
-  **File(s):** `artifacts/api‑server/.env.example`, `artifacts/api‑server/src/app.ts`
+  **File(s):** `.env.example`, `artifacts/api‑server/src/app.ts`
   **Verification:** `curl -H "Origin: http://localhost:5173" -I http://localhost:8081/api/healthz` returns `Access‑Control‑Allow‑Origin`.
 - [ ] SEC‑003.2 (AGENT): Write integration test for allowed and disallowed origins.
   **File(s):** `artifacts/api‑server/src/__tests__/middlewares/cors.test.ts`
@@ -223,7 +248,7 @@ curl -X OPTIONS -H "Origin: http://localhost:5173" -H "Access-Control-Request-Me
 
 **Depends on:** `infrastructure/SECURITY.md → MON‑001` (health check endpoint enhancement — pool metrics displayed there)
 **Blocks:** [N/A]
-**Related Files:** `lib/db/src/index.ts`, `artifacts/api‑server/.env.example`
+**Related Files:** `lib/db/src/index.ts`, `.env.example`
 
 **Definition of Done**
 - [ ] `DATABASE_URL` in `.env.example` includes `?sslmode=require` for production guidance
@@ -264,7 +289,7 @@ curl http://localhost:8081/api/healthz | jq .pool
   **File(s):** `lib/db/src/index.ts`
   **Verification:** `pnpm run typecheck` passes; server starts with configured pool.
 - [ ] SEC‑004.2 (AGENT): Add `?sslmode=require` to `DATABASE_URL` in `.env.example` and document `PG_MAX`.
-  **File(s):** `artifacts/api‑server/.env.example`
+  **File(s):** `.env.example`
   **Verification:** `.env.example` updated.
 - [ ] SEC‑004.3 (AGENT): Write integration test verifying pool metrics appear in health check response.
   **File(s):** `artifacts/api‑server/src/__tests__/lib/db‑pool.test.ts`
@@ -351,7 +376,7 @@ pnpm --filter @workspace/apex‑os test -- SecurityAlerts.test.tsx
 
 ## Database Row‑Level Security
 
-### [ ] DB‑RLS‑FIN‑001: Re‑evaluate Row Level Security for Financial Data
+### [ ] SEC‑013: Financial Data RLS Review & Adoption Plan
 **Status:** ⏳ Not Started
 **Actor:** MIXED
 **Priority:** 🟠 High
@@ -397,16 +422,16 @@ pnpm --filter @workspace/api‑server test -- rls‑policies.test.ts
 ---
 
 ### Subtasks
-- [ ] DB‑RLS‑FIN‑001.0.25 (AGENT): Read ARCH‑001 ADR, current financial schemas, and Drizzle `pgPolicy` documentation. *No action — pause.*
-- [ ] DB‑RLS‑FIN‑001.0.5 (AGENT): Research PostgreSQL RLS best practices for multi‑tenant SaaS, `pgPolicy` in Drizzle v0.39+, and performance implications. *Document findings briefly.*
-- [ ] DB‑RLS‑FIN‑001.1 (HUMAN): Decide whether to implement RLS for financial data or defer again. **Verification:** Decision documented in ADR update.
-- [ ] DB‑RLS‑FIN‑001.2 (AGENT): If implementing: add `pgPolicy` to financial table schemas, configure session parameter setter, write migration.
+- [ ] SEC‑013.0.25 (AGENT): Read ARCH‑001 ADR, current financial schemas, and Drizzle `pgPolicy` documentation. *No action — pause.*
+- [ ] SEC‑013.0.5 (AGENT): Research PostgreSQL RLS best practices for multi‑tenant SaaS, `pgPolicy` in Drizzle v0.39+, and performance implications. *Document findings briefly.*
+- [ ] SEC‑013.1 (HUMAN): Decide whether to implement RLS for financial data or defer again. **Verification:** Decision documented in ADR update.
+- [ ] SEC‑013.2 (AGENT): If implementing: add `pgPolicy` to financial table schemas, configure session parameter setter, write migration.
   **File(s):** `lib/db/src/schema/finance/`, `lib/db/src/index.ts`
   **Verification:** `pnpm --filter @workspace/api‑server test -- rls‑policies.test.ts` → GREEN.
-- [ ] DB‑RLS‑FIN‑001.3 (AGENT): If deferring: update ADR with rationale and new target phase.
+- [ ] SEC‑013.3 (AGENT): If deferring: update ADR with rationale and new target phase.
   **File(s):** `docs/adr/001‑multi‑tenancy.md`
   **Verification:** ADR updated; deferral reason documented.
-- [ ] DB‑RLS‑FIN‑001.N (HUMAN): Final review and sign‑off. **Verification:** Approved.
+- [ ] SEC‑013.N (HUMAN): Final review and sign‑off. **Verification:** Approved.
 
 ---
 

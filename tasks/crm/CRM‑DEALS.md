@@ -200,6 +200,31 @@ pnpm typecheck
 
 ---
 
+### [ ] API‑CRM‑033: Deal Scoring Engine
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** Deals are not scored automatically and automation rules cannot react to a deal score.
+**Size:** Medium
+
+**Description:** Extend the lead-scoring model to the Deals aggregate so scoring rules can calculate, persist, and emit changes for automation workflows.
+
+**Depends on:** `crm/CRM‑DEALS.md → API‑CRM‑017`, `crm/CRM‑LEADS.md → API‑CRM‑031`, `API‑CRM‑032`
+**Blocks:** `automation/AUTOMATION‑WORKFLOWS.md → AUTO‑CRM‑001`
+**Related Files:** `artifacts/api‑server/src/services/crm/deal‑scoring‑service.ts`, `lib/api‑spec/openapi.yaml`
+
+**Definition of Done**
+- [ ] Deal scoring rules can be defined or reused from lead scoring criteria
+- [ ] Score recalculates on relevant deal changes and engagement signals
+- [ ] `DealScoreChanged` event emitted for downstream automation
+
+### Subtasks
+- [ ] API‑CRM‑033.1 (AGENT): Define deal scoring inputs and reuse points from lead scoring.
+- [ ] API‑CRM‑033.2 (AGENT): Implement score calculation and persistence hooks.
+- [ ] API‑CRM‑033.3 (AGENT): Add automation-facing event contract and tests.
+
+---
+
 ## Frontend Integration
 
 ### [ ] FRONT‑CRM‑003: CRM Deals & Activities – Replace Mock Data
