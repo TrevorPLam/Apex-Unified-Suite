@@ -1,258 +1,374 @@
-# Apex Unified Suite – Consolidated Codebase Analysis
+# Apex Unified Suite - Verified Current-State Analysis
+
+This document reflects the current checked-in code in the live workspace as of May 5, 2026. It is intentionally descriptive rather than aspirational. When a feature is mock-only, visually present but inert, or missing, that is stated directly.
 
 ## 1. Executive Summary
-**Apex Unified Suite** is a full‑stack, enterprise‑grade business management SaaS platform built as a pnpm monorepo. It comprises **3 applications** (frontend, backend, design tool), **4 shared libraries**, and **9 business modules**. The stack is TypeScript‑strict, API‑first (OpenAPI → Orval code generation), and security‑hardened (1‑day npm release age, platform‑specific exclusions). The project contains **258+ files** across a clean separation of concerns, providing a production‑ready foundation for CRM, project management, finance, docs, assets, analytics, and more.
 
-## 2. Repository Structure & Workspace Configuration
+- Apex Unified Suite is currently a polished frontend prototype wrapped around a real monorepo, code generation pipeline, and backend/database scaffolding.
+- The primary product surface is `artifacts/apex-os`: a React app with nine routed domain pages plus a 404 route, a consistent dark design system, a collapsible sidebar, a header, and a command palette.
+- Most domain behavior is local and mock-driven. The frontend does not call any business APIs, does not persist changes, and does not authenticate users.
+- The backend is minimal: `artifacts/api-server` exposes only `GET /api/healthz`, which returns `{ "status": "ok" }`.
+- The database package is wired to PostgreSQL through Drizzle but has no actual tables.
+- The API-first workflow is prepared rather than exercised: the OpenAPI spec defines only `healthz`, and the generated React Query/Zod outputs contain only that contract.
+- The most accurate label for the current codebase is "high-fidelity product mockup plus infrastructure scaffolding", not "production-ready SaaS".
 
-```
-Apex-Unified-Suite/
-├── .replit               # Replit platform config (Node.js-24, port mappings)
-├── pnpm-workspace.yaml   # Monorepo config + security (160 lines)
-├── package.json          # Root scripts (17 lines)
-├── tsconfig.base.json    # Strict TS base (ES2022, strict, isolatedModules)
-├── tsconfig.json         # Project references for lib/*
-├── pnpm-lock.yaml        # 220KB lock file
-├── lib/                  # Shared packages (4)
-│   ├── api-spec/         # OpenAPI 3.1.0 + Orval config
-│   ├── api-client-react/ # Custom fetch + React Query hooks
-│   ├── api-zod/          # Zod validation schemas
-│   └── db/               # Drizzle ORM + PostgreSQL
-├── artifacts/            # Deployable apps (3)
-│   ├── apex-os/          # Frontend (83 files, React 19)
-│   ├── api-server/       # Backend (8 files, Express 5)
-│   └── mockup-sandbox/   # Design testing tool (67 files)
-├── scripts/              # Build utilities (post-merge hook)
-└── attached_assets/      # Static documentation
-```
+## 2. Verified Repository Snapshot
 
-### Workspace & Security
-- **pnpm lockfile**: 5,701 lines (220KB), strict peer deps disabled, auto‑install peers off.
-- **Supply‑chain protection**: `minimumReleaseAge: 1440` (1 day) for all public packages; excluded: `@replit/*`.
-- **Platform override**: 103 lines exclude non‑Linux‑x64 binaries (esbuild, lightningcss, rollup, etc.) to reduce attack surface.
-- **Catalog deps**: 24 centrally managed (React 19.1.0, Vite 7.3.2, Tailwind 4.1.14, Zod 3.25.76, etc.).
-- **Root scripts**:
-  - `preinstall` enforces pnpm, removes other lock files.
-  - `build` → typecheck → parallel build of all packages.
-  - `typecheck:libs` → `tsc --build` for lib references.
-  - `typecheck` → full TS validation across libs, artifacts, scripts.
+Counts below distinguish between the curated product inventory in `WORKSPACE-MAP.md` and the raw live filesystem shape of this workspace.
 
-### TypeScript Configuration
-- **Base**: `target: ES2022`, `strict` all flags, `moduleResolution: bundler`, `isolatedModules`, custom condition `"workspace"`.
-- **Project references**: only `lib/*` packages are referenced; root `tsconfig.json` lists references, no source files.
+- Product-focused inventory from `WORKSPACE-MAP.md`: 201 included files, 39 included directories
+- Raw live filesystem count in this workspace, excluding only `.git` and `node_modules`: 368 files, 108 directories
+- Applications: 3
+- Shared packages: 4
+- Main product surface: `artifacts/apex-os`
+- Backend surface: `artifacts/api-server`
+- Preview surface: `artifacts/mockup-sandbox`
 
-## 3. Technology Stack (Concise Table)
+| Surface | Current role | Current reality |
+| --- | --- | --- |
+| `artifacts/apex-os` | Main user-facing app | Most complete part of the repo; visually rich, mostly mock-backed |
+| `artifacts/api-server` | Backend API | Express scaffold with one health route |
+| `artifacts/mockup-sandbox` | Component preview app | Infrastructure present, but no mockup components are registered |
+| `lib/api-spec` | API contract | Defines only `/healthz` |
+| `lib/api-client-react` | Generated client + custom fetch | Client infrastructure exists but is unused by the frontend |
+| `lib/api-zod` | Generated Zod schemas | Only health response schema exists |
+| `lib/db` | Database access | Pool/Drizzle setup exists, schema is empty |
 
-| Category          | Technology / Version |
-|-------------------|----------------------|
-| Package manager   | pnpm (workspace)     |
-| Language          | TypeScript 5.9.2 (strict) |
-| Runtime           | Node.js 24           |
-| **Frontend**      | React 19.1.0, Vite 7.3.2, Tailwind CSS 4.1.14, Radix UI (40+ primitives), Wouter 3.3.5, TanStack React Query 5.90.21, React Hook Form 7.55.0, Framer Motion 12.23.24, Recharts 2.15.2, date‑fns 3.6.0, cmdk 1.1.1, embla‑carousel‑react 8.6.0, sonner 2.0.7, next‑themes 0.4.6, Lucide React 0.545.0, React Icons 5.4.0 |
-| **Backend**       | Express 5 (ESM), Drizzle ORM 0.45.2, PostgreSQL (pg 8.20.0), Zod 3.25.76, Pino 9 (structured logging), CORS 2, cookie‑parser 1.4.7 |
-| Build tools       | Vite 7.3.2 (frontend), esbuild 0.27.3 (backend), TSX 4.21.0 (scripts) |
-| Code gen          | Orval 8.5.2 (OpenAPI → React Query hooks + Zod schemas) |
-| Lint/format       | Prettier 3.8.1 (ESLint not yet configured) |
-| Platform          | Replit (autoscale, post‑merge hooks, 3 ports) |
+## 3. Frontend Application Reality (`artifacts/apex-os`)
 
-## 4. Architecture & Design
+### 3.0 Boot and runtime prerequisites
 
-### Monorepo Pattern
-- **Shared libraries** (`lib/`) provide reusable infrastructure: API spec, generated types, DB layer.
-- **Applications** (`artifacts/`) are independently deployable services.
-- **Scripts** automation via post‑merge Git hook and TSX utilities.
+- `artifacts/apex-os/vite.config.ts` hard-requires both `PORT` and `BASE_PATH`; if either is missing, Vite throws during config evaluation before the app boots.
+- The frontend dev server and preview server both bind `0.0.0.0`, reuse the same `PORT`, and enable `strictPort`.
+- Frontend production output is written to `dist/public`.
+- Replit-specific Vite plugins (`@replit/vite-plugin-cartographer` and `@replit/vite-plugin-dev-banner`) only load when `NODE_ENV !== "production"` and `REPL_ID` is set.
+- `artifacts/api-server/src/index.ts` hard-requires a numeric `PORT`.
+- `lib/db/src/index.ts` hard-requires `DATABASE_URL`, but the current `artifacts/api-server/src` tree does not import `@workspace/db`, so the live health-only backend is not actually opening a database connection today.
+- `.replit` expects the main frontend on `8080`, the backend on `8081`, and Vite preview on `24672`.
 
-### API‑First Data Flow
-```
-OpenAPI spec (lib/api-spec/openapi.yaml)
-  → Orval codegen
-    → React Query hooks (lib/api-client-react/src/generated/api.ts)
-    → Zod validation schemas (lib/api-zod/src/generated)
-  → Custom Fetch (lib/api-client-react/src/custom-fetch.ts)
-    → React components use hooks → custom fetch → Express server → Zod validation → DB
-```
+### 3.1 Shell, navigation, and look
 
-### Shared Libraries Details
+- The app is mounted in `src/main.tsx` and renders `App` directly. There is no `React.StrictMode`.
+- Routing uses Wouter with a base path derived from `import.meta.env.BASE_URL`. It is path-based routing, not hash routing.
+- `/` redirects to `/dashboard`.
+- All page modules are eagerly imported in `App.tsx`; there is no route-level lazy loading.
+- `MainLayout` renders a fixed app shell: collapsible left sidebar, sticky top header, and a scrollable main content area.
+- The sidebar exposes nine domain routes: Dashboard, CRM, Projects, Documents, Finance, Assets, Portal, Analytics, and Settings.
+- The sidebar collapse control works and animates between narrow and expanded widths using Framer Motion.
+- The header shows:
+  - a breadcrumb-style label (`ApexOS / <Module>`)
+  - a search button that opens the command palette
+  - a static notification bell with a blue unread dot
+  - a static round avatar button showing `JS`
+- The command palette opens from the header button and via `Ctrl+K` / `Cmd+K`.
+- The palette contains a single `Pages` group and filters only top-level route labels. It does not search records, commands, or domain data.
+- `PageTransition` adds a simple 0.2s fade/slide motion to page content.
+- `index.css` defines the live visual language:
+  - dark background and card tokens
+  - electric blue accent
+  - Inter for body text and Space Grotesk for display text
+  - hover elevation utilities and light glass-style surfaces
+- The repo includes a large `src/components/ui` library, but only a subset of those primitives is exercised by current pages.
+- There is no theme switcher, no user session state in the header, and no personalization beyond static labels.
 
-#### api-spec (3 files)
-- `openapi.yaml`: OpenAPI 3.1.0, endpoint `GET /api/healthz`, title fixed to `"Api"` for stable imports.
-- `orval.config.ts` (73 lines): dual targets (react‑query + zod), split mode, custom fetch integration, title transformer, coercion for query/body/response.
+### 3.2 Data and state model in the UI
 
-#### api-client-react (6 files)
-- **custom‑fetch.ts (372 lines)**: production HTTP client with:
-  - Base URL config, async auth token getter (`setAuthTokenGetter`), Bearer header injection.
-  - Response type inference (`json`/`text`/`blob`/`auto`), BOM handling.
-  - Error classes: `ApiError` (status, response data) and `ResponseParseError`.
-  - React Native compatibility detection.
-- Generated `api.ts` (102 lines): React Query hooks for `useHealthzHealthz()`.
-- Generated `api.schemas.ts`: TypeScript types.
+- `QueryClientProvider` is present in `App.tsx`, but the frontend does not use React Query to fetch business data.
+- Search across `artifacts/apex-os/src` shows no usage of the generated API client or `useHealthCheck`.
+- Page state is entirely local `useState` for tabs, drawers, selected records, and view toggles.
+- Most domain data comes from `src/data/mockData.ts`.
+- `mockData.ts` derives many visible dates from `today` using `date-fns`, so deadlines, activities, last-contact fields, due dates, and other date-driven labels shift relative to the day the bundle is evaluated rather than staying fixed to one calendar snapshot.
+- Some visible UI data bypasses `mockData.ts` entirely: Analytics chart datasets, the Documents cabinet list, Portal Preview content, and Settings > Integrations all live inside page components instead of the shared mock-data module.
+- Form dependencies and form components exist in the repo, but page flows do not use `react-hook-form` or Zod-backed form validation.
+- There are no optimistic updates, cache invalidation flows, loading spinners tied to async data, or server-driven empty/error states because there are no real data fetches.
 
-#### api-zod (6 files)
-- Generated Zod schemas from OpenAPI, runtime validation for request/response, coercion support.
+### 3.3 What users actually see by page
 
-#### db (5 files)
-- **Drizzle ORM + PostgreSQL**:
-  - `drizzle.config.ts`: schema path `src/schema/index.ts`, dialect `postgresql`, env‑based credentials.
-  - `src/index.ts`: creates `pool` from `DATABASE_URL`, exports `db = drizzle(pool, { schema })`.
-  - Schema currently template‑ready, empty; uses `drizzle-zod` integration.
-  - Commands: `pnpm --filter db push` (standard), `push-force`.
+#### Dashboard
 
-## 5. Frontend Application (apex-os) – 83 Files
+- Users land on a dark dashboard with:
+  - four KPI cards from mock data
+  - an `Upcoming Deadlines` card
+  - an `Activity Feed` card
+  - two top-right CTA buttons: `New Project` and `New Lead`
+- The KPI cards and lists are display-only.
+- The deadline and activity timestamps are relative mock entries generated from `today` at module-load time.
+- The two CTA buttons are styled and clickable but have no handlers.
+- There are no charts, drilldowns, filters, or live updates.
 
-### Architecture
-- Entry: `src/main.tsx` → React DOM render.
-- `src/App.tsx` (53 lines): providers (`QueryClientProvider`, `TooltipProvider`, `Toaster`), `WouterRouter` with base URL.
-- Layout: `MainLayout` (26 lines) – sidebar, header, `AnimatePresence` for page transitions.
-- Routing: hash‑based with base path; pages in `src/pages/`.
+#### CRM
 
-### UI Component Library (56+ Components)
+- CRM opens on the `Leads` tab.
+- Tabs rendered: `Leads`, `Contacts`, `Deals`, `Email`, `Engagements`.
+- `Leads` is a static kanban-style column layout built from `crmLeads` mock data.
+- Clicking a lead opens a right-side slide-out drawer with:
+  - lead/company details
+  - mock value/source fields
+  - hardcoded activity entries
+  - a bottom action button (`Convert to Contact`)
+- `Contacts` renders a static table from `crmContacts`; clicking a row opens the same style of slide-out drawer.
+- The `Contacts` toolbar buttons (`My Contacts`, `Uncontacted`, `Hot Leads`) are visual only.
+- The same drawer component is reused for both leads and contacts, so contact rows inherit generic fallback `Value` and `Source` boxes (`$0` and `Direct`) even though those fields are not part of `crmContacts`.
+- `Deals`, `Email`, and `Engagements` do not exist beyond a placeholder panel that says the view is coming soon.
+- The top-right `New <item>` button changes label based on the active tab but does not perform any action.
 
-Grouped by purpose:
+#### Projects
 
-**Layout**: `MainLayout`, `Header`, `Sidebar` (22KB, collapsible, keyboard shortcut), `PageTransition`
-**Forms**: `Button`, `Input`, `Textarea`, `Select`, `Form`, `Field`, `Label`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `InputOTP`, `InputGroup`
-**Navigation**: `NavigationMenu`, `Menubar`, `Breadcrumb`, `Tabs`, `Pagination`, `ContextMenu`, `DropdownMenu`
-**Feedback**: `Toast` (sonner), `Alert`, `AlertDialog`, `Dialog`, `Drawer`, `Popover`, `Tooltip`, `Progress`, `Skeleton`
-**Data Display**: `Table`, `Card`, `Badge`, `Avatar`, `Chart` (Recharts), `Carousel` (Embla), `Calendar`, `Separator`, `ScrollArea`
-**Advanced**: `CommandPalette` (cmdk, 3.4KB), `Resizable`, `Sheet`, `Accordion`, `Collapsible`, `Toggle`, `ToggleGroup`
+- Projects opens on the `Board` tab by default.
+- The default `Board` view is not implemented; users first see a `Board view coming soon` placeholder.
+- `My Week` is implemented and shows:
+  - three columns (`Focus`, `This Week`, `Later`)
+  - task cards pulled from `projectsData.tasks`
+  - a placeholder `Mini Calendar UI` box
+- The three `My Week` columns are labeled like status buckets, but the current rendering logic distributes tasks by array index modulo 3 rather than by the task `status` field.
+- `Projects` is implemented and shows a table of projects from mock data.
+- Clicking a project row opens a right-side details drawer with:
+  - client name and project title
+  - a static tab strip (`Tasks`, `Timeline`, `Time & Budget`, `Details`)
+  - only the `Tasks` content is actually rendered
+  - three placeholder tasks, one shown as completed
+- The top-right `New Project` button and the drawer `Add Task` button are presentational only.
+- `Board`, `Templates`, and `Scheduler` are placeholders even though `mockData.ts` contains board data.
+- This page feels half built: a real table and drawer exist, but the default entry view is still a stub.
 
-All components built on Radix primitives + Tailwind, fully typed.
+#### Documents
 
-### Business Modules (10 Pages)
+- Documents opens on `Repository`.
+- `Repository` is the most complete document view and contains:
+  - a left cabinet list with static folder names
+  - a search input
+  - a table of repository files from mock data
+- The top-right `E-Sign` and `Upload` buttons are styled but inert.
+- The folder buttons are visual only; the file list does not actually change.
+- The search field is visual only; typing does not filter anything.
+- The selected cabinet label (`Client Contracts`) and file count (`3 files`) are hardcoded display strings rather than derived from cabinet state.
+- Clicking a repository row opens a modal with:
+  - a fake document preview canvas
+  - share/download buttons
+  - static version history entries
+- `E-Sign` is implemented as a table using `documentsData.esign`.
+- `Workflows` and `Inbox` are placeholders that show `coming soon`.
 
-Each page is a single domain, with horizontal tabs (3‑5) and glassmorphism slide‑out panels (400px, right side).
+#### Finance
 
-1. **Dashboard** (5KB): bento grid metrics (revenue MTD $124,500, active projects 34, leads 128, overdue tasks 12), activity feed, quick actions, deadlines.
-2. **CRM** (12KB): tabs Leads (kanban), Contacts (sortable table with 360° profile), Deals (pipeline), Email (inbox simulation), Engagements (proposals/contracts).
-3. **Projects** (11KB): tabs My Week, Board (kanban + list/timeline views), Projects (table with detail subtabs), Templates, Scheduler.
-4. **Documents** (14KB): tabs Repository (folder tree + file list), E‑Sign (signature requests), Workflows, Inbox.
-5. **Finance** (9.6KB): product‑switcher AP/AR/Spend; AP: invoice capture, approvals, payments, vendors; AR: invoices, payments, portal preview; Spend: virtual cards, budgets.
-6. **Assets** (4.9KB): tabs Inventory, Check‑Out, Maintenance, Depreciation.
-7. **Portal** (8.5KB): tabs Management (client table, content manager) and Preview (client dashboard).
-8. **Analytics** (6.9KB): vertical sub‑sidebar for categories; overview KPI grid, domain‑specific charts (CRM funnel, AR aging, etc.), custom report builder.
-9. **Settings** (6.8KB): sub‑sidebar with General, Users & Permissions, Email, Integrations, Audit Log, Billing, API & Webhooks.
-10. **NotFound** – custom 404 page.
+- Finance opens on `AP`.
+- `AP` renders:
+  - an approvals queue table from `financeData.ap`
+  - approve/reject icon buttons for pending rows
+  - a static invoice capture card with a fake inbox address
+- The `Run Batch Payment` button is presentational only.
+- The approve/reject icon buttons are presentational only; there is no action wiring.
+- `Spend` renders:
+  - two hardcoded virtual cards
+  - a third tile inviting the user to issue a physical card
+  - budget-vs-actual bars based on `financeData.spend`
+- The `Issue New Card` button and `Issue Physical Card` tile are presentational only.
+- `AR` is a placeholder that says `AR view coming soon`.
+- `mockData.ts` already contains `financeData.ar`, but the page does not use it.
+- Finance looks visually strong but does not yet behave like an actual AP/AR product.
 
-### Design System Constants
-- Background: `#0B0C0E`, text: `#E8EAED`, accent: `#005BB5` (electric blue, used for hover glow on interactive elements).
-- Typography: Inter / Space Grotesk.
-- Glassmorphism cards with backdrop blur.
-- Page transitions: `AnimatePresence` fade + slide‑up, 200ms.
+#### Assets
 
-### State Management
-- Server state: TanStack React Query (caching, refetch).
-- Forms: React Hook Form + Zod resolvers.
-- Local UI state: React hooks.
+- Assets opens on `Inventory`.
+- `Inventory` renders a table from `assetsData`.
+- Rows show name, category, location, status, and serial number.
+- The top-right `Scan Barcode` and `New Asset` buttons are presentational only.
+- Row action affordances appear on hover, but they do not open a menu or invoke any handler.
+- There is no detail view, edit flow, checkout flow, or search/filter UI.
+- `Check-Out`, `Maintenance`, and `Depreciation` are placeholders.
 
-### Mock Data (`src/data/mockData.ts`, 116 lines)
-Centralized realistic data: metrics, activities, CRM leads (by stage), contacts, deals, projects, tasks, finance AP/AR/spend, assets, portal clients, settings users. Uses `date-fns` for relative dates.
+#### Portal
 
-## 6. Backend API Server (api-server) – 8 Files
+- Portal opens on `Management`.
+- `Management` renders:
+  - a client table from `portalClients`
+  - a branding card with read-only custom domain and brand color fields
+- The `Portal Access` toggle is rendered as a visual switch but is not interactive.
+- The management table column is labeled `Last Login`, but the data shown comes from the mock field `portalClients.lastActivity`; there is no separate login/audit source.
+- `Preview` is implemented as a light-themed fake client portal:
+  - browser chrome
+  - `Acme Portal` branding
+  - three KPI cards
+  - an `Action Required` list with `Review` and `Pay Now` buttons
+- The preview buttons are visual only.
+- Portal is one of the few pages where both tabs render real UI, but it is still mock-driven and static.
 
-- `src/index.ts` (26 lines): reads `PORT` env, starts Express.
-- `src/app.ts` (35 lines):
-  - Middleware: `pinoHttp` (structured logging with serialised req/res), `cors()`, `express.json()`, `express.urlencoded()`.
-  - Mounts routes at `/api`.
-- `src/routes/health.ts` (12 lines): `GET /api/healthz` → `{ status: "ok", timestamp, uptime }`.
-- `src/routes/index.ts`: aggregates routes.
-- `src/lib/logger.ts`: Pino instance with pretty‑print in dev.
-- `build.mjs` (127 lines): esbuild config:
-  - Bundle `src/index.ts` → `dist/index.mjs` (ESM, node24 target, sourcemaps).
-  - 103 packages externalised (pg, express, pino, etc.).
-  - Pino plugin for log transport integration.
-  - CJS compatibility banner.
+#### Analytics
 
-## 7. Code Generation Pipeline
+- Analytics opens on `Overview`.
+- Left-side category navigation is implemented.
+- `Overview` renders actual Recharts components:
+  - area chart for revenue
+  - bar chart for lead volume
+  - donut chart for lead sources
+- All chart data is hardcoded inside the page component.
+- The lead-sources donut sits inside a three-column grid that currently renders only one populated chart card.
+- `CRM`, `Projects`, `Finance`, `Assets`, and `Custom` all render a placeholder `charts coming soon` state.
+- There is no report builder, export flow, or drilldown behavior.
 
-1. **Define** API in `lib/api-spec/openapi.yaml`.
-2. **Run** `pnpm --filter @workspace/api-spec run codegen` (Orval).
-3. **Output**:
-   - React Query hooks (`lib/api-client-react/src/generated/api.ts`)
-   - TypeScript types (`api.schemas.ts`)
-   - Zod schemas (`lib/api-zod/src/generated`)
-4. **Custom fetch** is injected via Orval config, using the advanced HTTP client from `api-client-react`.
+#### Settings
 
-## 8. Database Layer (lib/db)
+- Settings opens on `Users & Permissions`.
+- Left-side category navigation is implemented.
+- `Users & Permissions` renders a table from `settingsUsers`.
+- The `Invite User` button is styled but inert.
+- Each row includes:
+  - initials avatar
+  - email
+  - role `<select>`
+  - a styled status toggle
+- The role select can be changed in the DOM but is not saved anywhere.
+- The status toggle is a styled `div`, not an interactive control.
+- `Integrations` renders six static cards (`Stripe`, `Salesforce`, `QuickBooks`, `Google Drive`, `Slack`, `DocuSign`) with `Connected`/`Not Connected` badges and inert buttons.
+- `General`, `Email & Notifications`, `Audit Log`, `Billing`, and `API & Webhooks` all show placeholder `settings coming soon` panels.
 
-- Configuration: environment variable `DATABASE_URL`.
-- Connection: `pg.Pool` → Drizzle instance with schema.
-- Schema: `src/schema/index.ts` currently empty; designed for one‑table‑per‑file with drizzle‑zod validation.
-- Migration: `drizzle-kit push` / `push-force` for dev; no generated migration files yet.
+#### NotFound
 
-## 9. Build & Deployment
+- Unknown routes render a light-gray 404 card with the message `Did you forget to add the page to the router?`
+- Because `NotFound` is rendered inside `MainLayout`, the page appears inside the main shell but uses a much lighter visual style than the rest of the app.
+- It reads as a developer-facing placeholder, not a polished user-facing 404.
 
-### Frontend (apex-os)
-- **Dev**: `vite --host 0.0.0.0` (HMR, port 8080).
-- **Build**: `vite build` → `dist/public`.
-- **Preview**: `vite preview` (port 24672 → external 3000).
-- Replit plugins: Cartographer, Dev Banner, Runtime Error Modal.
+### 3.4 Cross-cutting UX observations
 
-### Backend (api-server)
-- **Dev**: build + start (port 8081 → external 80).
-- **Build**: `node build.mjs` → `dist/index.mjs`.
-- **Start**: `node --enable-source-maps dist/index.mjs`.
+- The app feels consistent at the shell and component level.
+- Many surfaces are intentionally styled to look interactive even when they are not yet wired.
+- That mismatch is especially visible in prominent CTA/button surfaces such as `New Project`, `New Lead`, `Upload`, `Run Batch Payment`, `Invite User`, `Scan Barcode`, and several card/action affordances inside drawers and tables.
+- There are no live toasts triggered by current domain flows, even though toaster infrastructure is present.
+- There is no auth gate, onboarding flow, tenant switching, real notifications panel, global entity search, or saved personalization.
+- Several pages are stronger as visual mockups than as product workflows:
+  - CRM has partial drawers but three empty tabs
+  - Projects defaults to an empty tab
+  - Documents has a strong preview modal but fake search/folder state
+  - Finance has mock tables and visuals but no mutation logic
+  - Analytics has one real chart screen and five empty categories
 
-### Automation
-- **Post‑merge hook** (`scripts/post-merge.sh`): `pnpm install --frozen-lockfile && pnpm --filter db push`.
-- **Replit**: autoscale deployment; 20s timeout for post‑merge.
+## 4. Backend, API, and shared packages
 
-## 10. Security Measures
+### 4.1 `artifacts/api-server`
 
-- **Supply chain**: 1‑day minimum release age for all npm packages (except `@replit/*`); 103 platform‑specific exclusions remove non‑Linux‑x64 binaries, reducing attack surface.
-- **Type safety**: strict TypeScript everywhere, Zod runtime validation for API inputs/outputs.
-- **CORS** configured on Express.
-- **Environment secrets**: `DATABASE_URL` not hardcoded.
-- **Authentication readiness**: `custom-fetch.ts` exposes `setAuthTokenGetter()` for JWT Bearer tokens; token refresh flow supported.
-- **Error handling**: dedicated `ApiError` / `ResponseParseError` classes, Pino structured logging.
+- The backend is a very small Express 5 ESM app.
+- `src/app.ts` wires:
+  - `pino-http`
+  - default `cors()`
+  - JSON parsing
+  - URL-encoded form parsing
+  - `/api` router mount
+- `src/index.ts` requires a numeric `PORT` environment variable and refuses to start without it.
+- `src/routes/index.ts` mounts only one router: `healthRouter`.
+- `src/routes/health.ts` returns `HealthCheckResponse.parse({ status: "ok" })`.
+- The health response is only `{ status: "ok" }`; it does not include `timestamp`, `uptime`, or any dependency checks.
+- There are no business routes, no auth middleware, no RBAC, no request validation beyond the health response schema, no database queries, and no global error mapping layer.
+- `src/middlewares/` is empty except for `.gitkeep`.
+- `cookie-parser` is installed in `package.json` but unused in the app.
+- `src/lib/logger.ts` is solid for the current scale:
+  - redacts authorization and cookie data
+  - pretty-prints outside production
 
-## 11. Performance Optimizations
+### 4.2 API contract and generated client packages
 
-- **Build**:
-  - Frontend: Vite (fast HMR, code splitting, tree shaking).
-  - Backend: esbuild (10× faster than webpack), 103 deps externalised.
-- **Runtime**:
-  - React 19 concurrent features, React Query caching.
-  - PostgreSQL connection pooling (pg pool).
-  - Pino minimal‑overhead logging.
-- **Bundle**: automatic lazy‑loading of routes, dead code elimination.
+- `lib/api-spec/openapi.yaml` defines one server base (`/api`) and one path (`/healthz`).
+- `lib/api-spec/orval.config.ts` correctly generates two outputs from that spec:
+  - React Query client code into `lib/api-client-react/src/generated`
+  - Zod schemas into `lib/api-zod/src/generated`
+- `lib/api-client-react/src/generated/api.ts` currently exports:
+  - `healthCheck`
+  - `getHealthCheckQueryOptions`
+  - `useHealthCheck`
+- `lib/api-client-react/src/custom-fetch.ts` is more mature than the rest of the app:
+  - optional base URL override
+  - optional async bearer token getter
+  - media-type aware parsing
+  - typed `ApiError` and `ResponseParseError`
+- `lib/api-client-react/src/index.ts` re-exports the generated API surface, generated schema/types, `setBaseUrl`, and `setAuthTokenGetter`, so the package is ready to be consumed from its root entrypoint.
+- That client is not currently used anywhere in `artifacts/apex-os/src`.
+- `lib/api-zod/src/generated/api.ts` exports only `HealthCheckResponse`.
+- `lib/api-zod/src/index.ts` re-exports both the generated schema file and generated type helpers.
 
-## 12. Development Workflow Commands (Consolidated)
+### 4.3 Database layer
 
-| Scope           | Command                                            | Description |
-|-----------------|----------------------------------------------------|-------------|
-| Root            | `pnpm run build`                                   | typecheck all → build all packages |
-| Root            | `pnpm run typecheck`                               | full TS check (libs + artifacts + scripts) |
-| Root            | `pnpm run typecheck:libs`                          | `tsc --build` for lib references only |
-| apex-os         | `dev` / `build` / `serve` / `typecheck`            | Vite dev, prod build, preview, TS check |
-| api-server      | `dev` / `build` / `start` / `typecheck`            | esbuild dev loop, prod build, run, TS check |
-| api-spec        | `codegen`                                          | Orval generate hooks + zod schemas |
-| db              | `push` / `push-force`                              | Apply schema to dev DB |
-| scripts         | `post-merge.sh`                                    | Auto install + db push after git merge |
+- `lib/db/src/index.ts` creates a `pg.Pool` and Drizzle instance and throws immediately if `DATABASE_URL` is missing.
+- `lib/db/src/schema/index.ts` is still a commented template with example code only.
+- There are no real tables, relations, or migrations in the included tree.
+- `@workspace/db` is declared as a backend dependency, but the current `artifacts/api-server/src` tree does not import it at all, so the running health-only API is not actually touching PostgreSQL today.
 
-## 13. Original Project Specifications (Key Points)
+### 4.4 `artifacts/mockup-sandbox`
 
-The design was guided by a spec requiring a futuristic, developer‑tool aesthetic (Supabase/Neon style). Core requirements already implemented:
-- Global left sidebar switching business domains.
-- Horizontal tab bars per module with electric blue underline.
-- Glassmorphism slide‑out panels (400px right side) for detail views.
-- Drag‑and‑drop kanban, bento dashboards, CDM‑style pipelines, Karbon‑style project management, ShareFile‑style document management, Bill.com‑style finance, AssetTiger‑style asset tracking.
-- Empty states, toast notifications, command palette.
+- The sandbox is a second Vite app intended to preview isolated components.
+- `src/App.tsx` has two behaviors:
+  - show a simple gallery/instructions page
+  - load a component from `/preview/<component path>`
+- `mockupPreviewPlugin.ts` watches `src/components/mockups/**/*.tsx` and rebuilds `src/.generated/mockup-components.ts`.
+- In the current tree:
+  - `src/components/mockups` does not exist
+  - `src/.generated/mockup-components.ts` exports an empty registry
+- Result: the sandbox infrastructure is present, but there are no actual previewable mockups checked in.
 
-## 14. Recommendations & Future Roadmap
+## 5. Security, tooling, and quality posture
 
-**Immediate**: Implement authentication (JWT + RBAC), define DB models, add API business endpoints, integrate error boundaries, set up testing (Jest, Playwright).
+### 5.1 What is meaningfully present
 
-**Medium‑term**: APM integration, security scanning, CI/CD pipelines, comprehensive audit logging, user analytics.
+- `pnpm-workspace.yaml` includes real supply-chain controls:
+  - `minimumReleaseAge: 1440`
+  - a narrow allowlist for early installs
+  - extensive platform/binary exclusions
+  - centralized catalog versions
+- `tsconfig.base.json` enables strict TypeScript settings.
+- `eslint.config.js` contains TypeScript lint rules plus bounded-context import restrictions.
+- The backend logger redacts sensitive headers.
+- The codegen pipeline is in place and coherent.
 
-**Long‑term**: Microservices decomposition, real‑time WebSocket features, React Native mobile app, multi‑tenancy, machine learning analytics.
+### 5.2 What is not yet present in the product itself
 
-## 15. Conclusion
+- No authentication UI
+- No backend auth or protected API surface
+- No RBAC enforcement
+- No persisted domain data
+- No jobs/queues, notifications, or background processing in the checked-in app code
+- No file upload implementation beyond mock UI
+- No real integrations with Stripe, Plaid, calendars, storage providers, or email providers
+- No committed runtime test suite under `artifacts/` or `lib/`
+- No error boundaries or recoverable async failure flows in the frontend
+- No real API consumption by the frontend
 
-The Apex Unified Suite codebase is **production‑ready and enterprise‑grade**. It exhibits:
-- **Modern stack** with end‑to‑end type safety.
-- **Security‑first** design (supply chain, validation).
-- **Scalable architecture** (monorepo, shared libs, modular UI).
-- **Exceptional developer experience** (hot reload, code gen, automation).
-- **Comprehensive business module mockups** paving the way for real logic.
+### 5.3 Tooling drift and script caveats
 
-The project is a solid foundation for a full‑featured business operating SaaS.
+- Root `package.json` exposes `consolidate-skills`, `consolidate-docs`, and `consolidate-tasks`, but the referenced Node `.cjs` files are missing.
+- `.replit` points to `scripts/post-merge.sh`, but that file is absent from the current tree.
+- `scripts/` currently contains only `consolidate-tasks.ps1`, so the one surviving consolidation utility is PowerShell-based while the root scripts still point at missing Node wrappers.
+- The root `preinstall` script uses `sh -c`.
+- `artifacts/api-server/package.json` uses POSIX `export NODE_ENV=development && ...` in its `dev` script.
+- Those script choices fit a Replit/POSIX environment better than a plain Windows shell.
+- Default backend CORS is permissive because the app calls `cors()` with no explicit origin policy.
+
+### 5.4 Current workspace diagnostics
+
+- In the current editor session, `artifacts/apex-os/tsconfig.json` reports missing `node` and `vite/client` type definition files, which indicates unresolved frontend dependencies in this environment.
+- The active shell has `node` available, but `pnpm` is not on `PATH`, so the repo’s standard root commands cannot currently be executed from this terminal without additional setup.
+- Independent of that environment issue, the checked-in `artifacts/apex-os/src/pages/Finance.tsx` source contains two obvious unresolved icon references by inspection: `Mail` and `Plus` are used in JSX but are not imported from `lucide-react`.
+
+## 6. Current maturity assessment
+
+| Area | Current state |
+| --- | --- |
+| App shell and visual design | Strong and cohesive |
+| Routed page coverage | Broad |
+| Domain interactivity | Partial and mostly local-only |
+| Persisted business logic | Not present |
+| API surface | Minimal |
+| Database model | Empty scaffold |
+| Generated client/schema workflow | Ready but barely used |
+| Testing | No committed test suite in included tree |
+| Operational scripts | Partly stale or missing |
+| Production readiness | Not ready |
+
+A more precise maturity summary:
+
+- `artifacts/apex-os` is a high-quality design prototype with working navigation and selective page depth.
+- `artifacts/api-server` is a bootstrap backend, not a domain API.
+- `lib/db` and the codegen packages are scaffolding for future implementation, not evidence of completed end-to-end flows.
+
+## 7. Bottom line
+
+Apex Unified Suite currently presents itself as a unified business SaaS at the UI layer, and users can click through a convincing dark-theme shell across CRM, projects, documents, finance, assets, portal, analytics, and settings. What they experience today is mostly a guided product mockup: tab changes, drawers, charts, previews, and tables work locally, but almost all business actions stop at the UI.
+
+The repo is well-organized and the foundations are sensible. The frontend shell is ahead of the backend by a large margin. The backend, database, and test layers are still at the "prepare the rails" stage, while the frontend is at the "show the product shape" stage. The truthful current description is: a polished, mock-driven frontend prototype with real monorepo, API, and database scaffolding, but without implemented domain persistence or end-to-end workflows.
