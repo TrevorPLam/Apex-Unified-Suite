@@ -60,14 +60,101 @@ Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 
 ### [ ] API‑DOCS‑002: Documents – Integration Tests (TDD Red)
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Medium  
+
+**Description** Write comprehensive TDD red-phase integration tests for document CRUD endpoints, covering all success scenarios, error conditions, version management, and storage integration following 2026 document management testing best practices.
+
 **Depends on:** API‑DOCS‑001, TEST‑INFRA‑001.  
-**Tests include:**
-- Upload a file → 201, document metadata with `storage_path`, version=1.
-- Get document → 200 with `signed_download_url`.
-- Update document (new file) → version increments to 2.
-- Soft delete → 204, subsequent GET → 404.
-- Attempt to upload without file → 400.
-- File not found → 404 `DocumentNotFound`.
+**Blocks:** API‑DOCS‑003 (service implementation).  
+**Related Files:** `artifacts/api-server/__tests__/api/documents/documents.test.ts`, `lib/api-spec/openapi.yaml`
+
+**Imports / Exports**
+- Imports: `describe`, `test`, `expect` from Jest, `request` from supertest, document test fixtures, mock storage adapter
+- Exports: [N/A] – test suite only
+
+**Definition of Done**
+- [ ] `artifacts/api-server/__tests__/api/documents/documents.test.ts` contains comprehensive failing tests for all document operations
+- [ ] Tests cover success scenarios: upload file (201), get document (200 with signed URL), update document (200 with version increment), soft delete (204)
+- [ ] Tests cover error scenarios: upload without file (400), file not found (404), unauthorized (401), storage errors (502)
+- [ ] Tests verify version increment behavior on document updates
+- [ ] Tests verify signed download URL generation with proper expiry
+- [ ] Tests verify soft delete behavior (excluded from listings, 404 on direct access)
+- [ ] All tests compile and run, currently failing (red phase) because routes don't exist yet
+- [ ] Test coverage shows >90% for document functionality
+
+**Out of Scope**
+- Performance testing for large file uploads
+- UI/e2e testing for document workflows
+- Bulk document operations testing
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets, test data with real document content
+- Never mock the storage adapter integration – test full request/response cycle
+- Never allow tests to create actual files in production storage
+
+**Output Artifacts**
+- Tests added/updated in: `artifacts/api-server/__tests__/api/documents/documents.test.ts`
+- Test fixtures: `artifacts/api-server/__tests__/fixtures/documents.ts`
+- Mock storage adapter: `artifacts/api-server/__tests__/mocks/storage-adapter.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – entire test file can be reverted if test design is flawed
+- Halt condition: if tests inadvertently pass due to existing routes – redesign test cases to ensure proper red phase
+
+**Rules to Follow**
+- All tests must fail before implementation (TDD red phase)
+- Test all storage integration scenarios
+- Test version increment behavior
+- Test signed URL generation and expiry
+- Test authentication and authorization
+- Test file type validation
+
+**Verification**
+```bash
+# Run tests (should fail - red phase)
+pnpm --filter @workspace/api-server test -- documents.test.ts
+
+# Verify test coverage
+pnpm --filter @workspace/api-server test:coverage -- documents.test.ts
+
+# Ensure tests compile
+pnpm --filter @workspace/api-server typecheck
+```
+
+**Advanced Code Patterns**
+- TDD red-green-refactor cycle
+- Integration test design with full HTTP cycle
+- Mock storage adapter for controlled testing
+- File upload testing with multipart/form-data
+- Signed URL testing with expiry validation
+
+**Anti-Patterns**
+- Missing storage integration tests
+- Testing against mock HTTP layer
+- Shared test state between cases
+- Missing version increment testing
+- Incomplete error scenario testing
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Tests verify Document aggregate behavior through API contract, ensuring storage coordination
+- TDD: Red-Green-Refactor cycle ensures tests drive implementation
+- BDD: "As a user, I can upload, view, update, and delete documents with proper version control" scenarios
+- Deep Module: Tests verify Document service encapsulation of storage operations and version management
+
+**Test Scenarios Include:**
+- Upload file → 201, document metadata with `storage_path`, version=1
+- Get document → 200 with `signed_download_url` (15-minute expiry)
+- Update document (new file) → version increments to 2, new storage path
+- Soft delete → 204, subsequent GET → 404
+- Upload without file → 400 `FileRequired`
+- File not found → 404 `DocumentNotFound`
+- Unauthorized access → 401
+- Storage backend unavailable → 502 `StorageBackendUnavailable`
 
 ---
 
@@ -100,15 +187,194 @@ Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 
 ### [ ] API‑DOCS‑005: Folders – Expand OpenAPI Spec
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Medium  
+
+**Description** Design and specify folder management endpoints following hierarchical data patterns with tree traversal, child validation, and proper deletion protection consistent with enterprise document organization systems.
+
 **Depends on:** DB‑DOCS‑001.  
-**Definition of Done:** Folder CRUD endpoints: `GET /api/v1/folders`, `POST`, `GET /{folderId}`, `PATCH`, `DELETE` (soft delete, blocks if folder has children). Pagination, tree view option. Examples.
+**Blocks:** API‑DOCS‑006 (integration tests).  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/documents/folder-service.ts`
+
+**Imports / Exports**
+- Imports: [N/A] – OpenAPI specification only
+- Exports: Folder management API contract for code generation
+
+**Definition of Done**
+- [ ] OpenAPI spec adds folders tag and paths with `/api/v1/` prefix
+- [ ] `GET /api/v1/folders` endpoint returns paginated folder list with optional tree view parameter
+- [ ] `POST /api/v1/folders` endpoint creates folder with parent validation, returns 201 with Location header
+- [ ] `GET /api/v1/folders/{folderId}` endpoint returns folder details with optional children tree
+- [ ] `PATCH /api/v1/folders/{folderId}` endpoint updates folder name and parent with validation
+- [ ] `DELETE /api/v1/folders/{folderId}` endpoint performs soft delete with child validation (400 if has children)
+- [ ] Schemas defined: `Folder`, `FolderCreate`, `FolderUpdate`, `FolderTree`, `FolderListResponse`
+- [ ] All endpoints include proper error responses (409 for circular reference, 400 for invalid parent, 404 for not found)
+- [ ] Examples included for all request/response patterns
+- [ ] Tree view option supports hierarchical display with nested children
+
+**Out of Scope**
+- Folder permissions and access control
+- Folder sharing and collaboration
+- Folder-level retention policies
+- Bulk folder operations
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow folder deletion with child folders (protect against data loss)
+- Never allow circular parent references (prevent infinite loops)
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Generated types in: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OpenAPI spec changes can be reverted
+- Halt condition: if generated types contain errors or breaking changes – review spec design
+
+**Rules to Follow**
+- Folder hierarchy must be validated (no circular references)
+- Delete protection for folders with children
+- Tree view must support reasonable depth limits
+- Pagination required for flat folder listings
+- Parent validation for folder moves
+
+**Verification**
+```bash
+# Validate OpenAPI spec
+pnpm --filter @workspace/api-spec run validate
+
+# Generate types and check for errors
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+
+# Verify examples render in Swagger UI
+pnpm --filter @workspace/api-server dev
+# Navigate to /docs and test all examples
+```
+
+**Advanced Code Patterns**
+- Hierarchical data modeling
+- Tree traversal algorithms
+- Circular reference detection
+- Parent-child relationship validation
+- Recursive deletion protection
+
+**Anti-Patterns**
+- Missing circular reference validation
+- Allowing deletion of folders with children
+- Infinite recursion in tree operations
+- Missing parent validation
+- Inconsistent folder hierarchy handling
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Folder is a separate aggregate with hierarchical behavior; delete protection is a business rule
+- TDD: Integration tests (API-DOCS-006) will verify hierarchy validation and delete protection
+- BDD: Enables "As a user, I can organize documents in folders with proper hierarchy and protection against accidental deletion" scenarios
+- Deep Module: Folder service will encapsulate tree traversal complexity and validation logic
 
 ---
 
 ### [ ] API‑DOCS‑006: Folders – Integration Tests (Red)
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Medium  
+
+**Description** Write comprehensive TDD red-phase integration tests for folder management endpoints, covering all success scenarios, error conditions, hierarchy validation, and delete protection following enterprise folder management testing patterns.
+
 **Depends on:** API‑DOCS‑005, TEST‑INFRA‑001.  
-**Tests include:** create folder, list tree, update name, delete empty folder → 204, delete folder with children → 400.
+**Blocks:** API‑DOCS‑007 (service implementation).  
+**Related Files:** `artifacts/api-server/__tests__/api/documents/folders.test.ts`, `lib/api-spec/openapi.yaml`
+
+**Imports / Exports**
+- Imports: `describe`, `test`, `expect` from Jest, `request` from supertest, folder test fixtures
+- Exports: [N/A] – test suite only
+
+**Definition of Done**
+- [ ] `artifacts/api-server/__tests__/api/documents/folders.test.ts` contains comprehensive failing tests for all folder operations
+- [ ] Tests cover success scenarios: create folder (201), list folders (200 with pagination), get folder details (200), update folder (200), delete empty folder (204)
+- [ ] Tests cover error scenarios: create folder with invalid parent (400), delete folder with children (400), circular reference (409), folder not found (404)
+- [ ] Tests verify tree view functionality with proper hierarchical structure
+- [ ] Tests verify delete protection for folders containing subfolders or documents
+- [ ] Tests verify circular reference detection in parent assignments
+- [ ] All tests compile and run, currently failing (red phase) because routes don't exist yet
+- [ ] Test coverage shows >90% for folder functionality
+
+**Out of Scope**
+- Performance testing for deep folder hierarchies
+- UI/e2e testing for folder navigation
+- Bulk folder operations testing
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets, test data with real folder structures
+- Never mock the hierarchy validation logic – test full request/response cycle
+- Never allow tests to create actual folder structures in production database
+
+**Output Artifacts**
+- Tests added/updated in: `artifacts/api-server/__tests__/api/documents/folders.test.ts`
+- Test fixtures: `artifacts/api-server/__tests__/fixtures/folders.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – entire test file can be reverted if test design is flawed
+- Halt condition: if tests inadvertently pass due to existing routes – redesign test cases to ensure proper red phase
+
+**Rules to Follow**
+- All tests must fail before implementation (TDD red phase)
+- Test all hierarchy validation scenarios
+- Test delete protection behavior
+- Test circular reference detection
+- Test tree view functionality
+- Test parent validation rules
+
+**Verification**
+```bash
+# Run tests (should fail - red phase)
+pnpm --filter @workspace/api-server test -- folders.test.ts
+
+# Verify test coverage
+pnpm --filter @workspace/api-server test:coverage -- folders.test.ts
+
+# Ensure tests compile
+pnpm --filter @workspace/api-server typecheck
+```
+
+**Advanced Code Patterns**
+- TDD red-green-refactor cycle
+- Integration test design with hierarchical data
+- Tree structure testing algorithms
+- Circular reference detection testing
+- Parent-child relationship validation
+
+**Anti-Patterns**
+- Missing hierarchy validation tests
+- Testing against mock HTTP layer
+- Shared test state between cases
+- Missing delete protection tests
+- Incomplete tree structure testing
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Tests verify Folder aggregate behavior and hierarchical business rules
+- TDD: Red-Green-Refactor cycle ensures tests drive implementation
+- BDD: "As a user, I can organize documents in folders with proper hierarchy and protection against accidental deletion" scenarios
+- Deep Module: Tests verify Folder service encapsulation of tree operations and validation logic
+
+**Test Scenarios Include:**
+- Create folder → 201, folder with proper parent validation
+- List folders → 200 with pagination and optional tree view
+- Get folder details → 200 with hierarchical information
+- Update folder name → 200 with parent validation
+- Delete empty folder → 204, folder marked as deleted
+- Delete folder with children → 400 `FolderHasChildren`
+- Create circular reference → 409 `CircularReferenceDetected`
+- Invalid parent folder → 400 `InvalidParentFolder`
+- Folder not found → 404 `FolderNotFound`
 
 ---
 
@@ -133,18 +399,95 @@ Schemas: `Document`, `DocumentCreate`, `DocumentUpdate`. Examples for all.
 
 ### [ ] API‑DOCS‑009: Document Request List API
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Design and specify document request list endpoints for client document collection workflows with item tracking, reminder systems, and status management following enterprise client portal patterns.
+
 **Depends on:** DB‑DOCS‑003, API‑DOCS‑004.  
-**Definition of Done:** Document collection request endpoints:  
-- `GET /api/v1/document‑requests` – list request lists with pagination, filter by status.  
-- `POST /api/v1/document‑requests` – create a new request list with items. Body: `{ name, description?, due_date?, items: [{ document_name, required }] }`.  
-- `GET /api/v1/document‑requests/{requestId}` – detail with items and their submission status.  
-- `PATCH /api/v1/document‑requests/{requestId}` – update name, due date, status.  
-- `PATCH /api/v1/document‑requests/{requestId}/items/{itemId}` – update item (e.g., mark as reviewed).  
-- `POST /api/v1/document‑requests/{requestId}/send‑reminder` – trigger reminder email to client.  
-- `DELETE /api/v1/document‑requests/{requestId}` – archive.  
-Emits `DocumentRequestCreated`, `DocumentRequestItemSubmitted` events.  
-**DDD:** ShareFile document collection feature for gathering files from clients.  
-**TDD:** Write integration tests for full lifecycle.
+**Blocks:** API‑DOCS‑010 (approval workflows).  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/documents/document-request-service.ts`
+
+**Imports / Exports**
+- Imports: [N/A] – OpenAPI specification only
+- Exports: Document request API contract for code generation
+
+**Definition of Done**
+- [ ] OpenAPI spec adds document-requests tag and paths with `/api/v1/` prefix
+- [ ] `GET /api/v1/document-requests` endpoint returns paginated request lists with status filtering
+- [ ] `POST /api/v1/document-requests` endpoint creates request lists with multiple items, returns 201 with Location header
+- [ ] `GET /api/v1/document-requests/{requestId}` endpoint returns detailed request with item submission status
+- [ ] `PATCH /api/v1/document-requests/{requestId}` endpoint updates request metadata (name, due date, status)
+- [ ] `PATCH /api/v1/document-requests/{requestId}/items/{itemId}` endpoint updates individual item status
+- [ ] `POST /api/v1/document-requests/{requestId}/send-reminder` endpoint triggers client reminder emails
+- [ ] `DELETE /api/v1/document-requests/{requestId}` endpoint archives request (soft delete)
+- [ ] Schemas defined: `DocumentRequest`, `DocumentRequestCreate`, `DocumentRequestItem`, `DocumentRequestUpdate`
+- [ ] All endpoints include proper error responses and validation
+- [ ] Event emission for `DocumentRequestCreated`, `DocumentRequestItemSubmitted`
+
+**Out of Scope**
+- Bulk document request operations
+- Document request templates
+- Advanced reminder scheduling
+- Client portal interface (handled separately)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow deletion of active requests with submitted documents
+- Never allow reminder sending without proper email service integration
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Generated types in: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OpenAPI spec changes can be reverted
+- Halt condition: if generated types contain errors or breaking changes – review spec design
+
+**Rules to Follow**
+- Request status transitions must be validated
+- Item submission tracking must be atomic
+- Reminder sending requires email service availability
+- Archive requests should preserve submission history
+
+**Verification**
+```bash
+# Validate OpenAPI spec
+pnpm --filter @workspace/api-spec run validate
+
+# Generate types and check for errors
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+
+# Verify examples render in Swagger UI
+pnpm --filter @workspace/api-server dev
+# Navigate to /docs and test all examples
+```
+
+**Advanced Code Patterns**
+- State machine pattern for request status transitions
+- Event-driven architecture for reminder triggers
+- Atomic item submission tracking
+- Client notification workflows
+
+**Anti-Patterns**
+- Missing status transition validation
+- Non-atomic item updates
+- Missing event emission
+- Inconsistent reminder scheduling
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Document request is a separate aggregate with item collection and status workflow
+- TDD: Integration tests cover full lifecycle from creation to archive
+- BDD: "As a firm user, I can request documents from clients with tracking and reminders" scenarios
+- Deep Module: Document request service encapsulates collection workflow and notification logic
+
+**DDD:** ShareFile document collection feature for gathering files from clients with proper workflow tracking.  
+**TDD:** Write integration tests for full lifecycle including item submission and reminder triggers.
 
 ### Subtasks:
 - [ ] API‑DOCS‑009.1: Add document request paths to OpenAPI. (AGENT)  
@@ -157,16 +500,93 @@ Emits `DocumentRequestCreated`, `DocumentRequestItemSubmitted` events.
 
 ### [ ] API‑DOCS‑010: Document Approval Workflow API
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Design and specify multi-step document approval workflow endpoints with sequential approver management, state machine validation, and audit trail functionality following enterprise document approval patterns.
+
 **Depends on:** DB‑DOCS‑004, API‑DOCS‑004.  
-**Definition of Done:** Multi‑step document approval endpoints:  
-- `POST /api/v1/documents/{documentId}/submit‑for‑approval` – initiate approval workflow. Body: `{ approvers: [{ user_id, order }] }`. Returns workflow ID.  
-- `GET /api/v1/documents/{documentId}/approval‑workflow` – get current workflow status with all approver responses.  
-- `POST /api/v1/documents/{documentId}/approval‑workflow/approve` – approve current step. Body: `{ comment? }`.  
-- `POST /api/v1/documents/{documentId}/approval‑workflow/reject` – reject with required comment.  
-- `POST /api/v1/documents/{documentId}/approval‑workflow/comment` – add a comment without approving or rejecting.  
-Status transitions: pending → in_progress → approved/rejected.  
-Emits `WorkflowSubmitted`, `WorkflowStepApproved`, `WorkflowApproved`, `WorkflowRejected` events.  
-**DDD:** ShareFile approval workflows for document collaboration.  
+**Blocks:** API-DOCS-011 (annotations).  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/documents/approval-workflow-service.ts`
+
+**Imports / Exports**
+- Imports: [N/A] – OpenAPI specification only
+- Exports: Approval workflow API contract for code generation
+
+**Definition of Done**
+- [ ] OpenAPI spec adds approval-workflow tag and paths with `/api/v1/` prefix
+- [ ] `POST /api/v1/documents/{documentId}/submit-for-approval` endpoint initiates workflow with approvers list, returns 201 with workflow ID
+- [ ] `GET /api/v1/documents/{documentId}/approval-workflow` endpoint returns workflow status with approver responses
+- [ ] `POST /api/v1/documents/{documentId}/approval-workflow/approve` endpoint approves current step with optional comment
+- [ ] `POST /api/v1/documents/{documentId}/approval-workflow/reject` endpoint rejects with required comment
+- [ ] `POST /api/v1/documents/{documentId}/approval-workflow/comment` endpoint adds comment without decision
+- [ ] Status transitions: pending → in_progress → approved/rejected with proper validation
+- [ ] Schemas defined: `ApprovalWorkflow`, `WorkflowCreate`, `WorkflowResponse`, `ApproverResponse`
+- [ ] All endpoints include proper error responses and approver validation
+- [ ] Event emission for `WorkflowSubmitted`, `WorkflowStepApproved`, `WorkflowApproved`, `WorkflowRejected`
+
+**Out of Scope**
+- Parallel approval workflows
+- Automatic approval based on conditions
+- Delegation of approval authority
+- Bulk approval operations
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow approval without proper permissions validation
+- Never allow invalid state transitions in workflow
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Generated types in: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OpenAPI spec changes can be reverted
+- Halt condition: if generated types contain errors or breaking changes – review spec design
+
+**Rules to Follow**
+- Validate approver permissions before workflow creation
+- Enforce sequential approval order
+- Maintain complete audit trail of all actions
+- Prevent concurrent approval modifications
+
+**Verification**
+```bash
+# Validate OpenAPI spec
+pnpm --filter @workspace/api-spec run validate
+
+# Generate types and check for errors
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+
+# Verify examples render in Swagger UI
+pnpm --filter @workspace/api-server dev
+# Navigate to /docs and test all examples
+```
+
+**Advanced Code Patterns**
+- State machine pattern for workflow transitions
+- Event-driven architecture for notifications
+- Sequential approval validation
+- Audit trail maintenance
+
+**Anti-Patterns**
+- Concurrent approval modifications
+- Invalid state transitions
+- Missing approver validation
+- Incomplete audit trail
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Approval workflow is a separate aggregate with sequential state machine and approver coordination
+- TDD: Integration tests cover all workflow states and transition validation
+- BDD: "As a manager, I can submit documents for sequential approval with tracking and audit trail" scenarios
+- Deep Module: Approval workflow service encapsulates state machine logic and notification triggers
+
+**DDD:** ShareFile approval workflows for document collaboration with proper sequential validation.  
 **Deep Module:** Encapsulates sequential approval logic and notification triggers with clear state management.  
 **Advanced Code Patterns:** State machine pattern, event-driven workflow, proper validation.  
 **Anti-Patterns:** Avoid concurrent approval modifications, prevent invalid state transitions.  
@@ -184,16 +604,93 @@ Emits `WorkflowSubmitted`, `WorkflowStepApproved`, `WorkflowApproved`, `Workflow
 
 ### [ ] API‑DOCS‑011: Document Feedback & Annotation API
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Design and specify document annotation and feedback endpoints with threaded conversations, section mapping, position tracking, and collaborative review features following enterprise document collaboration patterns.
+
 **Depends on:** DB‑DOCS‑004, API‑DOCS‑004.  
-**Definition of Done:** Annotation and feedback endpoints for documents:  
-- `GET /api/v1/documents/{documentId}/annotations` – list all annotations, filter by section, by user.  
-- `POST /api/v1/documents/{documentId}/annotations` – create annotation. Body: `{ section_id, content, annotation_type (comment/highlight/suggestion), position_data_json? }`.  
-- `PATCH /api/v1/documents/{documentId}/annotations/{annotationId}` – update annotation content.  
-- `DELETE /api/v1/documents/{documentId}/annotations/{annotationId}` – soft delete annotation.  
-- `POST /api/v1/documents/{documentId}/annotations/{annotationId}/reply` – threaded reply to an annotation.  
-Emits `AnnotationCreated`, `AnnotationResolved` events.  
-**DDD:** ShareFile collaborative document review with in‑context annotations.  
-**Deep Module:** Encapsulates annotation threading and section mapping.
+**Blocks:** API-DOCS-012 (version comparison).  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/documents/annotation-service.ts`
+
+**Imports / Exports**
+- Imports: [N/A] – OpenAPI specification only
+- Exports: Document annotation API contract for code generation
+
+**Definition of Done**
+- [ ] OpenAPI spec adds annotations tag and paths with `/api/v1/` prefix
+- [ ] `GET /api/v1/documents/{documentId}/annotations` endpoint returns paginated annotations with filtering by section and user
+- [ ] `POST /api/v1/documents/{documentId}/annotations` endpoint creates annotations with position data, returns 201 with Location header
+- [ ] `PATCH /api/v1/documents/{documentId}/annotations/{annotationId}` endpoint updates annotation content, returns 200
+- [ ] `DELETE /api/v1/documents/{documentId}/annotations/{annotationId}` endpoint soft deletes annotation, returns 204
+- [ ] `POST /api/v1/documents/{documentId}/annotations/{annotationId}/reply` endpoint creates threaded replies, returns 201
+- [ ] Schemas defined: `Annotation`, `AnnotationCreate`, `AnnotationUpdate`, `AnnotationReply`, `AnnotationListResponse`
+- [ ] All endpoints include proper error responses and validation
+- [ ] Event emission for `AnnotationCreated`, `AnnotationResolved`, `AnnotationReplied`
+
+**Out of Scope**
+- Real-time annotation synchronization
+- Annotation drawing/graphics tools
+- Advanced annotation analytics
+- Bulk annotation operations
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow annotation modification without proper authorization
+- Never expose internal document structure through position data
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Generated types in: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OpenAPI spec changes can be reverted
+- Halt condition: if generated types contain errors or breaking changes – review spec design
+
+**Rules to Follow**
+- Validate annotation permissions before creation/modification
+- Maintain thread integrity for replies
+- Store position data securely and validate structure
+- Support multiple annotation types (comment/highlight/suggestion)
+
+**Verification**
+```bash
+# Validate OpenAPI spec
+pnpm --filter @workspace/api-spec run validate
+
+# Generate types and check for errors
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+
+# Verify examples render in Swagger UI
+pnpm --filter @workspace/api-server dev
+# Navigate to /docs and test all examples
+```
+
+**Advanced Code Patterns**
+- Threaded conversation modeling
+- Position-based annotation mapping
+- Event-driven collaboration
+- Soft delete with audit trail
+
+**Anti-Patterns**
+- Missing thread validation
+- Insecure position data handling
+- Missing authorization checks
+- Broken reply chains
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Annotation is a separate aggregate with threading and document context
+- TDD: Integration tests cover all annotation operations and thread integrity
+- BDD: "As a collaborator, I can add comments and feedback to documents with threaded discussions" scenarios
+- Deep Module: Annotation service encapsulates threading logic and position mapping complexity
+
+**DDD:** ShareFile collaborative document review with in‑context annotations and threaded discussions.  
+**Deep Module:** Encapsulates annotation threading and section mapping with proper validation.
 
 ### Subtasks:
 - [ ] API‑DOCS‑011.1: Add annotation/feedback paths to OpenAPI. (AGENT)  
@@ -205,13 +702,92 @@ Emits `AnnotationCreated`, `AnnotationResolved` events.
 
 ### [ ] API‑DOCS‑012: Document Version Comparison
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Design and specify document version comparison and restoration endpoints with diff generation, version metadata tracking, and safe restoration patterns following enterprise document version control best practices.
+
 **Depends on:** API‑DOCS‑004 (documents with versions).  
-**Definition of Done:** Version comparison endpoint:  
-- `GET /api/v1/documents/{documentId}/diff?versionFrom=1&versionTo=2` – returns diff data between two versions of a document. Response includes: additions, deletions, modifications highlighted with section/page references.  
-- `GET /api/v1/documents/{documentId}/versions` – list all versions with metadata (version number, changed by, timestamp, size change).  
-- `POST /api/v1/documents/{documentId}/versions/{versionId}/restore` – restore a previous version as the current version (creates a new version).  
-**DDD:** ShareFile version navigation and comparison.  
-**Integration tests:** compare versions, list versions, restore previous version.
+**Blocks:** API-DOCS-013 (secure sharing).  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/documents/version-service.ts`
+
+**Imports / Exports**
+- Imports: [N/A] – OpenAPI specification only
+- Exports: Document version comparison API contract for code generation
+
+**Definition of Done**
+- [ ] OpenAPI spec adds version-comparison tag and paths with `/api/v1/` prefix
+- [ ] `GET /api/v1/documents/{documentId}/diff` endpoint returns diff data between versions with section/page references
+- [ ] `GET /api/v1/documents/{documentId}/versions` endpoint returns paginated version list with metadata
+- [ ] `POST /api/v1/documents/{documentId}/versions/{versionId}/restore` endpoint creates new version from previous version
+- [ ] Schemas defined: `VersionDiff`, `VersionMetadata`, `VersionListResponse`, `VersionRestore`
+- [ ] All endpoints include proper error responses and version validation
+- [ ] Diff response includes additions, deletions, modifications with proper highlighting
+- [ ] Version metadata includes version number, changed by, timestamp, size changes
+
+**Out of Scope**
+- Real-time diff generation
+- Advanced diff algorithms (semantic comparison)
+- Version branching and merging
+- Bulk version operations
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow version restoration without proper validation
+- Never expose internal diff algorithm details
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Generated types in: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OpenAPI spec changes can be reverted
+- Halt condition: if generated types contain errors or breaking changes – review spec design
+
+**Rules to Follow**
+- Validate version existence before comparison
+- Ensure restoration creates new version (not overwrite)
+- Maintain version integrity and audit trail
+- Support reasonable diff size limits
+
+**Verification**
+```bash
+# Validate OpenAPI spec
+pnpm --filter @workspace/api-spec run validate
+
+# Generate types and check for errors
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+
+# Verify examples render in Swagger UI
+pnpm --filter @workspace/api-server dev
+# Navigate to /docs and test all examples
+```
+
+**Advanced Code Patterns**
+- Diff algorithm integration
+- Version metadata tracking
+- Safe restoration patterns
+- Audit trail maintenance
+
+**Anti-Patterns**
+- Missing version validation
+- Overwriting existing versions
+- Incomplete diff generation
+- Missing audit trail
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Document version is a separate aggregate with diff and restoration capabilities
+- TDD: Integration tests cover all version operations and diff accuracy
+- BDD: "As a user, I can compare document versions and restore previous versions with proper tracking" scenarios
+- Deep Module: Version service encapsulates diff logic and restoration complexity
+
+**DDD:** ShareFile version navigation and comparison with proper audit trail and safe restoration.  
+**Integration tests:** compare versions, list versions, restore previous version with validation.
 
 ### Subtasks:
 - [ ] API‑DOCS‑012.1: Add version comparison paths to OpenAPI. (AGENT)  
@@ -289,16 +865,95 @@ Emits `RetentionPolicyUpdated`, `RetentionEnforced` events.
 
 ### [ ] DOC‑INFRA‑001: Document Preview / Thumbnail Generation
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Implement server-side document preview generation service with async processing, caching strategies, and format-specific handlers for PDF, images, and Office documents following enterprise document management patterns.
+
 **Depends on:** DOC‑STORAGE‑001, API‑DOCS‑004.  
-**Definition of Done:** Server‑side preview generation service:  
-- `POST /api/v1/documents/{documentId}/preview` – trigger preview generation for a document.  
-- `GET /api/v1/documents/{documentId}/preview` – returns preview image URLs or thumbnails.  
-- Support for common file types: PDF (first page image), images (resized thumbnail), Office documents (via conversion).  
-- Preview metadata stored alongside the document (e.g., `preview_urls_json`).  
-- Async generation via background job or on‑demand with caching.  
-**Integration tests:** upload PDF, request preview, verify thumbnail generated.  
-**DDD:** Browser preview capability (ShareFile).  
-**Deep Module:** Encapsulates preview generation logic, caching strategy, and format conversion.  
+**Blocks:** DOC-INFRA-002 (chunked upload).  
+**Related Files:** `artifacts/api-server/src/services/documents/preview-service.ts`, `artifacts/api-server/src/lib/preview/processors/`
+
+**Imports / Exports**
+- Imports: Preview processors, caching service, storage adapter, background job queue
+- Exports: `PreviewService` with async generation capabilities
+
+**Definition of Done**
+- [ ] `POST /api/v1/documents/{documentId}/preview` endpoint triggers async preview generation
+- [ ] `GET /api/v1/documents/{documentId}/preview` endpoint returns preview URLs or generation status
+- [ ] Support for PDF (first page image), images (resized thumbnail), Office documents (via conversion)
+- [ ] Preview metadata stored alongside document in `preview_urls_json` field
+- [ ] Async generation via background job system with progress tracking
+- [ ] Caching strategy implemented for generated previews
+- [ ] Format-specific processors for different file types
+- [ ] Integration tests verify preview generation and caching
+
+**Out of Scope**
+- Real-time preview updates
+- Video preview generation
+- Advanced image processing (watermarks, filters)
+- Batch preview generation
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow preview generation without proper file validation
+- Never expose internal file paths through preview URLs
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/documents/preview-service.ts`
+- Preview processors: `artifacts/api-server/src/lib/preview/processors/`
+- Tests added/updated in: `artifacts/api-server/__tests__/services/documents/preview.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – service and processors can be reverted
+- Halt condition: if preview generation causes memory leaks or storage issues – review resource management
+
+**Rules to Follow**
+- Always validate file types before processing
+- Implement proper error handling for unsupported formats
+- Cache results to avoid repeated processing
+- Use async processing for large files
+- Monitor resource usage and implement limits
+
+**Verification**
+```bash
+# Run preview service tests
+pnpm --filter @workspace/api-server test -- preview.test.ts
+
+# Type checking
+pnpm run typecheck
+
+# Manual preview generation test
+pnpm --filter @workspace/api-server dev
+# Upload test PDF and verify preview generation
+```
+
+**Advanced Code Patterns**
+- Async job processing with queue management
+- Caching strategies with TTL
+- Format-specific handler pattern
+- Resource monitoring and limits
+- Background job status tracking
+
+**Anti-Patterns**
+- Blocking operations for large files
+- Memory leaks with image processing
+- Missing file type validation
+- Inconsistent caching behavior
+- Missing error handling
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Preview generation is a domain service supporting document browsing capability
+- TDD: Integration tests verify async processing and caching behavior
+- BDD: "As a user, I can see document previews without downloading the full file" scenarios
+- Deep Module: Preview service encapsulates format-specific processing and caching complexity
+
+**DDD:** Browser preview capability (ShareFile) with async generation and caching.  
+**Deep Module:** Encapsulates preview generation logic, caching strategy, and format conversion with proper resource management.  
 **Advanced Code Patterns:** Async job processing, caching strategies, format-specific handlers.  
 **Anti-Patterns:** Avoid blocking operations, prevent memory leaks with large files.  
 **Rules to Follow:** Always validate file types, implement proper error handling, cache results.  
@@ -314,16 +969,95 @@ Emits `RetentionPolicyUpdated`, `RetentionEnforced` events.
 
 ### [ ] DOC‑INFRA‑002: Chunked Upload for Large Files
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Implement resumable chunked upload system with session management, progress tracking, and large file support following enterprise file upload patterns with proper error handling and cleanup.
+
 **Depends on:** DOC‑STORAGE‑001.  
-**Definition of Done:** Resumable chunked upload endpoint:  
-- `POST /api/v1/documents/upload/init` – initialise a multipart upload. Body: `{ filename, total_size, content_type }`. Returns upload session ID.  
-- `POST /api/v1/documents/upload/{sessionId}/chunk` – upload a chunk. Headers: `Content-Range: bytes X-Y/Z`. Returns progress or completion status.  
-- `POST /api/v1/documents/upload/{sessionId}/complete` – finalise upload, create document record.  
-- `POST /api/v1/documents/upload/{sessionId}/abort` – cancel and clean up.  
-- Progress tracking: `GET /api/v1/documents/upload/{sessionId}/progress`.  
-- Support for files up to 5GB.  
-**Integration tests:** upload file in chunks, verify reassembled correctly, abort mid‑upload.  
-**DDD:** Infrastructure for handling large files (ShareFile supports up to 100GB).
+**Blocks:** DOC-INFRA-003 (OCR extraction).  
+**Related Files:** `artifacts/api-server/src/services/documents/chunked-upload-service.ts`, `artifacts/api-server/src/lib/upload/session-manager.ts`
+
+**Imports / Exports**
+- Imports: Storage adapter, session manager, file validation utilities
+- Exports: `ChunkedUploadService` with session management and progress tracking
+
+**Definition of Done**
+- [ ] `POST /api/v1/documents/upload/init` endpoint initializes multipart upload session, returns session ID
+- [ ] `POST /api/v1/documents/upload/{sessionId}/chunk` endpoint uploads chunks with Content-Range headers
+- [ ] `POST /api/v1/documents/upload/{sessionId}/complete` endpoint finalizes upload and creates document record
+- [ ] `POST /api/v1/documents/upload/{sessionId}/abort` endpoint cancels upload and cleans up resources
+- [ ] `GET /api/v1/documents/upload/{sessionId}/progress` endpoint returns upload progress and status
+- [ ] Support for files up to 5GB with proper validation
+- [ ] Session management with timeout and cleanup
+- [ ] Chunk reassembly and validation
+- [ ] Integration tests verify complete chunked upload flow
+
+**Out of Scope**
+- Parallel chunk uploads
+- Upload acceleration (CDN distribution)
+- Advanced file validation (virus scanning)
+- Upload queue management
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never allow unlimited file sizes without validation
+- Never expose internal storage paths through upload endpoints
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/documents/chunked-upload-service.ts`
+- Session manager: `artifacts/api-server/src/lib/upload/session-manager.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/services/documents/chunked-upload.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – service and session manager can be reverted
+- Halt condition: if chunked upload causes storage corruption – review reassembly logic
+
+**Rules to Follow**
+- Validate file size and type before upload initialization
+- Implement proper session timeout and cleanup
+- Validate Content-Range headers for chunk ordering
+- Reassemble chunks in correct order
+- Handle network interruptions gracefully
+
+**Verification**
+```bash
+# Run chunked upload tests
+pnpm --filter @workspace/api-server test -- chunked-upload.test.ts
+
+# Type checking
+pnpm run typecheck
+
+# Manual chunked upload test
+pnpm --filter @workspace/api-server dev
+# Test large file upload with chunking
+```
+
+**Advanced Code Patterns**
+- Session-based upload management
+- Chunk reassembly algorithms
+- Progress tracking with real-time updates
+- Resource cleanup and timeout handling
+- Resumable upload patterns
+
+**Anti-Patterns**
+- Missing session cleanup
+- Incorrect chunk ordering validation
+- Memory leaks with large file handling
+- Missing progress tracking
+- Poor error handling for network issues
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Chunked upload is infrastructure service supporting large file handling
+- TDD: Integration tests verify complete upload flow and error scenarios
+- BDD: "As a user, I can upload large files reliably with progress tracking and resume capability" scenarios
+- Deep Module: Chunked upload service encapsulates session management and reassembly complexity
+
+**DDD:** Infrastructure for handling large files (ShareFile supports up to 100GB) with reliable chunked upload patterns.
 
 ### Subtasks:
 - [ ] DOC‑INFRA‑002.1: Implement chunked upload service with session management. (AGENT)  
@@ -334,15 +1068,94 @@ Emits `RetentionPolicyUpdated`, `RetentionEnforced` events.
 
 ### [ ] DOC‑INFRA‑003: OCR Text Extraction for Uploaded Documents
 **Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Size:** Large  
+
+**Description** Implement OCR text extraction service with async processing, third-party API integration, and automatic triggering for image-based documents following enterprise document searchability patterns.
+
 **Depends on:** DOC‑STORAGE‑001, API‑DOCS‑004.  
-**Definition of Done:** OCR extraction service:  
-- `POST /api/v1/documents/{documentId}/ocr` – trigger OCR text extraction (async).  
-- `GET /api/v1/documents/{documentId}/ocr‑text` – retrieve extracted text.  
-- Extraction triggered automatically on upload for image‑based files (PDFs, images).  
-- Extracted text stored alongside the document and used for full‑text search indexing.  
-- Initial implementation: stub that extracts basic metadata or uses a third‑party OCR API; full local OCR deferred.  
-**Integration tests:** upload image‑based document, verify OCR text appears.  
-**DDD:** Content searchability (ShareFile feature).
+**Blocks:** [N/A] – completes document infrastructure.  
+**Related Files:** `artifacts/api-server/src/services/documents/ocr-service.ts`, `artifacts/api-server/src/lib/ocr/ocr-provider.ts`
+
+**Imports / Exports**
+- Imports: OCR provider interface, storage adapter, background job queue
+- Exports: `OCRService` with async text extraction capabilities
+
+**Definition of Done**
+- [ ] `POST /api/v1/documents/{documentId}/ocr` endpoint triggers async OCR text extraction
+- [ ] `GET /api/v1/documents/{documentId}/ocr-text` endpoint returns extracted text or processing status
+- [ ] OCR extraction triggered automatically on upload for image-based files (PDFs, images)
+- [ ] Extracted text stored alongside document in `extracted_text` field
+- [ ] Text used for full-text search indexing
+- [ ] Initial implementation uses third-party OCR API with fallback to stub
+- [ ] Integration tests verify OCR extraction and search integration
+- [ ] Proper error handling for unsupported file types
+
+**Out of Scope**
+- Full local OCR implementation (deferred to later phase)
+- Advanced OCR features (language detection, handwriting recognition)
+- Real-time OCR processing
+- Batch OCR operations
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Never expose OCR API keys or internal processing details
+- Never allow OCR processing without proper file validation
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/documents/ocr-service.ts`
+- OCR provider: `artifacts/api-server/src/lib/ocr/ocr-provider.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/services/documents/ocr.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level – OCR service and provider can be reverted
+- Halt condition: if OCR processing causes storage issues – review text storage strategy
+
+**Rules to Follow**
+- Validate file types before OCR processing
+- Use third-party OCR API with proper error handling
+- Store extracted text securely with proper encoding
+- Implement async processing to avoid blocking uploads
+- Handle OCR service failures gracefully
+
+**Verification**
+```bash
+# Run OCR service tests
+pnpm --filter @workspace/api-server test -- ocr.test.ts
+
+# Type checking
+pnpm run typecheck
+
+# Manual OCR extraction test
+pnpm --filter @workspace/api-server dev
+# Upload image-based document and verify OCR text
+```
+
+**Advanced Code Patterns**
+- Async text extraction with job queuing
+- Third-party API integration with fallback
+- Text storage and indexing integration
+- File type validation for OCR compatibility
+- Background processing with status tracking
+
+**Anti-Patterns**
+- Synchronous OCR processing
+- Missing error handling for OCR failures
+- Insecure API key storage
+- Missing file type validation
+- Poor text encoding handling
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: OCR extraction is domain service supporting document searchability
+- TDD: Integration tests verify text extraction and search integration
+- BDD: "As a user, I can search within document contents after upload" scenarios
+- Deep Module: OCR service encapsulates third-party integration and text processing complexity
+
+**DDD:** Content searchability (ShareFile feature) with automatic OCR processing and search integration.
 
 ### Subtasks:
 - [ ] DOC‑INFRA‑003.1: Implement OCR service with stub or third‑party integration. (AGENT)  

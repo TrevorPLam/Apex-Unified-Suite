@@ -1,89 +1,87 @@
+Now producing `TODO-P7-VIDEO.md`.
+
+---
+
 # TODO-P7-VIDEO.md – Phase 7 Video Conferencing Integrations
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
-
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
-
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This document contains video conferencing integration tasks for Zoom SDK, Microsoft Teams, and Google Meet. All tasks follow the established patterns with explicit dependencies and verification commands.
+This document contains video conferencing integration tasks for Zoom, Microsoft Teams, and Google Meet. All tasks follow the established patterns with explicit dependencies, safety boundaries, rollback plans, and verification commands. Engineered for 100% agentic execution using The Framework (DDD + TDD + BDD + Deep Module).
 
 ---
 
 ## Phase 7 Video Integration Task Index
 
-- [ ] INT‑VIDEO‑001 – Zoom SDK Integration  
-- [ ] INT‑VIDEO‑002 – Microsoft Teams Integration  
-- [ ] INT‑VIDEO‑003 – Google Meet Integration  
+- [ ] INT‑VIDEO‑001 – Zoom Integration
+- [ ] INT‑VIDEO‑002 – Microsoft Teams Integration
+- [ ] INT‑VIDEO‑003 – Google Meet Integration
 
 ---
 
-## Video Conferencing Integrations
+## [ ] INT‑VIDEO‑001: Zoom Integration
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No Zoom integration exists. As of May 2026, Zoom REST API v2 supports Server‑to‑Server OAuth and standard OAuth 2.0 for meeting CRUD, webhooks for real‑time event notifications, and recording management. Meeting creation is rate‑limited to 100 requests per day per user (free/pro accounts) or higher tiers for business/enterprise. Starting March 2 2026, OBF (On Behalf Of) tokens are required for Meeting SDK bots joining external meetings.
+**Size:** Medium
 
-### [ ] INT‑VIDEO‑001: Zoom SDK Integration
-**Status:** ⏳ Not Started  
-**Depends on:** API‑APPT‑007 (video integration service), INT‑CALENDAR‑003.  
-**Definition of Done:**
-- Zoom SDK integration with OAuth 2.0 authentication.
-- Meeting creation, update, and deletion via Zoom API.
-- Real‑time meeting status updates via Zoom webhooks.
-- Recording management and download capabilities.
-- Zoom‑specific features (breakout rooms, polling, reactions).
+**Description:** Implement Zoom meeting lifecycle management (create, update, delete) via the Zoom REST API v2 with OAuth 2.0, real‑time webhook processing for meeting status updates, and recording download capabilities.
 
-**Out of Scope:**
-- Zoom Phone integration
-- Zoom Chat integration
-- Zoom Events platform
+**Depends on:** API‑APPT‑006 (appointment API), INT‑CALENDAR‑003 (Apple Calendar integration — patterns reference)
+**Blocks:** INT‑VIDEO‑002 (Microsoft Teams — adapter patterns reusable)
+**Related Files:** `integrations/zoom/oauth.ts`, `integrations/zoom/meeting-client.ts`, `integrations/zoom/webhooks.ts`, `integrations/zoom/recordings.ts`, `lib/integrations/video-sync/zoom-sync.ts`
 
-**Rules to Follow:**
-- Use Zoom REST API v2 with proper error handling
-- Implement OAuth 2.0 flow with JWT app fallback
-- Handle Zoom rate limits (100 requests/second)
-- Store Zoom credentials securely with rotation
+**Imports / Exports**
+- Imports: `VideoPort` interface, `OAuthTokenStore`, Zoom REST API client
+- Exports: `ZoomAdapter`, `ZoomMeetingService`, `ZoomWebhookHandler`, `ZoomRecordingService`
 
-**Deep Module:**
-- Zoom SDK integration with OAuth 2.0 authentication and JWT fallback
-- Meeting lifecycle management with real-time status updates
-- Recording management with chunked download and processing
-- Webhook processing pipeline with event filtering and routing
+**Definition of Done**
+- [ ] OAuth 2.0 flow (Server‑to‑Server or standard OAuth) completed; tokens encrypted at rest
+- [ ] `createMeeting(appointmentId)` → creates a Zoom meeting via `POST /v2/users/{userId}/meetings`; returns join URL, meeting ID, and passcode
+- [ ] `updateMeeting(appointmentId)` → updates meeting settings (topic, start time, duration); handles `PATCH /v2/meetings/{meetingId}`
+- [ ] `deleteMeeting(appointmentId)` → deletes the linked Zoom meeting via `DELETE /v2/meetings/{meetingId}`
+- [ ] Webhook handler processes events: `meeting.started`, `meeting.ended`, `meeting.updated`, `recording.completed`; verifies Zoom webhook signature using the verification token
+- [ ] Recording service: when `recording.completed` webhook received, downloads recording files and stores references in Apex
+- [ ] Status machine: Apex appointment status transitions based on Zoom meeting lifecycle events
+- [ ] Rate limiting: tracks daily meeting‑creation count per user (100/day default); implements exponential backoff on `429 Too Many Requests`
+- [ ] Unit tests pass using recorded fixture webhook payloads
+- [ ] `pnpm run typecheck` passes with zero errors
 
-**Anti-Patterns:**
-- Don't store Zoom JWT tokens long-term
-- Don't ignore Zoom API rate limits
-- Don't skip webhook signature validation
-- Don't hardcode Zoom account credentials
+**Out of Scope**
+- Zoom Meeting SDK embedding (client‑side in‑browser Zoom experience) — this task covers REST API only
+- Zoom Phone, Zoom Chat, Zoom Events integrations
+- Zoom Webinars
+- OBF token management for Meeting SDK bots
 
-**Related Files:**
-- `integrations/zoom/client.ts` – Zoom API client
-- `integrations/zoom/meeting-manager.ts` – Meeting lifecycle
-- `integrations/zoom/webhooks.ts` – Webhook handlers
-- `integrations/zoom/recordings.ts` – Recording management
-- `lib/integrations/zoom-sync/` – Zoom sync service
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`, `ZOOM_VERIFICATION_TOKEN`
+- Never store OAuth tokens in plaintext
+- Never skip webhook signature verification — unsigned webhooks are a spoofing vector
 
-**Depends on:**
-- API‑APPT‑007: Video integration service
-- INT‑CALENDAR‑003: Apple Calendar integration
+**Output Artifacts**
+- Code changes in: `integrations/zoom/`, `lib/integrations/video-sync/`
+- Tests added/updated in: `integrations/zoom/*.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
 
-**Imports from/exports to:**
-- Imports: Video integration interface, OAuth utilities
-- Exports: Zoom adapter, meeting manager, recording service
+**Rollback**
+- Granularity: file‑level — delete `integrations/zoom/` directory; deregister Zoom webhook endpoint
+- Halt condition: if Zoom returns persistent `401` or `403` errors, stop and verify OAuth credentials and scopes before continuing
 
-**Blocks:**
-- INT‑VIDEO‑002: Microsoft Teams Integration
+**Rules to Follow**
+- Use Zoom REST API v2; the base URL is `https://api.zoom.us/v2`
+- Meeting creation must include: `type: 2` (scheduled meeting), `start_time`, `duration`, `timezone`, `topic`
+- Webhook endpoint must be registered at `/webhooks/zoom`; return HTTP 200 within 3 s and process asynchronously
+- Zoom webhook signature verification: compute HMAC‑SHA256 of the raw request body using the verification token and compare to the `x-zm-signature` header (Note: current Zoom docs indicate the header is `x-zm-signature` — verify against the latest Zoom webhook documentation as the exact header name can vary by webhook version)
+- Meeting URLs must never be logged in plaintext to avoid unauthorised access
+- Respect Zoom's 100 meetings/day/user rate limit; implement a counter per connected user
 
-**Verification:**
+**Verification**
 ```bash
-# Test Zoom OAuth
-pnpm vitest run -- integrations/zoom/client.test.ts
+# Test OAuth flow
+pnpm vitest run -- integrations/zoom/oauth.test.ts
 
-# Test meeting management
-pnpm vitest run -- integrations/zoom/meeting-manager.test.ts
+# Test meeting CRUD
+pnpm vitest run -- integrations/zoom/meeting-client.test.ts
 
 # Test webhook processing
 pnpm vitest run -- integrations/zoom/webhooks.test.ts
@@ -91,169 +89,288 @@ pnpm vitest run -- integrations/zoom/webhooks.test.ts
 # Test recording download
 pnpm vitest run -- integrations/zoom/recordings.test.ts
 
-# Manual verification
-curl -X POST http://localhost:8081/integrations/zoom/test-meeting
+# Full typecheck
+pnpm run typecheck
 ```
 
-**Subtasks:**
-- [ ] INT‑VIDEO‑001.1: Implement Zoom OAuth and API client. (AGENT) – `integrations/zoom/client.ts`  
-  **verification:** Zoom API operations work with test credentials.
-- [ ] INT‑VIDEO‑001.2: Add meeting lifecycle management. (AGENT) – `integrations/zoom/meeting-manager.ts`  
-  **verification:** Meeting creation, updates, and deletion work correctly.
-- [ ] INT‑VIDEO‑001.3: Implement Zoom webhook handlers. (AGENT) – `integrations/zoom/webhooks.ts`  
-  **verification:** Meeting status updates are processed in real‑time.
-- [ ] INT‑VIDEO‑001.4: Add recording management capabilities. (AGENT) – `integrations/zoom/recordings.ts`  
-  **verification:** Recording download and management work properly.
+**Advanced Code Patterns**
+- Adapter pattern: `ZoomAdapter` implements `VideoPort`; domain layer never imports Zoom‑specific types
+- Webhook deduplication: use `event_id` from Zoom webhook payload as a dedup key in a `processed_webhook_events` table
+- Rate limit tracker: `Map<userId, { count, resetAt }>` per 24‑hour window; reset at UTC midnight
+- Recording download: async background job downloads each recording file, uploads to R2 storage, and links to the appointment
 
-### [ ] INT‑VIDEO‑002: Microsoft Teams Integration
-**Status:** ⏳ Not Started  
-**Depends on:** INT‑VIDEO‑001, API‑APPT‑007.  
-**Definition of Done:**
-- Microsoft Teams integration via Graph API.
-- Teams meeting creation and management.
-- Integration with Outlook calendar for automatic Teams meetings.
-- Teams‑specific features (channel meetings, live events, recording policies).
-- Proper handling of Microsoft Teams licensing and permissions.
+**Anti‑Patterns**
+- Do not poll Zoom for meeting status — use webhooks exclusively
+- Do not hardcode meeting settings (duration, type) — derive from the Apex appointment configuration
+- Do not expose meeting passcodes or join URLs in API responses that don't require auth
+- Do not create duplicate meetings — always check for an existing `externalMeetingId` on the appointment before creating
+- Do not skip webhook signature verification
 
-**Out of Scope:**
-- Teams Chat integration
-- Teams Channels management
-- Teams Power Platform integration
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Zoom is an external system in the Appointments bounded context. `ZoomAdapter` is an anti‑corruption layer implementing `VideoPort`, translating Zoom meeting concepts into Apex domain events.
+- TDD: Use recorded Zoom API responses and webhook payloads as fixtures. All tests must be deterministic without a live Zoom connection.
+- BDD: "As a service provider, a Zoom meeting is automatically created when an appointment is confirmed, and the recording is available in Apex after the meeting ends."
+- Deep Module: `ZoomMeetingService.create(appointmentId)` hides OAuth refresh, rate limit tracking, webhook subscription, and meeting lifecycle behind one method.
 
-**Rules to Follow:**
-- Use Microsoft Graph API for Teams operations
-- Handle Teams licensing requirements
-- Implement proper permission checks
-- Follow Microsoft Teams API limits
+---
 
-**Deep Module:**
-- Microsoft Teams integration via Graph API with licensing validation
-- Online meeting lifecycle management with Teams-specific features
-- Recording policy enforcement with permission-based access
-- Microsoft-specific event mapping and feature integration
+### Subtasks
 
-**Anti-Patterns:**
-- Don't ignore Teams licensing requirements
-- Don't skip permission validation
-- Don't assume all users have Teams enabled
-- Don't process Teams events without proper validation
+- [ ] INT‑VIDEO‑001.0.25 (AGENT): Read the entire task and Zoom REST API v2 documentation (meetings, webhooks, recordings).
+  *No action — pause until fully understood.*
 
-**Related Files:**
-- `integrations/microsoft/teams-client.ts` – Teams Graph API client
-- `integrations/microsoft/teams-recordings.ts` – Teams recording management
-- `lib/integrations/teams-sync/` – Teams sync service
-- `lib/integrations/microsoft-licensing/` – License validation
+- [ ] INT‑VIDEO‑001.0.5 (AGENT): Research Zoom REST API v2 meeting creation, webhook signature verification, and Server‑to‑Server OAuth patterns (as of May 2026).
+  *Document findings briefly or note "no changes."*
 
-**Depends on:**
-- INT‑VIDEO‑001: Zoom SDK integration patterns
-- API‑APPT‑007: Video integration service
+- [ ] INT‑VIDEO‑001.0.75 (AGENT): Reason about rate limit strategy (100 meetings/day/user) and webhook deduplication. Confirm OAuth flow type (Server‑to‑Server vs. standard OAuth) with user.
+  *If uncertain about OAuth type, ask the user before executing.*
 
-**Imports from/exports to:**
-- Imports: Video integration interface, Microsoft Graph utilities
-- Exports: Teams adapter, recording service, license checker
+- [ ] INT‑VIDEO‑001.1 (AGENT): Implement Zoom OAuth flow and encrypted token storage.
+  **File(s):** `integrations/zoom/oauth.ts`
+  **Verification:** `pnpm vitest run -- integrations/zoom/oauth.test.ts`
 
-**Blocks:**
-- INT‑VIDEO‑003: Google Meet Integration
+- [ ] INT‑VIDEO‑001.2 (AGENT): Implement meeting CRUD (create, update, delete) with rate limit tracking.
+  **File(s):** `integrations/zoom/meeting-client.ts`
+  **Verification:** `pnpm vitest run -- integrations/zoom/meeting-client.test.ts`
 
-**Verification:**
+- [ ] INT‑VIDEO‑001.3 (AGENT): Implement webhook handler with signature verification and status‑machine transitions.
+  **File(s):** `integrations/zoom/webhooks.ts`
+  **Verification:** `pnpm vitest run -- integrations/zoom/webhooks.test.ts`
+
+- [ ] INT‑VIDEO‑001.4 (AGENT): Implement recording download service with R2 upload.
+  **File(s):** `integrations/zoom/recordings.ts`
+  **Verification:** `pnpm vitest run -- integrations/zoom/recordings.test.ts`
+
+- [ ] INT‑VIDEO‑001.5 (AGENT): Run `pnpm run typecheck` and fix any type errors.
+  **File(s):** All modified files
+  **Verification:** `pnpm run typecheck` exits 0.
+
+- [ ] INT‑VIDEO‑001.N (HUMAN): Final review — verify OAuth flow and meeting creation end‑to‑end in Zoom sandbox, approve.
+  **Verification:** Approved.
+
+---
+
+## [ ] INT‑VIDEO‑002: Microsoft Teams Integration
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No Microsoft Teams integration exists. As of May 2026, Microsoft Graph API v1.0 provides the `POST /me/onlineMeetings` endpoint for creating standalone Teams meetings. OAuth 2.0 delegated permissions (`OnlineMeetings.ReadWrite`) are required. Teams Live Events `isBroadcast` property is being retired — effective March 31 2026 (beta) and June 30 2026 (v1.0), replaced by Virtual Event APIs for webinars and town halls. Meeting creation requires Microsoft 365 work/school accounts with Teams enabled.
+**Size:** Medium
+
+**Description:** Implement Microsoft Teams meeting lifecycle management via Microsoft Graph API, including OAuth 2.0 flow, online meeting creation with auto‑generated join URLs, meeting update/deletion, and webhook subscription for change notifications.
+
+**Depends on:** INT‑VIDEO‑001 (Zoom — adapter patterns reusable), API‑APPT‑006 (appointment API)
+**Blocks:** INT‑VIDEO‑003 (Google Meet — patterns reference)
+**Related Files:** `integrations/microsoft/teams-oauth.ts`, `integrations/microsoft/teams-client.ts`, `integrations/microsoft/teams-webhooks.ts`, `lib/integrations/video-sync/teams-sync.ts`
+
+**Imports / Exports**
+- Imports: `VideoPort` interface, `OAuthTokenStore`, `@microsoft/microsoft-graph-client` (v3+)
+- Exports: `TeamsAdapter`, `TeamsMeetingService`, `TeamsWebhookHandler`
+
+**Definition of Done**
+- [ ] OAuth 2.0 flow (authorization code with PKCE, delegated permissions) completed; tokens encrypted at rest
+- [ ] `createMeeting(appointmentId)` → creates an online meeting via `POST /me/onlineMeetings` with `startDateTime`, `endDateTime`, `subject`; returns `joinWebUrl` and `meetingId`
+- [ ] `updateMeeting(appointmentId)` → updates the meeting via `PATCH /me/onlineMeetings/{meetingId}` (subject, start/end times)
+- [ ] `deleteMeeting(appointmentId)` → deletes the meeting via `DELETE /me/onlineMeetings/{meetingId}`
+- [ ] Webhook subscription: creates a subscription for `/communications/onlineMeetings` change notifications; renews before expiry (max subscription lifetime: 3 days); removes on disconnect
+- [ ] Webhook handler: validates `clientState`; processes `updated` and `deleted` change types; triggers re‑sync
+- [ ] Licensing validation: checks that the authenticated user has Teams enabled and licensed before attempting meeting creation
+- [ ] Rate limiting: respects Microsoft Graph throttling (10,000 requests per 10‑minute window per app); backoff on `HTTP 429`
+- [ ] Unit tests pass using recorded fixture data
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Teams Live Events (deprecated — use Virtual Event APIs, future phase)
+- Teams Chat and Channels integration
+- Microsoft 365 admin consent for organisation‑wide access
+- Recording download via OneDrive/SharePoint (future phase)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, `AZURE_CLIENT_SECRET`, OAuth refresh tokens
+- Never store OAuth tokens in plaintext
+- Never skip webhook `clientState` validation
+
+**Output Artifacts**
+- Code changes in: `integrations/microsoft/`, `lib/integrations/video-sync/`
+- Tests added/updated in: `integrations/microsoft/*.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file‑level — delete `integrations/microsoft/` Teams files; remove webhook subscriptions
+- Halt condition: if Teams meeting creation fails with licensing errors, stop and verify the test account has Teams enabled
+
+**Rules to Follow**
+- Use `@microsoft/microsoft-graph-client` v3+ for all Graph API calls
+- Required OAuth scopes: `OnlineMeetings.ReadWrite`, `offline_access`
+- Meeting creation body: `{ startDateTime, endDateTime, subject, participants: { attendees: [] } }` (ISO 8601 with timezone offset)
+- Webhook subscriptions: validate `clientState` on every notification; renew within 3‑day max lifespan
+- Do not use the deprecated `isBroadcast` property — it is retired for v1.0 as of June 30 2026
+
+**Verification**
 ```bash
-# Test Teams client
+pnpm vitest run -- integrations/microsoft/teams-oauth.test.ts
 pnpm vitest run -- integrations/microsoft/teams-client.test.ts
-
-# Test Teams recordings
-pnpm vitest run -- integrations/microsoft/teams-recordings.test.ts
-
-# Test Teams sync
-pnpm vitest run -- lib/integrations/teams-sync/sync.test.ts
-
-# Manual verification
-curl -X POST http://localhost:8081/integrations/teams/test-meeting
+pnpm vitest run -- integrations/microsoft/teams-webhooks.test.ts
+pnpm vitest run -- lib/integrations/video-sync/teams-sync.test.ts
+pnpm run typecheck
 ```
 
-**Subtasks:**
-- [ ] INT‑VIDEO‑002.1: Implement Teams meeting creation via Graph API. (AGENT) – `integrations/microsoft/teams-client.ts`  
-  **verification:** Teams meetings are created successfully.
-- [ ] INT‑VIDEO‑002.2: Add Teams‑specific features and capabilities. (AGENT)  
-  **verification:** Channel meetings and other Teams features work.
-- [ ] INT‑VIDEO‑002.3: Implement Teams recording management. (AGENT) – `integrations/microsoft/teams-recordings.ts`  
-  **verification:** Teams recordings are managed properly.
-- [ ] INT‑VIDEO‑002.4: Handle Teams licensing and permissions. (AGENT)  
-  **verification:** Teams operations respect licensing limitations.
+**Advanced Code Patterns**
+- Adapter pattern: `TeamsAdapter` implements `VideoPort`
+- Webhook subscription lifecycle: background job renews every 2 days (3‑day max lifespan minus safety margin)
+- Licensing check: call `GET /me/licenseDetails` before meeting creation; cache result for 1 hour
+- Idempotent meeting creation: store `externalMeetingId` on the appointment; check before creating
 
-### [ ] INT‑VIDEO‑003: Google Meet Integration
-**Status:** ⏳ Not Started  
-**Depends on:** INT‑VIDEO‑002, API‑APPT‑007.  
-**Definition of Done:**
-- Google Meet integration via Google Calendar API.
-- Automatic meeting link generation for appointments.
-- Meet‑specific features (live captions, recording, breakout rooms).
-- Integration with Google Workspace for enhanced meeting features.
-- Proper handling of Meet API limitations and quotas.
+**Anti‑Patterns**
+- Do not use `isBroadcast` or Teams Live Events creation — deprecated as of 2026
+- Do not create meetings without verifying the user has Teams licensed
+- Do not create duplicate webhook subscriptions — check existing subscriptions before creating new ones
+- Do not call the Graph API synchronously in request handlers — always process in background jobs
 
-**Out of Scope:**
-- Google Chat integration
-- Google Workspace admin features
-- Google Meet hardware integration
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Microsoft Teams is an external system in the Appointments bounded context. `TeamsAdapter` implements `VideoPort`, the same interface as `ZoomAdapter`.
+- TDD: Use recorded Graph API responses as fixtures; tests must not require a live Microsoft 365 tenant.
+- BDD: "As a service provider, a Teams meeting link is automatically generated when a client books an appointment, and they can join directly from the confirmation email."
+- Deep Module: `TeamsMeetingService.create(appointmentId)` hides OAuth refresh, licensing validation, webhook subscription, and meeting lifecycle behind one method.
 
-**Rules to Follow:**
-- Use Google Calendar API for Meet operations
-- Handle Google Workspace licensing requirements
-- Implement proper quota management
-- Follow Google Meet API limitations
+---
 
-**Deep Module:**
-- Google Meet integration via Calendar API with Workspace features
-- Meet conference data management with live caption support
-- Workspace integration with feature enablement and licensing
-- Meet API quota management with intelligent rate limiting
+### Subtasks
 
-**Anti-Patterns:**
-- Don't ignore Google Workspace licensing
-- Don't skip Meet feature validation
-- Don't assume all users have Meet enabled
-- Don't process Meet events without proper authentication
+- [ ] INT‑VIDEO‑002.0.25 (AGENT): Read the entire task and Microsoft Graph `onlineMeetings` API documentation.
+  *No action — pause until fully understood.*
 
-**Related Files:**
-- `integrations/google/meet-client.ts` – Google Meet API client
-- `integrations/google/meet-recordings.ts` – Meet recording management
-- `lib/integrations/meet-sync/` – Meet sync service
-- `lib/integrations/google-workspace/` – Workspace integration
+- [ ] INT‑VIDEO‑002.0.5 (AGENT): Research Microsoft Graph v1.0 `onlineMeetings` endpoint, Teams Live Events deprecation timeline, and webhook subscription lifecycle (as of May 2026).
+  *Document findings briefly or note "no changes."*
 
-**Depends on:**
-- INT‑VIDEO‑002: Microsoft Teams integration patterns
-- API‑APPT‑007: Video integration service
+- [ ] INT‑VIDEO‑002.0.75 (AGENT): Reason about licensing validation approach and whether to use delegated or application permissions. Confirm with user.
+  *If uncertain, default to delegated permissions.*
 
-**Imports from/exports to:**
-- Imports: Video integration interface, Google Calendar utilities
-- Exports: Meet adapter, recording service, workspace integration
+- [ ] INT‑VIDEO‑002.1 (AGENT): Implement OAuth 2.0 flow (Microsoft identity platform) with encrypted token storage.
+  **File(s):** `integrations/microsoft/teams-oauth.ts`
+  **Verification:** `pnpm vitest run -- integrations/microsoft/teams-oauth.test.ts`
 
-**Blocks:**
-- INT‑PAYMENT‑001: Stripe Payment Integration
+- [ ] INT‑VIDEO‑002.2 (AGENT): Implement online meeting CRUD with licensing validation.
+  **File(s):** `integrations/microsoft/teams-client.ts`
+  **Verification:** `pnpm vitest run -- integrations/microsoft/teams-client.test.ts`
 
-**Verification:**
+- [ ] INT‑VIDEO‑002.3 (AGENT): Implement webhook subscription management and change notification handler.
+  **File(s):** `integrations/microsoft/teams-webhooks.ts`
+  **Verification:** `pnpm vitest run -- integrations/microsoft/teams-webhooks.test.ts`
+
+- [ ] INT‑VIDEO‑002.4 (AGENT): Run `pnpm run typecheck` and fix any type errors.
+  **File(s):** All modified files
+  **Verification:** `pnpm run typecheck` exits 0.
+
+- [ ] INT‑VIDEO‑002.N (HUMAN): Final review — verify OAuth flow and meeting creation with a Microsoft 365 test account, approve.
+  **Verification:** Approved.
+
+---
+
+## [ ] INT‑VIDEO‑003: Google Meet Integration
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** No Google Meet integration exists independent of the Google Calendar integration (INT‑CALENDAR‑001). As of May 2026, Google Meet is not a standalone API — it is embedded in the Google Calendar API via the `conferenceData` field. Setting `conferenceData.createRequest` on a calendar event automatically generates a Meet link asynchronously. As of February 2026, Google recommends generating a new conference via `createRequest` for every new event rather than reusing Meet codes, to avoid unintended access to meetings. No extra OAuth scopes are needed beyond Calendar API scopes.
+**Size:** Small
+
+**Description:** Implement Google Meet meeting link generation as an enhancement to the Google Calendar integration (INT‑CALENDAR‑001), ensuring every Apex appointment generates a fresh Google Meet link via the Calendar API `conferenceData.createRequest` field, and provide recording access via Google Drive.
+
+**Depends on:** INT‑CALENDAR‑001 (Google Calendar integration), INT‑VIDEO‑002 (Teams — patterns reference)
+**Blocks:** [N/A] — final video conferencing integration
+**Related Files:** `integrations/google/meet-client.ts`, `lib/integrations/video-sync/meet-sync.ts`
+
+**Imports / Exports**
+- Imports: `VideoPort` interface, `GoogleCalendarAdapter` (from INT‑CALENDAR‑001), `googleapis`
+- Exports: `MeetAdapter`, `MeetRecordingService`
+
+**Definition of Done**
+- [ ] Extends Google Calendar event creation to always include `conferenceData.createRequest` with a unique `requestId` (UUID per appointment)
+- [ ] Generates a fresh Google Meet link per appointment (no Meet code reuse between events)
+- [ ] Reads Meet conference data from calendar events: `conferenceData.entryPoints[]` (video, phone, sip)
+- [ ] Recording access: queries Google Drive for Meet recordings associated with the calendar event (recordings are auto‑saved to the organiser's Drive)
+- [ ] Status mapping: maps Meet conference status (`pending`, `accepted`, `declined`) to Apex appointment video status
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Google Meet REST API for live meeting control (mute, remove participant) — not available via public API
+- Meet live streaming
+- Google Workspace admin features for Meet
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, `GOOGLE_CLIENT_SECRET`, OAuth refresh tokens
+- Never reuse Meet codes across events — always generate a fresh `createRequest` per event
+
+**Output Artifacts**
+- Code changes in: `integrations/google/meet-client.ts`, `lib/integrations/video-sync/meet-sync.ts`
+- Tests added/updated in: `integrations/google/meet-client.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file‑level — revert Meet‑specific code; Google Calendar events created without Meet links
+- Halt condition: if Meet conference creation consistently returns `declined` status, stop and verify Google Workspace settings have Meet enabled
+
+**Rules to Follow**
+- Always use `conferenceDataVersion: 1` query parameter on Calendar API calls
+- Always create a new `createRequest` with a unique `requestId` (UUID) per appointment — never reuse Meet codes
+- Meet links are generated asynchronously; poll `conferenceData.status` if needed, but eventual consistency is acceptable
+- Google Meet requires no additional OAuth scopes beyond what INT‑CALENDAR‑001 already requires for Calendar access
+- Recordings are auto‑saved to Google Drive; access them via the Drive API (future enhancement) or via `conferenceData` entry points
+
+**Verification**
 ```bash
-# Test Meet client
 pnpm vitest run -- integrations/google/meet-client.test.ts
-
-# Test Meet recordings
-pnpm vitest run -- integrations/google/meet-recordings.test.ts
-
-# Test Meet sync
-pnpm vitest run -- lib/integrations/meet-sync/sync.test.ts
-
-# Manual verification
-curl -X POST http://localhost:8081/integrations/meet/test-meeting
+pnpm vitest run -- lib/integrations/video-sync/meet-sync.test.ts
+pnpm run typecheck
 ```
 
-**Subtasks:**
-- [ ] INT‑VIDEO‑003.1: Implement Google Meet meeting creation. (AGENT) – `integrations/google/meet-client.ts`  
-  **verification:** Google Meet meetings are created successfully.
-- [ ] INT‑VIDEO‑003.2: Add Meet‑specific features and capabilities. (AGENT)  
-  **verification:** Meet features like captions work properly.
-- [ ] INT‑VIDEO‑003.3: Implement Meet recording management. (AGENT) – `integrations/google/meet-recordings.ts`  
-  **verification:** Meet recordings are managed correctly.
-- [ ] INT‑VIDEO‑003.4: Handle Meet API limitations and quotas. (AGENT)  
-  **verification:** Meet operations respect API limits.
+**Advanced Code Patterns**
+- Adapter pattern: `MeetAdapter` implements `VideoPort`, wrapping the Google Calendar adapter
+- Unique `requestId`: `crypto.randomUUID()` per appointment, stored on the appointment record; ensures Meet link regeneration on reschedule
+- Conference data polling: optional background job that checks `conferenceData.status` for pending conferences and updates the appointment
+
+**Anti‑Patterns**
+- Do not reuse Meet codes across calendar events — this causes access issues and exposes meeting details to unintended users (per Google's February 2026 guidance)
+- Do not call a separate "Google Meet API" — it does not exist as a standalone API; always use the Calendar API
+- Do not assume the Meet link is available synchronously after event creation — it is generated asynchronously
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Google Meet is an integrated capability of Google Calendar within the Appointments bounded context. `MeetAdapter` implements `VideoPort` and delegates to `GoogleCalendarAdapter`.
+- TDD: Use recorded Calendar API responses with `conferenceData` populated.
+- BDD: "As a service provider, every booked appointment automatically gets a fresh Google Meet link, and clients can join directly from their confirmation."
+- Deep Module: `MeetAdapter` is a thin wrapper around the existing `GoogleCalendarAdapter`; all Meet‑specific logic is encapsulated within.
+
+---
+
+### Subtasks
+
+- [ ] INT‑VIDEO‑003.0.25 (AGENT): Read the entire task, Google Calendar `conferenceData` documentation, and the INT‑CALENDAR‑001 adapter code.
+  *No action — pause until fully understood.*
+
+- [ ] INT‑VIDEO‑003.0.5 (AGENT): Research Google February 2026 Meet code reuse guidance, `conferenceData.createRequest` best practices, and Meet recording access patterns (as of May 2026).
+  *Document findings briefly or note "no changes."*
+
+- [ ] INT‑VIDEO‑003.0.75 (AGENT): Reason about whether Meet should be a standalone adapter or an enhancement to INT‑CALENDAR‑001. Default: thin adapter wrapping the existing Google Calendar adapter.
+  *If uncertain, use the thin‑wrapper approach.*
+
+- [ ] INT‑VIDEO‑003.1 (AGENT): Implement `MeetAdapter` wrapping `GoogleCalendarAdapter` with `createRequest` and unique `requestId` per appointment.
+  **File(s):** `integrations/google/meet-client.ts`
+  **Verification:** `pnpm vitest run -- integrations/google/meet-client.test.ts`
+
+- [ ] INT‑VIDEO‑003.2 (AGENT): Implement recording access and conference data reading.
+  **File(s):** `lib/integrations/video-sync/meet-sync.ts`
+  **Verification:** `pnpm vitest run -- lib/integrations/video-sync/meet-sync.test.ts`
+
+- [ ] INT‑VIDEO‑003.3 (AGENT): Run `pnpm run typecheck` and fix any type errors.
+  **File(s):** All modified files
+  **Verification:** `pnpm run typecheck` exits 0.
+
+- [ ] INT‑VIDEO‑003.N (HUMAN): Final review — verify Meet link generation with a Google test account, approve.
+  **Verification:** Approved.
 
 ---
 
@@ -261,17 +378,17 @@ curl -X POST http://localhost:8081/integrations/meet/test-meeting
 
 To avoid rules duplication across all integration tasks, the following common rules framework applies:
 
-### **Common Integration Rules**
-- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows
+### Common Integration Rules
+- **Authentication**: Use OAuth 2.0 with proper token management and refresh flows; encrypt tokens at rest with AES‑256‑GCM
 - **Error Handling**: Implement exponential backoff for rate limits and network errors
-- **Security**: Verify webhook signatures and store credentials securely
-- **Rate Limiting**: Respect provider-specific API limits with intelligent throttling
-- **Testing**: Use provider test environments with comprehensive unit test coverage
-- **Logging**: Implement structured logging with security-sensitive data redaction
+- **Security**: Verify webhook signatures and store credentials securely; never log raw token values
+- **Rate Limiting**: Respect provider‑specific API limits with intelligent throttling
+- **Testing**: Use provider test environments with comprehensive unit test coverage; record API responses as fixtures
+- **Logging**: Implement structured logging with security‑sensitive data redaction (Pino, `[REDACTED]` for tokens/credentials)
 
-### **Provider-Specific Rules**
-Each integration task should only include rules specific to that provider, not duplicate the common rules above.
+### Provider‑Specific Rules
+Each integration task includes only rules specific to that provider, not duplicating the common rules above.
 
 ---
 
-*End of Phase 7 Video Conferencing Integrations. Next: TODO-P7-STORAGE.md – Storage & Document Integrations.*
+*End of Phase 7 Video Conferencing Integrations.*
