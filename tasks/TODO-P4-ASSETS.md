@@ -1,18 +1,8 @@
 # TODO-P4-ASSETS.md – Phase 4 Assets Context
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
 
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
 
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This file covers the Assets Context with CRUD operations, checkout/check-in functionality, and maintenance logging. All assets tasks follow the established CRUD/soft‑delete pattern. Check‑out/check‑in are append‑only log entries; service enforces that an asset must be available before checkout. Maintenance log is append‑only. Deep modules encapsulate status transitions and availability rules.
+This file covers the Assets context: CRUD, check-out/check-in (append-only log), and maintenance log. Services enforce status transitions and availability rules. Deep modules encapsulate status machines and event emission.
 
 ---
 

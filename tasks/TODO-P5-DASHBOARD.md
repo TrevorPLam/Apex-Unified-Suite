@@ -1,105 +1,109 @@
-# TODO-P5-DASHBOARD.md – Dashboard Data Integration
+# TODO-P5-DASHBOARD.md – Phase 5: Dashboard Data Integration
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
-
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
-
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This part covers Dashboard data integration, replacing mock data with real API hooks.
+Replaces all `mockData` imports in the Dashboard page with real API data fetched via a React Query hook. Depends on `API-DASH-001` (backend aggregation endpoint) and the FRONT-INFRA foundation tasks.
 
 ---
 
-## Dashboard
+## [ ] FRONT‑DASH‑001: Dashboard – Replace Mock Data with API Hooks
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** `artifacts/apex-os/src/pages/Dashboard.tsx` imports metrics directly from `src/data/mockData.ts`. No `useDashboard` hook exists. The `QueryClient` is unconfigured (handled by FRONT‑INFRA‑001).
+**Size:** Small
 
-### [ ] FRONT‑DASH‑001: Dashboard – Replace Mock Data with API Hooks
-**Status:** ⏳ Not Started  
-**Depends on:** API‑DASH‑001 (dashboard aggregation endpoint).  
-**Definition of Done:** `artifacts/apex-os/src/pages/Dashboard.tsx` fetches real data from the `API‑DASH‑001` endpoint using a React Query hook. All mock data imports (`mockData.metrics`, etc.) are completely removed from Dashboard component and related hooks. Component tests pass with MSW mocks. Manual testing confirms all metrics display correctly with proper loading and error states.  
+**Description:** Create a `useDashboard` hook that calls the `API-DASH-001` aggregation endpoint with a period parameter and exposes metrics for CRM, Projects, Finance, Appointments, Documents, and Portal. Replace all `mockData` imports in `Dashboard.tsx` with hook data, add loading skeletons and a 30-second polling refresh, and add an error state with retry.
+
+**Depends on:** API‑DASH‑001 (dashboard aggregation endpoint), FRONT‑INFRA‑001 (QueryClient configured), FRONT‑INFRA‑002 (PageSkeleton), FRONT‑AUTH‑002 (dashboard behind ProtectedRoute)
+**Blocks:** [N/A] — Dashboard is a leaf consumer of all domain API integrations
 **Related Files:** `artifacts/apex-os/src/pages/Dashboard.tsx`, `artifacts/apex-os/src/hooks/useDashboard.ts`
 
-**DDD:** Dashboard is a read‑only aggregation view across bounded contexts.  
-**Deep Module:** Dashboard frontend module encapsulates metric aggregation, polling logic, and error handling. The module provides a unified interface for displaying cross-context business metrics while hiding the complexity of API calls, data transformation, and state management behind React Query hooks and well-organized components.
+**Imports / Exports**
+- Imports: `useQuery` from `@tanstack/react-query`; generated API client hook for `GET /api/v1/dashboard`
+- Exports: `useDashboard(period)` hook returning `{ data, isLoading, isError, refetch }`
 
-**TDD:** Use MSW to mock the API‑DASH‑001 response and verify component renders data. Test loading states, error states, and data refresh scenarios.
+**Definition of Done**
+- [ ] `src/hooks/useDashboard.ts` created; calls `GET /api/v1/dashboard?period={period}` via React Query with `refetchInterval: 30000`
+- [ ] `Dashboard.tsx` imports `useDashboard` and renders all metric cards (CRM, Projects, Finance, Appointments, Documents, Portal) from API data
+- [ ] All `mockData` imports removed from `Dashboard.tsx` — file has zero references to `src/data/mockData`
+- [ ] Loading state shows `PageSkeleton` during initial fetch
+- [ ] Error state shows a retry banner with `refetch()` button
+- [ ] `pnpm run typecheck` passes with zero errors
+- [ ] Component test with MSW passes: all metrics render; loading state shows skeleton; error state shows retry banner
+- [ ] 30-second polling refresh verified by test using `vi.useFakeTimers()`
 
-**BDD:** "As a user, I can see my business metrics on the dashboard."
+**Out of Scope**
+- Dashboard widget customisation (drag-to-reorder, hide/show widgets)
+- Real-time WebSocket push updates (polling is sufficient for Phase 5)
+- Per-user dashboard preferences
 
-**Advanced Code Patterns:**
-- React Query for data fetching and caching
-- Automatic polling with configurable intervals
-- Error boundaries with retry mechanisms
-- Skeleton loading states for better UX
-- Optimistic UI updates for real-time feel
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
 
-**Anti-Patterns:**
-- Direct API calls in components (use hooks instead)
-- Mock data in production builds
-- Missing error handling
-- Hardcoded metric configurations
-- Not using React Query caching features
-- Missing loading states during data fetching
+**Output Artifacts**
+- Code changes in: `artifacts/apex-os/src/hooks/useDashboard.ts`, `artifacts/apex-os/src/pages/Dashboard.tsx`
+- Tests added/updated in: `artifacts/apex-os/src/pages/__tests__/Dashboard.test.tsx`
+- Documentation: [N/A]
+- Migration files: [N/A]
 
-**Subtasks:**
-- [ ] FRONT‑DASH‑001.1: Implement `useDashboard` hook calling `API‑DASH‑001` with period parameter. (AGENT) – `src/hooks/useDashboard.ts`  
-  **verification:** `pnpm typecheck`; hook fetches data from MSW mock.
-- [ ] FRONT‑DASH‑001.2: Update `Dashboard.tsx` to use `useDashboard` hook and render real data for all metric cards (CRM, Projects, Finance, Appointments, Documents, Portal). (AGENT)  
-  **verification:** Component test with MSW – all metrics render; loading state shows skeleton; error state shows retry banner.
-- [ ] FRONT‑DASH‑001.3: Remove all `mockData` imports from `Dashboard.tsx`. (AGENT)  
-  **verification:** File has no remaining mock data references.
-- [ ] FRONT‑DASH‑001.4: Test 30‑second polling refresh works via React Query `refetchInterval`. (AGENT)  
-  **verification:** `npm test -- dashboard-polling.test.tsx` - data refreshes automatically; pause button stops refresh.
+**Rollback**
+- Granularity: file-level — delete `useDashboard.ts`; revert `Dashboard.tsx` to restore mock data imports
+- Halt condition: if `pnpm run typecheck` fails after removing mock imports, stop and verify API response type matches component expectations
 
----
+**Rules to Follow**
+- `refetchInterval: 30000` must be set in `useQuery` options — not via a `setInterval` outside React Query
+- The period parameter must be one of the values accepted by the API (`'day' | 'week' | 'month' | 'quarter'`); default to `'month'`
+- Never use `any` type for API response — use the generated Zod type or interface from `lib/api-zod`
+- All numeric metrics must have null/undefined guards before rendering (API may return `null` for contexts with no data)
 
-## Cross-References
-
-### Dependencies on Other Files
-- **TODO-P5-INFRA.md**: Dashboard depends on FRONT‑INFRA‑001 error boundaries and FRONT‑INFRA‑002 loading skeletons
-- **TODO-P5-AUTH.md**: Dashboard depends on FRONT‑AUTH‑002 protected routes
-- **TODO-P5-CRM.md**: Dashboard CRM metrics depend on CRM API integration
-- **TODO-P5-PROJECTS.md**: Dashboard project metrics depend on Projects API integration
-- **TODO-P5-FINANCE.md**: Dashboard finance metrics depend on Finance API integration
-
-### Related Master Tracker Tasks
-- **FRONT‑DASH‑001**: Replaces mock data with real dashboard aggregation API
-- **API‑DASH‑001**: Backend aggregation endpoint must be complete first
-
----
-
-## Verification Commands
-
-### Dashboard Integration Verification
+**Verification**
 ```bash
-# FRONT-DASH-001 verification
-npm test -- useDashboard.test.ts
-npm test -- dashboard.test.tsx
-pnpm typecheck
-
-# Manual verification
-# Navigate to dashboard, verify metrics load from API
-# Test pause/resume functionality
-# Test error states with MSW failure simulation
+pnpm run typecheck
+pnpm --filter @workspace/apex-os test -- Dashboard.test.tsx
+# Manual: navigate to /dashboard, verify all metric cards render; wait 30s and confirm data refreshes in network tab
 ```
 
+**Advanced Code Patterns**
+- `useQuery({ queryKey: ['dashboard', period], queryFn: fetchDashboard, refetchInterval: 30_000, staleTime: 25_000 })` — `staleTime` slightly below `refetchInterval` prevents cache staleness
+- Expose a `pausePolling` function by toggling `enabled` in the query options via component state — allows a "Pause" button in the UI
+- Use `keepPreviousData: true` (TanStack Query v5: `placeholderData: keepPreviousData`) so the previous period's data stays visible while the new period loads
+
+**Anti-Patterns**
+- Calling `setInterval` manually alongside React Query — double-polling and memory leaks
+- Importing mock data as a fallback — production code must never reference `src/data/mockData`
+- Not handling `null` metric values — throws during render when API returns empty context data
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Dashboard is a read-only aggregation view across bounded contexts; it does not own any data — it consumes projections from each context's API.
+- TDD: Write the MSW mock for `GET /api/v1/dashboard` first; then write the test asserting metric card values; then implement the hook.
+- BDD: "As a firm user, I can see live business metrics on my dashboard, refreshed automatically every 30 seconds."
+- Deep Module: `useDashboard` is the deep module — `Dashboard.tsx` calls `useDashboard('month')` and gets typed data; all HTTP, caching, and polling complexity is hidden inside the hook.
+
 ---
 
-## Completion Criteria
+### Subtasks
 
-### Dashboard Integration Complete When:
-1. Dashboard fetches real data from API‑DASH‑001 endpoint
-2. All metric cards display live business data across contexts
-3. Loading states show skeletons during data fetching
-4. Error states provide retry mechanisms
-5. 30-second polling refresh works with pause control
-6. All mock data imports are removed
-7. Component tests pass with MSW mocks
-8. Manual testing confirms complete dashboard functionality
+- [ ] FRONT‑DASH‑001.0.25 (AGENT): Read `Dashboard.tsx` in full and list every `mockData` import and the shape of data consumed.
+  *No action — pause until fully understood.*
 
-**Estimated Timeline:** 2-3 days
+- [ ] FRONT‑DASH‑001.0.5 (AGENT): Confirm `API-DASH-001` response schema against `lib/api-zod/src/generated/` and note the exact period parameter values accepted.
+  *Document findings briefly.*
+
+- [ ] FRONT‑DASH‑001.1 (AGENT): Implement `useDashboard(period)` hook with React Query and 30-second polling.
+  **File(s):** `artifacts/apex-os/src/hooks/useDashboard.ts`
+  **Verification:** `pnpm run typecheck` passes.
+
+- [ ] FRONT‑DASH‑001.2 (AGENT): Update `Dashboard.tsx` to use `useDashboard`; render loading skeleton and error banner.
+  **File(s):** `artifacts/apex-os/src/pages/Dashboard.tsx`
+  **Verification:** `pnpm run typecheck` passes; no `mockData` references remain.
+
+- [ ] FRONT‑DASH‑001.3 (AGENT): Remove all `mockData` imports and verify no mock references remain.
+  **File(s):** `artifacts/apex-os/src/pages/Dashboard.tsx`
+  **Verification:** `grep -r "mockData" artifacts/apex-os/src/pages/Dashboard.tsx` → zero results.
+
+- [ ] FRONT‑DASH‑001.4 (AGENT): Write component test with MSW covering: data renders, loading skeleton, error banner, 30-second polling.
+  **File(s):** `artifacts/apex-os/src/pages/__tests__/Dashboard.test.tsx`
+  **Verification:** `pnpm --filter @workspace/apex-os test -- Dashboard.test.tsx` → GREEN.
+
+- [ ] FRONT‑DASH‑001.5 (HUMAN): Final review and sign-off.
+  **Verification:** Approved.

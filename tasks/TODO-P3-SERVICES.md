@@ -1,184 +1,375 @@
-# TODO-P3-SERVICES.md – Phase 3: Cross‑Cutting Infrastructure APIs
+﻿# TODO-P3-SERVICES.md – Phase 3: Cross-Cutting Infrastructure APIs
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
-
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
-
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This part covers the Cross‑Cutting Infrastructure APIs that serve all other contexts – In‑App Notifications, Cross‑Module Search, and CSV Import/Export. All tasks follow the established patterns: contract‑first, test‑first, service‑as‑deep‑module, Either error handling, and domain event emission.
+## Tasks in this file
+- API-NOTIF-001: In-App Notification Endpoints
+- API-SEARCH-001: Cross-Module Search Endpoint
+- API-IMPORT-001: CSV Import/Export Service Endpoints
 
 ---
 
-## Cross‑Cutting Infrastructure APIs
+## [ ] API-NOTIF-001: In-App Notification Endpoints
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No notification infrastructure exists; users have no way to receive in-app alerts for domain events (lead assigned, invoice paid, task due, etc.).
+**Size:** Large
 
-### [ ] API‑NOTIF‑001: In‑App Notification Endpoints
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑NOTIF‑001, AUTH‑008 (auth middleware).  
-**Blocks:** FRONT‑NOTIF‑001.  
-**Definition of Done:** In‑app notification delivery and management:  
-- `GET /api/v1/notifications` – list notifications for the authenticated user, filter by `is_read`, `type`, paginated. Ordered by `created_at` descending.  
-- `GET /api/v1/notifications/unread‑count` – returns count of unread notifications.  
-- `PATCH /api/v1/notifications/{notificationId}/read` – mark a single notification as read.  
-- `POST /api/v1/notifications/mark‑all‑read` – mark all notifications as read for the current user.  
-- `GET /api/v1/notifications/preferences` – get user notification preferences.  
-- `PUT /api/v1/notifications/preferences` – update preferences (e.g., which types to receive, quiet hours).  
-**Integration tests:** list notifications, mark read, mark all read, get unread count, update preferences.  
-**DDD:** Infrastructure service consumed by all bounded contexts.  
-**TDD:** Write tests before implementation; all start red.  
-**Deep Module:** Encapsulates delivery, read‑state management, and preference filtering.
+**Description:** Build the full notification pipeline: OpenAPI spec, `NotificationService` (deep module), repository, and routes with auth middleware — delivering per-user, filterable, paginated in-app notifications with read-state management and per-type preference controls.
 
-### Subtasks:
-- [ ] API‑NOTIF‑001.1: Add notification paths and schemas to OpenAPI. (AGENT) – `lib/api‑spec/openapi.yaml`  
-  **verification:** Spec validates; codegen passes.
-- [ ] API‑NOTIF‑001.2: Write integration tests for all notification endpoints. (AGENT) – `artifacts/api‑server/__tests__/api/notifications.test.ts`  
-  **verification:** Tests fail (red).
-- [ ] API‑NOTIF‑001.3: Implement `NotificationService` and `NotificationRepository`. (AGENT) – `artifacts/api-server/src/services/notifications/notification‑service.ts`  
-  **verification:** Unit tests pass.
-- [ ] API‑NOTIF‑001.4: Create notification routes with auth middleware. (AGENT) – `routes/notifications.ts`  
-  **verification:** Route tests pass.
-- [ ] API‑NOTIF‑001.5: Run integration tests to green. (AGENT)  
-  **verification:** All notification tests pass.
+**Depends on:** DB-NOTIF-001 (notifications + notification_preferences tables), AUTH-008 (auth middleware), EVENT-001 (domain event bus for ingestion), ERROR-002 (domain errors).
+**Blocks:** FRONT-NOTIF-001 (frontend notification bell component).
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/notifications/notification-service.ts`, `lib/db/src/repositories/notifications.ts`, `artifacts/api-server/src/routes/notifications.ts`
 
----
+**Imports / Exports**
+- Imports: `DomainEventBus` (EVENT-001), `db` pool (lib/db), `req.user` (AUTH-008), `DomainError` (ERROR-002)
+- Exports: `NotificationService`, `NotificationRepository`, `/api/v1/notifications` router mounted in `routes/index.ts`
 
-### [ ] API‑SEARCH‑001: Cross‑Module Search Endpoint
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑SEARCH‑001, AUTH‑008, all CRUD APIs (for populating search index).  
-**Blocks:** FRONT‑SEARCH‑001.  
-**Definition of Done:** Unified search endpoint:  
-- `GET /api/v1/search?q={query}&modules={lead,contact,company,deal,project,task,document,invoice}&page=1&limit=20` – searches across configured entity types, returns results grouped by module with relevance ranking.  
-- Search index populated on entity create/update/delete via domain event subscribers.  
-- Organisation‑scoped: only returns results for the user's organisation.  
-- Supports full‑text search using PostgreSQL `tsvector` (or external engine if configured).  
-**Integration tests:** search for a known term, verify results across modules, verify organisation isolation, empty query returns empty, pagination.  
+**Definition of Done**
+- [ ] OpenAPI spec includes all notification paths under `/api/v1/notifications` with `Notification`, `NotificationPreferences` schemas and examples.
+- [ ] `GET /api/v1/notifications` — paginated, filterable by `is_read` and `type`, ordered by `created_at` desc.
+- [ ] `GET /api/v1/notifications/unread-count` — returns `{ count: number }`.
+- [ ] `PATCH /api/v1/notifications/{notificationId}/read` — marks single notification read (idempotent).
+- [ ] `POST /api/v1/notifications/mark-all-read` — marks all user notifications read atomically.
+- [ ] `GET /api/v1/notifications/preferences` — returns user's notification type preferences.
+- [ ] `PUT /api/v1/notifications/preferences` — updates preferences (which types, quiet hours).
+- [ ] `NotificationService` returns `Result<T, DomainError>` using `neverthrow`; no `throw`.
+- [ ] `NotificationRepository` enforces user-scoping on all queries.
+- [ ] All integration tests pass (list, mark-read, mark-all-read, unread-count, preferences).
+- [ ] `pnpm typecheck` passes.
 
-**Rules to Follow:**
-- Search results must be organisation-scoped
-- Index updates via domain event subscribers
-- Relevance ranking for result ordering
-- Pagination support for large result sets
-- Query validation and sanitization
+**Out of Scope**
+- Push notifications (browser push, mobile push) — future phase
+- Email/SMS notification delivery — future phase
+- Real-time delivery via WebSocket/SSE (polling model only at this phase)
+- Notification batching or digest emails
 
-**Advanced Code Patterns:**
-- Domain event-driven index updates
-- Full-text search implementation
-- Relevance ranking algorithms
-- Cross-module result aggregation
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+- Never return another user's notifications regardless of query params (enforce user-scoping in repository)
 
-**Anti-Patterns:**
-- Global search (no organisation scoping)
-- Manual index updates (not event-driven)
-- Missing relevance ranking
-- Unpaginated result sets
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/notifications/notification-service.ts`, `lib/db/src/repositories/notifications.ts`, `artifacts/api-server/src/routes/notifications.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/notifications.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A] (schema owned by DB-NOTIF-001)
 
-**DDD:** Infrastructure service that reads from a materialised search index. This is NOT a deep module - it's a specialized search utility.  
-**Deep Module:** N/A - This is an infrastructure search service, not a domain deep module.  
-**TDD:** Write tests before implementation. Tests must fail initially (red phase).  
-**BDD:** Enables "As a user, I can search across all modules from a single search box" scenarios.
+**Rollback**
+- Granularity: file-level
+- Remove `notification-service.ts`, `notifications.ts` (repository), and `routes/notifications.ts`; revert route mount from `routes/index.ts`.
+- Halt condition: `pnpm typecheck` failure or cross-user data access found in tests stops all changes.
 
-### Subtasks:
-- [ ] API‑SEARCH‑001.1: Add search endpoint to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑SEARCH‑001.2: Write integration tests with known seed data. (AGENT) – `artifacts/api-server/__tests__/api/search.test.ts`  
-  **verification:** Red.
-- [ ] API‑SEARCH‑001.3: Implement `SearchService` with PostgreSQL full‑text search (or adapter for chosen engine). (AGENT) – `services/search/search-service.ts`  
-  **verification:** Unit tests pass.
-- [ ] API‑SEARCH‑001.4: Implement event subscribers that update `search_index` on entity create/update/delete. (AGENT) – `services/search/index-subscribers.ts`  
-  **verification:** Unit tests with mock event bus.
-- [ ] API‑SEARCH‑001.5: Create search route and run integration tests to green. (AGENT) – `routes/search.ts`  
-  **verification:** All tests pass.
+**Rules to Follow**
+- All repository queries MUST include `WHERE user_id = $userId` to prevent data leakage.
+- `mark-all-read` must be a single atomic UPDATE, not per-row operations.
+- Notification preferences must be validated against known `type` enum values via Zod.
+- Use Zod schemas generated by Orval codegen for request validation — do not write manual schemas.
+- Pagination default: `limit=20`, max `limit=100`, response envelope `{ data, meta: { page, limit, total, totalPages } }`.
 
-**Rules to Follow:**
-- All subtasks must have specific file paths
-- Tests must fail before implementation (TDD red phase)
-- Search index updates via domain events
-- Organisation scoping enforced
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/notifications.test.ts
+pnpm typecheck
+```
 
-**Advanced Code Patterns:**
-- TDD red-green-refactor cycle
-- Domain event-driven architecture
-- Full-text search implementation
-- Index subscriber pattern
+**Advanced Code Patterns**
+- User-scoped repository: all methods accept `userId` parameter and include it in every query predicate.
+- Idempotent `markAsRead`: `UPDATE ... WHERE id = $id AND user_id = $userId AND is_read = false` — safe to call twice.
+- Atomic `markAllRead`: `UPDATE ... SET is_read = true, read_at = now() WHERE user_id = $userId AND is_read = false`.
+- Preference merge: `INSERT ... ON CONFLICT (user_id, type) DO UPDATE SET enabled = EXCLUDED.enabled`.
 
-**Anti-Patterns:**
-- Missing file paths in subtasks
-- Manual index updates
-- Missing organisation scoping
-- Synchronous index updates
+**Anti-Patterns**
+- Missing `user_id` predicate in ANY repository query (cross-user data leak).
+- N+1 queries when loading notification lists (use a single paginated SELECT).
+- Non-atomic mark-all-read using a loop (race conditions).
+- Hardcoding notification types as string literals instead of using an enum/const map.
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Notifications are an infrastructure cross-cutting concern, not part of any bounded context. They are produced by domain events (CRM, Finance, Projects) and consumed by the UI layer.
+- TDD: Write integration tests before implementation. All must fail (404) initially. Green phase after service and routes are implemented.
+- BDD: "When a lead is assigned to me, a notification appears in my notification bell within one page refresh."
+- Deep Module: `NotificationService` hides read-state management, preference filtering, pagination, and user-scoping behind 5 public methods.
 
 ---
 
-### [ ] API‑IMPORT‑001: CSV Import/Export Service Endpoints
-**Status:** ⏳ Not Started  
-**Depends on:** AUTH‑008, any domain CRUD APIs that support import/export.  
-**Blocks:** FRONT‑IMPORT‑001.  
-**Definition of Done:** Generic import/export pipeline:  
-- `POST /api/v1/import/{entityType}` – accept CSV file upload, validate headers against target schema, return preview with mapped columns and error rows (dry‑run mode by default).  
-- `POST /api/v1/import/{entityType}/execute?importId={importId}` – execute a previously previewed import.  
-- `GET /api/v1/import/{entityType}/history` – paginated list of past imports with status, row counts, error links.  
-- `GET /api/v1/export/{entityType}?columns=name,email&format=csv` – export data from any list resource with selected columns and optional filtering.  
-- Import supports: leads, contacts, companies, tasks, time entries, vendors, customers. Each entity type has a configurable column mapping.  
-**Integration tests:** upload CSV (preview), execute import, verify entities created, export entities, verify CSV content. Import with errors → error report generated.  
+### Subtasks
+- [ ] API-NOTIF-001.0.25 (AGENT): Read API-NOTIF-001, DB-NOTIF-001 schema, EVENT-001 event types. Note which domain events should produce notifications.
+  *No action — pause until fully understood.*
 
-**Rules to Follow:**
-- Import operations must be transactional
-- CSV validation before execution
-- Column mapping configurable per entity type
-- Export supports dynamic column selection
-- Import history tracked for audit
+- [ ] API-NOTIF-001.0.5 (AGENT): Research notification API design patterns, quiet-hours preference implementation, and atomic mark-all-read approaches (as of May 2026).
+  *Document findings briefly or note "no changes."*
 
-**Advanced Code Patterns:**
-- Transactional bulk operations
-- CSV parsing with validation
-- Dynamic column mapping
-- Streaming export for large datasets
+- [ ] API-NOTIF-001.0.75 (AGENT): Confirm notification types enum (lead_assigned, invoice_paid, task_due, etc.) with user before coding.
+  *If uncertain, ask the user before executing.*
 
-**Anti-Patterns:**
-- Non-transactional imports (partial data)
-- Missing CSV validation
-- Hardcoded column mappings
-- Memory-intensive export operations
+- [ ] API-NOTIF-001.1 (AGENT): Add notification paths and schemas to OpenAPI spec with examples.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm --filter @workspace/api-spec run codegen` ; `pnpm typecheck`
 
-**DDD:** Infrastructure service for bulk data operations across contexts. This is NOT a deep module - it's a utility service that provides cross-cutting functionality without complex business logic.  
-**Deep Module:** N/A - This is an infrastructure utility service, not a domain deep module.  
-**TDD:** Write tests before implementation. Tests must fail initially (red phase).  
-**BDD:** Enables "As an admin, I can bulk import contacts from a CSV file" scenarios.
+- [ ] API-NOTIF-001.2 (AGENT): Write integration tests for all endpoints (list, unread-count, mark-read, mark-all-read, preferences GET/PUT).
+  **File(s):** `artifacts/api-server/__tests__/api/notifications.test.ts`
+  **Verification:** `pnpm test -- notifications.test.ts` all fail with 404 (red phase)
 
-### Subtasks:
-- [ ] API‑IMPORT‑001.1: Add import/export paths and schemas to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑IMPORT‑001.2: Write integration tests for import (preview, execute, error handling) and export. (AGENT) – `artifacts/api-server/__tests__/api/import-export.test.ts`  
-  **verification:** Tests fail (no implementation).
-- [ ] API‑IMPORT‑001.3: Implement `ImportService` with CSV parsing, validation, column mapping, and transactional execution. (AGENT) – `services/import-export/import-service.ts`  
-  **verification:** Unit tests pass.
-- [ ] API‑IMPORT‑001.4: Implement `ExportService` with dynamic column selection and CSV generation. (AGENT) – `services/import-export/export-service.ts`  
-  **verification:** Unit tests pass.
-- [ ] API‑IMPORT‑001.5: Create import/export routes and run integration tests to green. (AGENT) – `routes/import-export.ts`  
-  **verification:** All tests pass.
+- [ ] API-NOTIF-001.3 (AGENT): Implement `NotificationRepository` with user-scoped queries and soft-delete awareness.
+  **File(s):** `lib/db/src/repositories/notifications.ts`
+  **Verification:** `pnpm test -- notifications.repository.test.ts` CRUD tests pass
 
-**Rules to Follow:**
-- All subtasks must have specific file paths
-- Tests must fail before implementation (TDD red phase)
-- Import/export operations transactional
-- CSV validation required before execution
+- [ ] API-NOTIF-001.4 (AGENT): Implement `NotificationService` with all 5 methods returning `Result<T, DomainError>`.
+  **File(s):** `artifacts/api-server/src/services/notifications/notification-service.ts`
+  **Verification:** `pnpm test -- notification-service.test.ts` unit tests pass
 
-**Advanced Code Patterns:**
-- TDD red-green-refactor cycle
-- Transactional bulk operations
-- CSV parsing with validation
-- Streaming data processing
+- [ ] API-NOTIF-001.5 (AGENT): Create notification routes with auth middleware and Zod validation; mount under `/api/v1/notifications`.
+  **File(s):** `artifacts/api-server/src/routes/notifications.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- notifications.test.ts` all green
 
-**Anti-Patterns:**
-- Missing file paths in subtasks
-- Non-transactional operations
-- Missing validation steps
-- Memory-intensive processing
+- [ ] API-NOTIF-001.6 (HUMAN): Final review and sign-off.
+  **Verification:** Approved; `pnpm typecheck` clean; all tests green; user-scoping verified manually.
+
+---
+
+## [ ] API-SEARCH-001: Cross-Module Search Endpoint
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** No unified search exists; users must navigate to each module separately to find records. Search index table does not yet exist.
+**Size:** Large
+
+**Description:** Implement a single `GET /api/v1/search` endpoint that queries a materialised `search_index` table (populated by domain event subscribers) and returns organisation-scoped, relevance-ranked results grouped by entity type across all modules.
+
+**Depends on:** DB-SEARCH-001 (search_index table with tsvector column), AUTH-008 (auth middleware), EVENT-001 (domain event bus for index updates), all domain CRUD APIs (lead, contact, project, task, document, invoice must exist to be indexed).
+**Blocks:** FRONT-SEARCH-001 (global search UI component).
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/search/search-service.ts`, `artifacts/api-server/src/services/search/index-subscribers.ts`, `artifacts/api-server/src/routes/search.ts`
+
+**Imports / Exports**
+- Imports: `DomainEventBus` (EVENT-001), `db` pool (lib/db), `req.user` (AUTH-008)
+- Exports: `SearchService`, `IndexSubscriberRegistry`, `/api/v1/search` router
+
+**Definition of Done**
+- [ ] OpenAPI spec includes `GET /api/v1/search?q={query}&modules={csv}&page=1&limit=20` with `SearchResult` schema and examples.
+- [ ] Search is organisation-scoped: `WHERE organization_id = $orgId` in all queries.
+- [ ] Full-text search using PostgreSQL `tsvector` + `tsquery` with `ts_rank` for relevance ranking.
+- [ ] Results grouped by module in response: `{ data: { leads: [], contacts: [], ... }, meta: { ... } }`.
+- [ ] `modules` filter param accepts comma-separated values; default: all modules.
+- [ ] Event subscribers update the `search_index` on entity `create`, `update`, `delete` domain events.
+- [ ] Integration tests: search for known seed term, verify results across modules, org isolation, empty query → 400, pagination.
+- [ ] `pnpm typecheck` passes.
+
+**Out of Scope**
+- Fuzzy/phonetic matching (PostgreSQL full-text uses stemming; not Elasticsearch-level fuzzy)
+- Search result personalisation or ML ranking
+- Real-time search index (event-driven near-real-time is acceptable)
+- Cross-organisation federated search
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+- Never return results from a different organisation than the authenticated user's (`organization_id` predicate is mandatory)
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/search/search-service.ts`, `artifacts/api-server/src/services/search/index-subscribers.ts`, `artifacts/api-server/src/routes/search.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/search.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A] (schema owned by DB-SEARCH-001)
+
+**Rollback**
+- Granularity: file-level
+- Remove `search-service.ts`, `index-subscribers.ts`, `routes/search.ts`; deregister event subscribers.
+- Halt condition: org-scoping predicate missing in any query — halt immediately and revert.
+
+**Rules to Follow**
+- `organization_id` predicate is non-negotiable on every search query — missing it is a critical security defect.
+- Empty or whitespace-only `q` returns 400 `InvalidSearchQuery`, not empty results.
+- Index subscriber failures must be logged and silently swallowed — search indexing is best-effort and must not fail domain operations.
+- `modules` param defaults to all modules; unknown module names in the param are ignored with a warning log.
+- Minimum query length: 2 characters (to prevent overly broad queries).
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/search.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- PostgreSQL `to_tsvector('english', content) @@ plainto_tsquery('english', $query)` for full-text matching.
+- `ts_rank(tsvector, tsquery)` for relevance ordering — include in SELECT and ORDER BY.
+- `search_index` table columns: `entity_type`, `entity_id`, `organization_id`, `content` (tsvector), `metadata` (JSONB for display data).
+- Domain event subscribers as lightweight functions registered on `DomainEventBus`: `bus.subscribe('LeadCreated', indexLeadHandler)`.
+- `modules` filter: `WHERE entity_type = ANY($modules::text[])` in Drizzle/SQL.
+
+**Anti-Patterns**
+- LIKE `%query%` instead of full-text search (no relevance ranking, no stemming, slow at scale).
+- Missing `organization_id` predicate (critical cross-tenant data leak).
+- Synchronous index updates blocking domain operations (must be async via event subscriber).
+- Returning raw internal IDs without metadata (search results need display name, URL, type).
+- Treating a whitespace-only query as valid (returns huge result sets).
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: `SearchService` is infrastructure — it reads from a materialised view (the search_index) without owning domain logic. Index subscribers are thin adapters from domain events to index updates.
+- TDD: Write integration tests with known seed data before implementing the service. Tests must fail initially (red). Green after service + route implementation.
+- BDD: "As a user, I can type 'Acme' in the global search box and see matching leads, contacts, and companies in one list."
+- Deep Module: `SearchService.search({ query, modules, orgId, page, limit })` hides full-text SQL, module filtering, result grouping, and ranking behind one method call.
+
+---
+
+### Subtasks
+- [ ] API-SEARCH-001.0.25 (AGENT): Read API-SEARCH-001, DB-SEARCH-001 schema, EVENT-001 event types. Identify all entity types to be indexed.
+  *No action — pause until fully understood.*
+
+- [ ] API-SEARCH-001.0.5 (AGENT): Research PostgreSQL `tsvector`/`tsquery` performance at scale, GIN index configuration, and `ts_rank` vs `ts_rank_cd` (as of May 2026).
+  *Document findings briefly or note "no changes."*
+
+- [ ] API-SEARCH-001.0.75 (AGENT): Confirm indexed entity types and result grouping format with user before coding.
+  *If uncertain, ask the user before executing.*
+
+- [ ] API-SEARCH-001.1 (AGENT): Add search endpoint to OpenAPI spec with `SearchResult` schema and examples.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
+
+- [ ] API-SEARCH-001.2 (AGENT): Write integration tests with known seed data for all scenarios (module filter, org isolation, pagination, empty query).
+  **File(s):** `artifacts/api-server/__tests__/api/search.test.ts`
+  **Verification:** `pnpm test -- search.test.ts` all fail with 404 (red phase)
+
+- [ ] API-SEARCH-001.3 (AGENT): Implement `SearchService` with PostgreSQL full-text search and `ts_rank` ordering.
+  **File(s):** `artifacts/api-server/src/services/search/search-service.ts`
+  **Verification:** `pnpm test -- search-service.test.ts` unit tests pass with test DB
+
+- [ ] API-SEARCH-001.4 (AGENT): Implement domain event subscribers that update `search_index` on entity create/update/delete.
+  **File(s):** `artifacts/api-server/src/services/search/index-subscribers.ts`
+  **Verification:** `pnpm test -- index-subscribers.test.ts` with mock event bus
+
+- [ ] API-SEARCH-001.5 (AGENT): Create search route and run integration tests to green.
+  **File(s):** `artifacts/api-server/src/routes/search.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- search.test.ts` all green ; `pnpm typecheck`
+
+- [ ] API-SEARCH-001.6 (HUMAN): Final review and sign-off.
+  **Verification:** Approved; `pnpm typecheck` clean; org-isolation test verified; all tests green.
+
+---
+
+## [ ] API-IMPORT-001: CSV Import/Export Service Endpoints
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** No import/export capability exists; users must manually enter data one record at a time. No file upload infrastructure in the API.
+**Size:** Large
+
+**Description:** Implement a two-phase CSV import pipeline (preview dry-run + execute) and a dynamic-column CSV export endpoint for all supported entity types (leads, contacts, companies, tasks, vendors, customers), with import history tracking and per-entity-type column mapping configuration.
+
+**Depends on:** AUTH-008 (auth middleware), domain CRUD APIs for all importable entities (API-CRM-005, API-PROJ-008, etc.), DB-IMPORT-001 (import_history table), ERROR-002 (domain errors).
+**Blocks:** FRONT-IMPORT-001 (CSV import UI wizard).
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/import-export/import-service.ts`, `artifacts/api-server/src/services/import-export/export-service.ts`, `artifacts/api-server/src/routes/import-export.ts`
+
+**Imports / Exports**
+- Imports: domain services (LeadService, ContactService, etc.), `multer` (file upload middleware), `csv-parse` (CSV parsing), `db` pool (lib/db)
+- Exports: `ImportService`, `ExportService`, `/api/v1/import`, `/api/v1/export` routes
+
+**Definition of Done**
+- [ ] `POST /api/v1/import/{entityType}` — accepts multipart CSV upload, validates headers against target schema, returns preview with column mapping and up to 5 error rows (dry-run, no DB writes).
+- [ ] `POST /api/v1/import/{entityType}/execute?importId={importId}` — executes a previously previewed import transactionally; returns `{ created, failed, errors }`.
+- [ ] `GET /api/v1/import/{entityType}/history` — paginated list of past imports with status, row counts, error download link.
+- [ ] `GET /api/v1/export/{entityType}?columns=name,email&format=csv` — exports data with selected columns; streams response to avoid memory overflow.
+- [ ] Supported `entityType` values: `leads`, `contacts`, `companies`, `tasks`, `vendors`, `customers`.
+- [ ] Column mapping is configurable per entity type; unmappable columns reported in preview, not silently discarded.
+- [ ] Import execution is atomic per-row (failed rows recorded, successful rows committed); not all-or-nothing.
+- [ ] Integration tests: preview CSV (happy + header mismatch), execute (verify entities created), export verify CSV, import with row errors → error report.
+- [ ] `pnpm typecheck` passes.
+
+**Out of Scope**
+- Excel (.xlsx) import — CSV only at this phase
+- Scheduled/recurring imports
+- Import via URL (fetch-from-remote)
+- Real-time progress streaming during import (synchronous response for now)
+- Import conflict resolution beyond row-level error reporting
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+- Uploaded files must be processed in-memory or temp-directory and never persisted permanently to disk
+- File size limit: 10MB maximum; reject larger files with 413
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/import-export/import-service.ts`, `artifacts/api-server/src/services/import-export/export-service.ts`, `artifacts/api-server/src/routes/import-export.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/import-export.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A] (schema owned by DB-IMPORT-001)
+
+**Rollback**
+- Granularity: file-level
+- Remove `import-service.ts`, `export-service.ts`, `routes/import-export.ts`; revert route mount.
+- Halt condition: import execution that partially writes and then crashes without recording the error — halt and add transaction rollback guard.
+
+**Rules to Follow**
+- Preview (dry-run) must NEVER write to the database — validate-only mode enforced by a flag.
+- Import execution must use database transactions; a mid-import crash must not leave partial data without error records.
+- Export streaming: use Node.js `Readable` stream with `csv-stringify` to avoid loading all rows into memory.
+- File upload size limit: 10MB enforced at `multer` config level, not in service code.
+- All imported data must pass Zod validation using the same schemas as direct API creation.
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/import-export.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- Two-phase import: `importId` ties preview to execute — prevents executing an un-previewed import.
+- `csv-parse` with `{ columns: true, skip_empty_lines: true, trim: true }` for robust CSV handling.
+- Streaming export: `res.setHeader('Content-Type', 'text/csv')` + `pipeline(dbStream, csvStringifier, res)`.
+- Per-entity column map: `COLUMN_MAPS.leads = { 'First Name': 'first_name', 'Email': 'email', ... }` — configurable, not hardcoded.
+- Row-level error capture: `{ row: 5, field: 'email', error: 'InvalidEmail', value: 'notanemail' }`.
+
+**Anti-Patterns**
+- Dry-run that writes to DB (defeats the preview guarantee).
+- Loading entire export dataset into memory before streaming (OOM for large exports).
+- Silently discarding unmapped CSV columns (must warn in preview response).
+- Non-transactional import that leaves partial data on crash.
+- Hardcoded column mappings that break when entity schemas change.
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: `ImportService` and `ExportService` are infrastructure utilities — they delegate to domain services for validation and creation; they do not own domain rules.
+- TDD: Write integration tests (preview, execute, export, error handling) before implementing services. All must fail (404) initially.
+- BDD: "As an admin, I can upload a CSV of 500 contacts, preview the mapping, review 3 error rows, then execute the import and see 497 contacts created."
+- Deep Module: `ImportService.preview(file, entityType, orgId)` and `ImportService.execute(importId, orgId)` hide CSV parsing, column mapping, Zod validation, transaction management, and error collection behind two methods.
+
+---
+
+### Subtasks
+- [ ] API-IMPORT-001.0.25 (AGENT): Read API-IMPORT-001, all domain service APIs it delegates to, and DB-IMPORT-001 schema.
+  *No action — pause until fully understood.*
+
+- [ ] API-IMPORT-001.0.5 (AGENT): Research `csv-parse` v5+ async API, `csv-stringify` streaming, `multer` memory storage vs disk storage, and two-phase import patterns (as of May 2026).
+  *Document findings briefly or note "no changes."*
+
+- [ ] API-IMPORT-001.0.75 (AGENT): Confirm supported entity types and column mapping strategy (explicit map vs auto-detect by header name). Confirm with user.
+  *If uncertain, ask the user before executing.*
+
+- [ ] API-IMPORT-001.1 (AGENT): Add import/export paths and schemas to OpenAPI spec.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
+
+- [ ] API-IMPORT-001.2 (AGENT): Write integration tests for preview, execute, export, and error-row reporting.
+  **File(s):** `artifacts/api-server/__tests__/api/import-export.test.ts`
+  **Verification:** `pnpm test -- import-export.test.ts` all fail (red phase)
+
+- [ ] API-IMPORT-001.3 (AGENT): Implement `ImportService` — CSV parse, column mapping, preview (no DB write), execute (transactional), error collection.
+  **File(s):** `artifacts/api-server/src/services/import-export/import-service.ts`
+  **Verification:** `pnpm test -- import-service.test.ts` unit tests pass
+
+- [ ] API-IMPORT-001.4 (AGENT): Implement `ExportService` — streaming CSV generation with dynamic column selection.
+  **File(s):** `artifacts/api-server/src/services/import-export/export-service.ts`
+  **Verification:** `pnpm test -- export-service.test.ts` unit tests pass; response streams correctly
+
+- [ ] API-IMPORT-001.5 (AGENT): Create import/export routes (with `multer` file upload) and run integration tests to green.
+  **File(s):** `artifacts/api-server/src/routes/import-export.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- import-export.test.ts` all green ; `pnpm typecheck`
+
+- [ ] API-IMPORT-001.6 (HUMAN): Final review and sign-off.
+  **Verification:** Approved; `pnpm typecheck` clean; all tests green; streaming export verified manually.
 
 ---

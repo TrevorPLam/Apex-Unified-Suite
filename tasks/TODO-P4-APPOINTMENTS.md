@@ -1,28 +1,660 @@
 # TODO-P4-APPOINTMENTS.md – Phase 4 Appointments Calendly‑Style Depth
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
 
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
 
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This file covers the Appointments Context with Calendly‑style depth features. These new API tasks extend the Appointments context beyond basic booking to include event types, routing forms, no‑show tracking, waitlists, and granular availability rules. The old `API‑APPT‑005` (ProjectSchedulerService anti‑corruption layer) has been removed because the Scheduler is now a PM‑owned feature.
+This file covers the Appointments context with Calendly-style depth: event types, routing forms, no-show tracking, waitlists, and granular availability rules. Portal identity is separate from firm identity.
 
 ---
 
-## Appointments – Calendly‑Style Depth
-
-*These new API tasks extend the Appointments context beyond basic booking to include event types, routing forms, no‑show tracking, waitlists, and granular availability rules. The old `API‑APPT‑005` (ProjectSchedulerService – an anti‑corruption layer that gave Projects a read‑only appointment view) has been removed because the Scheduler is now a PM‑owned feature. These five tasks add the Calendly‑inspired depth directly to the Appointments context.*
+*These tasks extend the Appointments context beyond basic booking to include Calendly-inspired depth: event types, routing forms, no-show tracking, waitlists, and granular availability rules.*
 
 ### [ ] API‑APPT‑011: Event Type Configuration API
 **Status:** ⏳ Not Started  
-**Depends on:** DB‑APPT‑009, DB‑APPT‑010, AUTH‑008.  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No `EventType` endpoints exist. `event_types` table has no Drizzle schema. Custom questions, group size, buffer configuration, and soft-delete are all unimplemented.  
+**Size:** Large  
+
+**Description:** Implement full CRUD for event types supporting one-on-one, round-robin, collective, and group formats with custom questions, availability overrides, and soft delete.  
+
+**Depends on:** DB‑APPT‑009, DB‑APPT‑010, AUTH‑008  
+**Blocks:** API‑APPT‑012 (routing forms reference event types), API‑APPT‑015 (availability per event type), API‑APPT‑020 (ownership type extension)  
+**Related Files:** `artifacts/api-server/src/services/appointments/event-type-service.ts`, `lib/db/src/repositories/event-types.ts`, `artifacts/api-server/src/routes/appointments/event-types.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository`; `drizzle-orm` (eq, and, isNull); `event_types` schema; event bus
+- Exports: `EventTypeService` (class), `EventTypeRepository` (class), `EventTypeCreated` (event), `EventTypeUpdated` (event)
+
+**Definition of Done**
+- [ ] `GET /appointments/event-types` — list with pagination; filter by `type`, `is_active`
+- [ ] `POST /appointments/event-types` — create; body includes `name`, `type`, `duration_minutes`, `buffer_before/after_minutes`, `daily_booking_limit`, `location_type`, `location_value`, `is_secret`, `cancellation_policy_json`, `reschedule_policy_json`, `max_group_size`, `questions`, `availability_overrides`
+- [ ] `GET /appointments/event-types/{eventTypeId}` — detail with questions and availability rules
+- [ ] `PATCH /appointments/event-types/{eventTypeId}` — update configuration
+- [ ] `DELETE /appointments/event-types/{eventTypeId}` — soft delete; existing bookings remain valid
+- [ ] `POST /appointments/event-types/{eventTypeId}/toggle-secret` — toggles `is_secret` flag
+- [ ] `EventTypeCreated` and `EventTypeUpdated` domain events emitted
+- [ ] Integration tests: create one-on-one type, create group type with max size, update buffers, list by type, soft delete, verify secret toggle
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Real-time availability slot calculation
+- Calendar integrations (Google Calendar, Outlook)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Soft delete only — never hard-delete event types with existing bookings
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/appointments/event-type-service.ts`, `lib/db/src/repositories/event-types.ts`, `artifacts/api-server/src/routes/appointments/event-types.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/event-types.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete service, repository, route files; no DB state changes
+- Halt condition: if `pnpm run typecheck` fails, stop and fix types before proceeding
+
+**Rules to Follow**
+- All queries scoped to `organization_id` — never return cross-org event types
+- `questions` JSON structure must be validated with Zod before persistence
+- Emit events AFTER transaction commits, never inside
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- event-types.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- `EventTypeService` method count ≤ 7; encapsulates full event type lifecycle
+- `questions` array stored as JSONB; validated with Zod array schema at request boundary
+- Soft delete: `UPDATE event_types SET deleted_at = NOW() WHERE id = $1 AND organization_id = $2`
+
+**Anti-Patterns**
+- Hard deleting event types with existing bookings — data integrity violation
+- Inline business logic in routes — move to `EventTypeService`
+- Unscoped queries missing `organization_id` filter — cross-org data leak
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: `EventType` is the core scheduling configuration aggregate in the Appointments bounded context
+- TDD: Write tests for soft-delete and group max_size validation before implementing
+- BDD: "As a firm admin, I create a Group event type with a max of 10 attendees so multiple clients can book the same slot"
+- Deep Module: `EventTypeService` hides event type lifecycle, question validation, buffer logic, and soft-delete behind ≤7 public methods
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑011.0.25 (AGENT): Read this task, `DB‑APPT‑009/010` schemas, `AUTH‑008` middleware, and `lib/api-spec/openapi.yaml` structure in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑011.0.5 (AGENT): Research Calendly event type configuration patterns (May 2026). Confirm JSONB schema for `questions` and `cancellation_policy_json`.  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑APPT‑011.0.75 (AGENT): Reason about soft-delete semantics: should `GET /event-types` list include soft-deleted items by default? Default: exclude (filter `deleted_at IS NULL`); add `?include_deleted=true` for admin.  
+  *If uncertain, use default.*
+
+- [ ] API‑APPT‑011.1 (AGENT): Add event type paths and schemas to OpenAPI spec; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** `pnpm --filter @workspace/api-spec run codegen` passes; generated types available.
+
+- [ ] API‑APPT‑011.2 (AGENT): Write integration tests (TDD red).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/event-types.test.ts`  
+  **Verification:** Tests compile and fail (no implementation).
+
+- [ ] API‑APPT‑011.3 (AGENT): Implement `EventTypeRepository` and `EventTypeService`.  
+  **File(s):** `lib/db/src/repositories/event-types.ts`, `artifacts/api-server/src/services/appointments/event-type-service.ts`  
+  **Verification:** Unit tests pass.
+
+- [ ] API‑APPT‑011.4 (AGENT): Create routes; run integration tests to green.  
+  **File(s):** `artifacts/api-server/src/routes/appointments/event-types.ts`  
+  **Verification:** All event type integration tests green.
+
+- [ ] API‑APPT‑011.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+### [ ] API‑APPT‑012: Routing Forms API
+**Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No routing form endpoints exist. `routing_forms` table has no Drizzle schema. Conditional invitee qualification logic is unimplemented.  
+**Size:** Medium  
+
+**Description:** Implement routing form management with create/read/update/delete and a test endpoint that evaluates conditional steps and returns the matching event type or a disqualification message.  
+
+**Depends on:** DB‑APPT‑011, API‑APPT‑011 (event types must exist for routing targets)  
+**Blocks:** [N/A]  
+**Related Files:** `artifacts/api-server/src/services/appointments/routing-form-service.ts`, `lib/db/src/repositories/routing-forms.ts`, `artifacts/api-server/src/routes/appointments/routing-forms.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository`; `drizzle-orm` (eq, isNull); `routing_forms` schema; `EventTypeRepository`
+- Exports: `RoutingFormService` (class), `RoutingFormRepository` (class)
+
+**Definition of Done**
+- [ ] `GET /appointments/routing-forms` — list routing forms for the organisation
+- [ ] `POST /appointments/routing-forms` — create; body: `{ name, description?, steps_json }` where each step is `{ question_id, answers: [{ value, target_event_type_id | disqualification_message }] }`
+- [ ] `GET /appointments/routing-forms/{formId}` — detail with steps
+- [ ] `PATCH /appointments/routing-forms/{formId}` — update steps, name, active status
+- [ ] `DELETE /appointments/routing-forms/{formId}` — soft delete
+- [ ] `POST /appointments/routing-forms/{formId}/test` — evaluate sample answers; returns matching event type ID or disqualification message
+- [ ] Integration tests: create form, test routing logic with valid and invalid answers, update steps, soft delete
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Public-facing routing form embed widget
+- Multi-page form with back-navigation
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/appointments/routing-form-service.ts`, `lib/db/src/repositories/routing-forms.ts`, `artifacts/api-server/src/routes/appointments/routing-forms.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/routing-forms.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete service, repository, route files; no DB state changes
+- Halt condition: if `pnpm run typecheck` fails, stop and fix types before proceeding
+
+**Rules to Follow**
+- `steps_json` must be Zod-validated at request boundary before persistence
+- The `/test` endpoint is read-only — it must never persist anything
+- All forms scoped to `organization_id`
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- routing-forms.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Conditional routing engine: iterate steps in order, evaluate answer match, return first matching `target_event_type_id`
+- `steps_json` as JSONB with Zod schema: `z.array(z.object({ question_id: z.string(), answers: z.array(...) }))`
+
+**Anti-Patterns**
+- Routing logic in route handler — belongs in `RoutingFormService`
+- Mutating state in the `/test` endpoint — must be side-effect free
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Routing forms qualify invitees and direct them to the correct event type — application service layer, not a domain aggregate
+- TDD: Write test for the routing engine (match vs. no-match vs. disqualification) before implementing
+- BDD: "As a firm, I create a routing form that asks budget questions and directs enterprise leads to the 60-min event type"
+- Deep Module: `RoutingFormService.evaluate(formId, answers)` hides step traversal, answer matching, and disqualification logic
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑012.0.25 (AGENT): Read this task, `DB‑APPT‑011` schema, `API‑APPT‑011` event type service, and existing OpenAPI structure in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑012.0.5 (AGENT): Research conditional routing form patterns for scheduling tools (May 2026). Confirm JSONB schema for `steps_json`.  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑APPT‑012.0.75 (AGENT): Reason about `/test` endpoint semantics. Default: stateless evaluation — no bookings created, no audit log entry.  
+  *If uncertain, use that approach.*
+
+- [ ] API‑APPT‑012.1 (AGENT): Add routing form paths and schemas to OpenAPI; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen passes; generated types available.
+
+- [ ] API‑APPT‑012.2 (AGENT): Write integration tests (TDD red).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/routing-forms.test.ts`  
+  **Verification:** Tests compile and fail (no implementation).
+
+- [ ] API‑APPT‑012.3 (AGENT): Implement `RoutingFormRepository` and `RoutingFormService`.  
+  **File(s):** `lib/db/src/repositories/routing-forms.ts`, `artifacts/api-server/src/services/appointments/routing-form-service.ts`  
+  **Verification:** Unit tests pass; routing engine returns correct event type.
+
+- [ ] API‑APPT‑012.4 (AGENT): Create routes; run integration tests to green.  
+  **File(s):** `artifacts/api-server/src/routes/appointments/routing-forms.ts`  
+  **Verification:** All routing form integration tests green.
+
+- [ ] API‑APPT‑012.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+### [ ] API‑APPT‑013: No-Show Management API
+**Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟡 Medium  
+**Current State:** No no-show tracking endpoints. `no_show_log` table has no Drizzle schema. Appointments have no `no_show` status and client restriction logic is absent.  
+**Size:** Small  
+
+**Description:** Implement no-show marking, per-client history lookup, client restriction after repeated no-shows, and a `NoShowRecorded` domain event.  
+
+**Depends on:** DB‑APPT‑013, API‑APPT‑001 (appointments CRUD)  
+**Blocks:** [N/A]  
+**Related Files:** `artifacts/api-server/src/services/appointments/no-show-service.ts`, `lib/db/src/repositories/no-show.ts`, `artifacts/api-server/src/routes/appointments/no-show.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository`; `drizzle-orm` (eq, and); `no_show_log` schema; `appointments` schema; event bus
+- Exports: `NoShowService` (class), `NoShowRepository` (class), `NoShowRecorded` (event)
+
+**Definition of Done**
+- [ ] `POST /appointments/{appointmentId}/mark-no-show` — mark as no-show; body: `{ notes? }`; creates `no_show_log` entry; updates appointment status to `no_show`; requires firm auth
+- [ ] `GET /appointments/{appointmentId}/no-show` — get no-show status for appointment
+- [ ] `GET /clients/{clientId}/no-show-history` — list no-show history for a client
+- [ ] `POST /appointments/{appointmentId}/restrict-client` — restrict client from future bookings (admin only)
+- [ ] Attempt to book while restricted → 403 `ClientRestricted`
+- [ ] `NoShowRecorded` domain event emitted on mark-no-show
+- [ ] Integration tests: mark no-show, verify history, restrict client, attempt booking → 403
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Automatic no-show marking after appointment time passes
+- Email notifications on no-show
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- `restrict-client` endpoint must be admin-only — verify role in auth middleware
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/appointments/no-show-service.ts`, `lib/db/src/repositories/no-show.ts`, `artifacts/api-server/src/routes/appointments/no-show.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/no-show.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete service, repository, route files; no DB state changes
+- Halt condition: if `pnpm run typecheck` fails, stop and fix types before proceeding
+
+**Rules to Follow**
+- `mark-no-show` must be idempotent — repeated calls on same appointment return 200 without duplicate log entry
+- `restrict-client` must check admin role before applying
+- All queries scoped to `organization_id`
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- no-show.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Idempotent no-show: `INSERT INTO no_show_log ... ON CONFLICT (appointment_id) DO NOTHING`
+- Client restriction check in booking validation: `SELECT is_restricted FROM clients WHERE id = $clientId AND organization_id = $orgId`
+
+**Anti-Patterns**
+- Non-idempotent no-show marking creating duplicate log entries
+- Client restriction enforced in service only — must also be enforced in `BookingService` booking check
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: No-show tracking is an application service concern; no-show records are value objects, not aggregates
+- TDD: Write test for restricted client booking rejection before implementing restriction logic
+- BDD: "When a client is a no-show, the firm marks them and the client cannot book future appointments"
+- Deep Module: `NoShowService` hides log creation, status update, restriction enforcement, and event emission
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑013.0.25 (AGENT): Read this task, `DB‑APPT‑013` schema, `API‑APPT‑001` booking service, and `AUTH‑008` middleware in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑013.0.5 (AGENT): Confirm idempotency strategy for `mark-no-show` (ON CONFLICT vs. pre-check query).  
+  *Document findings briefly.*
+
+- [ ] API‑APPT‑013.0.75 (AGENT): Reason about restriction enforcement location. Default: enforce in `BookingService.create()` with a `checkClientRestriction()` call before allowing booking.  
+  *If uncertain, use that approach.*
+
+- [ ] API‑APPT‑013.1 (AGENT): Add no-show paths to OpenAPI; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen passes; generated types available.
+
+- [ ] API‑APPT‑013.2 (AGENT): Write integration tests (TDD red).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/no-show.test.ts`  
+  **Verification:** Tests compile and fail (no implementation).
+
+- [ ] API‑APPT‑013.3 (AGENT): Implement `NoShowRepository` and `NoShowService`.  
+  **File(s):** `lib/db/src/repositories/no-show.ts`, `artifacts/api-server/src/services/appointments/no-show-service.ts`  
+  **Verification:** Unit tests pass.
+
+- [ ] API‑APPT‑013.4 (AGENT): Create routes; run integration tests to green.  
+  **File(s):** `artifacts/api-server/src/routes/appointments/no-show.ts`  
+  **Verification:** All no-show integration tests green.
+
+- [ ] API‑APPT‑013.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+### [ ] API‑APPT‑014: Waitlist Management API
+**Status:** ⏳ Not Started  
+**Actor:** MIXED  
+**Priority:** 🟠 High  
+**Current State:** No waitlist endpoints. `waitlist_entries` table has no Drizzle schema. Automatic slot-filling logic when an appointment is cancelled is unimplemented.  
+**Size:** Medium  
+
+**Description:** Implement waitlist join/leave/list endpoints and automatic slot-filling: when an appointment is cancelled and the slot opens, the service books the first eligible waitlist entry and emits `WaitlistBookingCreated`.  
+
+**Depends on:** DB‑APPT‑012, API‑APPT‑011 (event type required for waitlist entry)  
+**Blocks:** [N/A]  
+**Related Files:** `artifacts/api-server/src/services/appointments/waitlist-service.ts`, `lib/db/src/repositories/waitlist.ts`, `artifacts/api-server/src/routes/appointments/waitlist.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository`; `drizzle-orm` (eq, and, isNull, asc); `waitlist_entries` schema; `BookingService`; event bus; `EmailService`
+- Exports: `WaitlistService` (class), `WaitlistRepository` (class), `WaitlistBookingCreated` (event)
+
+**Definition of Done**
+- [ ] `POST /appointments/event-types/{eventTypeId}/waitlist/join` — join waitlist; body: `{ invitee_email, invitee_name?, requested_time_start }`
+- [ ] `GET /appointments/waitlist` — list waitlist entries; filter by `event_type_id`, `status`
+- [ ] `GET /appointments/waitlist/{entryId}` — detail
+- [ ] `DELETE /appointments/waitlist/{entryId}` — remove entry (invitee cancels)
+- [ ] Automatic booking logic: when appointment is cancelled, check waitlist for matching entries, book first eligible, emit `WaitlistBookingCreated`, notify invitee via email
+- [ ] Duplicate join prevention: second join for same email+time slot → 409 `AlreadyOnWaitlist`
+- [ ] Integration tests: join waitlist, cancel appointment and verify waitlist booking, remove entry, verify duplicate prevention
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Priority queue / VIP waitlist ordering
+- Real-time waitlist position notifications (WebSocket)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Automatic booking must run inside a transaction — if booking fails, waitlist entry remains unchanged
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/appointments/waitlist-service.ts`, `lib/db/src/repositories/waitlist.ts`, `artifacts/api-server/src/routes/appointments/waitlist.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/waitlist.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete service, repository, route files; no DB state changes
+- Halt condition: if automatic booking transaction fails in tests, stop and debug atomicity
+
+**Rules to Follow**
+- Automatic slot-fill must be transactional — use Drizzle transaction wrapping both `createBooking` and `updateWaitlistStatus`
+- Duplicate join: use `INSERT ... ON CONFLICT DO NOTHING RETURNING id` and return 409 if no row returned
+- Notification email sent only after transaction commits
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- waitlist.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Transactional slot-fill: `db.transaction(async tx => { await bookingRepo.create(tx, ...); await waitlistRepo.updateStatus(tx, entryId, 'booked'); })`
+- Duplicate prevention: `INSERT INTO waitlist_entries (...) ON CONFLICT (event_type_id, invitee_email, requested_time_start) DO NOTHING RETURNING id`
+
+**Anti-Patterns**
+- Non-transactional slot-fill that can create bookings without updating waitlist entry
+- Sending notification emails inside the transaction — send after commit
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Waitlist is an aggregate in Appointments; automatic booking is a domain service that coordinates `WaitlistEntry` and `Appointment` aggregates
+- TDD: Write the slot-fill test (cancel → automatic booking) before implementing the cancellation hook
+- BDD: "When an appointment is cancelled, the first person on the waitlist is automatically booked and notified"
+- Deep Module: `WaitlistService` hides FIFO selection, transactional booking, notification dispatch, and event emission
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑014.0.25 (AGENT): Read this task, `DB‑APPT‑012` schema, `API‑APPT‑011` event type service, and `BookingService` cancellation hook in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑014.0.5 (AGENT): Research FIFO waitlist + automatic booking patterns (May 2026). Confirm transaction isolation level needed.  
+  *Document findings briefly.*
+
+- [ ] API‑APPT‑014.0.75 (AGENT): Reason about where to hook into cancellation. Default: `BookingService.cancel()` calls `waitlistService.fillSlot(appointmentId)` after marking appointment cancelled.  
+  *If uncertain, use that approach.*
+
+- [ ] API‑APPT‑014.1 (AGENT): Add waitlist paths to OpenAPI; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen passes; generated types available.
+
+- [ ] API‑APPT‑014.2 (AGENT): Write integration tests (TDD red).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/waitlist.test.ts`  
+  **Verification:** Tests compile and fail (no implementation).
+
+- [ ] API‑APPT‑014.3 (AGENT): Implement `WaitlistRepository` and `WaitlistService` with automatic booking.  
+  **File(s):** `lib/db/src/repositories/waitlist.ts`, `artifacts/api-server/src/services/appointments/waitlist-service.ts`  
+  **Verification:** Unit tests pass; slot-fill transaction verified.
+
+- [ ] API‑APPT‑014.4 (AGENT): Create routes; run integration tests to green.  
+  **File(s):** `artifacts/api-server/src/routes/appointments/waitlist.ts`  
+  **Verification:** All waitlist integration tests green.
+
+- [ ] API‑APPT‑014.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+### [ ] API‑APPT‑015: Time Zone & Availability Rules API
+**Status:** ⏳ Not Started  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No availability override or per-event-type booking rule endpoints. No time zone conversion for availability slots. `availability_overrides` table has no Drizzle schema.  
+**Size:** Medium  
+
+**Description:** Implement per-event-type availability overrides (date-specific and recurring), booking rule configuration (min notice, max advance, daily limit, slot increments), and time zone-aware slot querying.  
+
+**Depends on:** DB‑APPT‑009, API‑APPT‑011 (event types must exist)  
+**Blocks:** [N/A]  
+**Related Files:** `artifacts/api-server/src/services/appointments/availability-service.ts`, `lib/db/src/repositories/availability-overrides.ts`, `artifacts/api-server/src/routes/appointments/availability.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository`; `drizzle-orm` (eq, and); `availability_overrides` schema; `Intl.DateTimeFormat` or `luxon`
+- Exports: `AvailabilityService` (class), `AvailabilityOverrideRepository` (class)
+
+**Definition of Done**
+- [ ] `GET /appointments/event-types/{eventTypeId}/availability-overrides` — list overrides
+- [ ] `POST /appointments/event-types/{eventTypeId}/availability-overrides` — create; body: `{ date?, day_of_week?, start_time?, end_time?, is_blocked }`
+- [ ] `DELETE /appointments/event-types/{eventTypeId}/availability-overrides/{overrideId}` — remove override
+- [ ] `GET /appointments/event-types/{eventTypeId}/booking-rules` — get rules: `min_scheduling_notice_hours`, `max_booking_advance_days`, `start_time_increments_minutes`, `daily_booking_limit`
+- [ ] `PUT /appointments/event-types/{eventTypeId}/booking-rules` — update rules
+- [ ] `GET /appointments/availability?timezone=America/New_York&event_type_id=...` — returns slots in invitee's local timezone; applies booking rules and overrides
+- [ ] Integration tests: set date override, list, delete; update per-event booking rules; query availability in two different timezones
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Calendar sync (Google/Outlook busy/free query)
+- Recurring availability schedule (handled by base event type config)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Timezone must be validated against IANA tz database before use
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/services/appointments/availability-service.ts`, `lib/db/src/repositories/availability-overrides.ts`, `artifacts/api-server/src/routes/appointments/availability.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/availability.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete service, repository, route files; no DB state changes
+- Halt condition: if timezone conversion produces incorrect UTC offset in tests, stop and fix
+
+**Rules to Follow**
+- All times stored as UTC in DB; convert to requested timezone at query time only
+- IANA timezone validation: use `Intl.supportedValuesOf('timeZone').includes(tz)` before accepting
+- `is_blocked = true` overrides completely block the slot; `is_blocked = false` opens a custom window
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- availability.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Timezone-aware slot generation: generate UTC slots → apply `Intl.DateTimeFormat` offset → return in requested tz
+- Override merge: date-specific overrides take precedence over `day_of_week` overrides
+
+**Anti-Patterns**
+- Storing times in local timezone in DB — always UTC
+- Accepting unvalidated IANA timezone strings — use `Intl.supportedValuesOf` check
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Availability rules are configuration of the `EventType` aggregate; overrides are a child collection
+- TDD: Write timezone conversion test for `America/New_York` vs `Asia/Tokyo` before implementing slot generation
+- BDD: "As an invitee in Tokyo, I see appointment slots in my local timezone, not the firm's timezone"
+- Deep Module: `AvailabilityService.getSlots(eventTypeId, timezone, date)` hides override lookup, booking rule application, and timezone conversion
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑015.0.25 (AGENT): Read this task, `DB‑APPT‑009` schema, `API‑APPT‑011` event type config, and existing timezone handling patterns in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑015.0.5 (AGENT): Research IANA timezone validation with `Intl.supportedValuesOf` (Node.js 18+ May 2026). Confirm no external tz library is needed.  
+  *Document findings briefly.*
+
+- [ ] API‑APPT‑015.0.75 (AGENT): Reason about override precedence: date-specific vs. day_of_week vs. base schedule. Confirm merge order.  
+  *If uncertain, use: date-specific > day_of_week > base event type schedule.*
+
+- [ ] API‑APPT‑015.1 (AGENT): Add availability override and booking rule paths to OpenAPI; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen passes; generated types available.
+
+- [ ] API‑APPT‑015.2 (AGENT): Write integration tests (TDD red).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/availability.test.ts`  
+  **Verification:** Tests compile and fail (no implementation).
+
+- [ ] API‑APPT‑015.3 (AGENT): Implement `AvailabilityOverrideRepository` and `AvailabilityService`.  
+  **File(s):** `lib/db/src/repositories/availability-overrides.ts`, `artifacts/api-server/src/services/appointments/availability-service.ts`  
+  **Verification:** Unit tests pass; timezone conversion verified.
+
+- [ ] API‑APPT‑015.4 (AGENT): Create routes; run integration tests to green.  
+  **File(s):** `artifacts/api-server/src/routes/appointments/availability.ts`  
+  **Verification:** All availability integration tests green.
+
+- [ ] API‑APPT‑015.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+### [ ] API‑APPT‑020: Shared vs. Team Event Type Configuration
+**Status:** ⏳ Not Started  
+**Actor:** MIXED  
+**Priority:** 🟡 Medium  
+**Current State:** `event_types` table lacks `ownership_type` field. All event types are implicitly personal. No visibility filtering based on ownership and no admin lock for team event types.  
+**Size:** Small  
+
+**Description:** Add `ownership_type` enum (`personal` | `shared` | `team`) to event types, implement visibility filtering in list/detail endpoints, and enforce admin-only controls for `team` event types.  
+
+**Depends on:** API‑APPT‑011 (event type endpoints must exist)  
+**Blocks:** [N/A]  
+**Related Files:** `lib/db/src/schema/appointments.ts`, `artifacts/api-server/src/services/appointments/event-type-service.ts`, `lib/api-spec/openapi.yaml`  
+
+**Imports / Exports**
+- Imports: `pgEnum` from drizzle-orm/pg-core; existing `eventTypes` table schema; `EventTypeService`
+- Exports: `ownershipTypeEnum` (Drizzle enum), updated `eventTypes` table schema
+
+**Definition of Done**
+- [ ] `ownership_type` column added to `event_types` Drizzle schema (default: `'personal'`); migration generated
+- [ ] `POST /appointments/event-types` accepts `ownership_type` field; Zod schema updated
+- [ ] `GET /appointments/event-types` filters: `personal` → only requester's event types; `shared` → all org members see them; `team` → visible to all but admin-managed
+- [ ] `PATCH /appointments/event-types/{eventTypeId}` on `team` type → requires admin role
+- [ ] Integration test: member creates `shared` event type → all org members see it in list
+- [ ] Integration test: non-admin patches `team` event type → 403 `AdminRequired`
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Enterprise-tier team event type controls (handled in ENT‑APPT‑001)
+- UI panel changes
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- DB schema change requires `pnpm --filter @workspace/db run push` — requires user approval
+
+**Output Artifacts**
+- Code changes in: `lib/db/src/schema/appointments.ts`, `artifacts/api-server/src/services/appointments/event-type-service.ts`, `lib/api-spec/openapi.yaml`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/appointments/event-types.test.ts` (add ownership scenarios)
+- Documentation: [N/A]
+- Migration files: `lib/db/drizzle/` (generated by `pnpm --filter @workspace/db run push`)
+
+**Rollback**
+- Granularity: migration-level — revert Drizzle schema; regenerate; requires DB push to revert column (user approval)
+- Halt condition: if DB push fails, stop and verify migration SQL before retrying
+
+**Rules to Follow**
+- `ownership_type` must use a Drizzle `pgEnum` — not a plain `varchar` with CHECK constraint
+- Default `'personal'` must be set at the DB column level, not only in application code
+- Admin check must use the same role-checking middleware as other admin-only endpoints
+
+**Verification**
+```bash
+# After user approves DB push:
+pnpm --filter @workspace/db run push
+pnpm --filter @workspace/api-server test -- event-types.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- `pgEnum('ownership_type', ['personal', 'shared', 'team'])` at schema level
+- Visibility filter in `EventTypeRepository.list()`: `WHERE organization_id = $orgId AND (ownership_type = 'shared' OR ownership_type = 'team' OR (ownership_type = 'personal' AND created_by = $userId))`
+
+**Anti-Patterns**
+- Checking ownership_type in route handler — belongs in `EventTypeService.list()` with user context
+- `varchar` column with application-level enum — use `pgEnum` for DB-level constraint
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: `ownership_type` is an attribute of the `EventType` aggregate that controls visibility invariants
+- TDD: Write visibility filter test before implementing the column; test all three ownership types
+- BDD: "As a team member, I create a Shared event type that every colleague can see without admin approval"
+- Deep Module: `EventTypeService.list(userId, orgId)` applies visibility filter internally — callers don't know the filter logic
+
+---
+
+### Subtasks
+
+- [ ] API‑APPT‑020.0.25 (AGENT): Read this task, `API‑APPT‑011` event type schema, and existing Drizzle enum patterns in the codebase in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑APPT‑020.0.5 (AGENT): Confirm `pgEnum` syntax in Drizzle v0.31 (May 2026). Verify that adding an enum column requires a migration.  
+  *Document findings briefly.*
+
+- [ ] API‑APPT‑020.0.75 (AGENT): Reason about visibility filter SQL. Default: `WHERE org_id = $orgId AND (ownership_type IN ('shared', 'team') OR (ownership_type = 'personal' AND created_by = $userId))`.  
+  *If uncertain, use that query.*
+
+- [ ] API‑APPT‑020.1 (AGENT): Update Drizzle schema with `ownership_type` enum column.  
+  **File(s):** `lib/db/src/schema/appointments.ts`  
+  **Verification:** `pnpm run typecheck` clean; migration SQL generated.
+
+- [ ] API‑APPT‑020.2 (HUMAN): Approve and run DB push.  
+  **File(s):** [N/A — DB operation]  
+  **Verification:** `pnpm --filter @workspace/db run push` succeeds.
+
+- [ ] API‑APPT‑020.3 (AGENT): Update OpenAPI spec and run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen passes; `ownership_type` enum in generated types.
+
+- [ ] API‑APPT‑020.4 (AGENT): Update `EventTypeService` with visibility filtering and admin enforcement.  
+  **File(s):** `artifacts/api-server/src/services/appointments/event-type-service.ts`  
+  **Verification:** Unit tests pass for all three ownership types.
+
+- [ ] API‑APPT‑020.5 (AGENT): Add ownership integration tests to existing test file.  
+  **File(s):** `artifacts/api-server/src/__tests__/api/appointments/event-types.test.ts`  
+  **Verification:** All ownership scenario tests green.
+
+- [ ] API‑APPT‑020.6 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+## Execution Order
+
+```
+API‑APPT‑011 (event type CRUD)
+  ├─> API‑APPT‑012 (routing forms)
+  ├─> API‑APPT‑015 (availability rules)
+  └─> API‑APPT‑020 (ownership type extension)
+API‑APPT‑013 (no-show management) [parallel, depends on API‑APPT‑001]
+API‑APPT‑014 (waitlist) [depends on API‑APPT‑011]
+```  
 **Definition of Done:** Full CRUD for event types:  
 - `GET /api/v1/appointments/event‑types` – list event types with pagination, filter by `type` (one‑on‑one/round‑robin/collective/group), `is_active`.  
 - `POST /api/v1/appointments/event‑types` – create event type. Body includes: `name`, `type`, `duration_minutes`, `buffer_before/after_minutes`, `daily_booking_limit`, `location_type`, `location_value`, `is_secret`, `cancellation_policy_json`, `reschedule_policy_json`, `max_group_size` (for group events), `questions` (array of custom questions), `availability_overrides`.  

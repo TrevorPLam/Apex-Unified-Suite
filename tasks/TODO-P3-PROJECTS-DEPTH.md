@@ -1,346 +1,567 @@
-# TODO-P3-PROJECTS-DEPTH.md – Phase 3: Projects Depth Features
+﻿# TODO-P3-PROJECTS-DEPTH.md – Phase 3: Projects Depth API
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
-
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
-
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This part covers the Projects context depth features – advanced functionality from the Projects Delta. All tasks follow the established patterns: contract‑first, test‑first, service‑as‑deep‑module, Either error handling, and domain event emission.
+## Tasks in this file
+- API-PROJ-013: My Week Planning API
+- API-PROJ-014: Board & Queue API (Lane Management + Bulk Reorder)
+- API-PROJ-015: Composite Project Workspace Endpoints
+- API-PROJ-016: Project Templates – CRUD & Versioning
+- API-PROJ-017: Project Creation from Template
 
 ---
 
-## Projects – Depth (Delta)
+## [ ] API-PROJ-013: My Week Planning API
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No "My Week" planning endpoints exist. Users have no personal task bucketing API.
+**Size:** Large
 
-### [ ] API‑PROJ‑013: My Week Planning API
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑006, API‑PROJ‑008 (tasks green).  
-**Definition of Done:** Personal work planning endpoints:
-- `GET /projects/my‑week?weekStart={date}` – returns tasks grouped by planning bucket (Focus, This Week, Later) with ordering, including carry‑over from previous week and personal notes.
-- `POST /projects/my‑week/plan` – add a task to a planning bucket for a specific week.
-- `PATCH /projects/my‑week/{planId}` – move an item to a different bucket, update order_index, or update note.
-- `DELETE /projects/my‑week/{planId}` – remove an item from the plan (does not delete the task).
-- `POST /projects/my‑week/carry‑over` – auto‑carry incomplete items to the next week.
-All operations scoped to the authenticated user. Emits `MyWeekUpdated` event.  
-**Integration tests:** plan a task for this week, move to Focus, verify ordering, carry over to next week, remove from plan (task still exists).  
-**DDD:** Per‑user planning state, separate from canonical task status (PROJ‑DOM‑003).  
-**Deep Module:** Encapsulates personal planning logic, carry‑over rules, and ordering.
+**Description:** Implement a personal weekly planning API allowing users to assign tasks to focus buckets (`Focus`, `This Week`, `Later`), with carry-over of incomplete tasks to the next week and a `MyWeekUpdated` event.
 
-**Rules to Follow:**
-- All operations scoped to authenticated user
-- Personal planning separate from task status
-- Carry-over logic respects task completion
-- Ordering preserved within buckets
-- Event emission for planning changes
+**Depends on:** API-PROJ-008 (tasks must exist), DB-PROJ-004 (my_week_items schema), AUTH-008, EVENT-001, ERROR-002.
+**Blocks:** [N/A] — standalone depth feature.
+**Related Files:** `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/my-week.ts`, `artifacts/api-server/src/services/projects/my-week-service.ts`, `artifacts/api-server/src/routes/projects/my-week.ts`
 
-**Advanced Code Patterns:**
-- User-scoped data isolation
-- Planning bucket state machine
-- Event-driven carry-over automation
-- Ordering preservation algorithms
+**Imports / Exports**
+- Imports: `db`, Drizzle `myWeekItems` table, `TaskRepository`, `DomainEventBus`, `neverthrow`
+- Exports: `MyWeekRepository`, `MyWeekService`, `myWeekRouter`; generated `MyWeekItemSchema`, `MyWeekBucketEnum` hooks (via codegen)
 
-**Anti-Patterns:**
-- Mixing planning state with task status
-- Global planning data (not user-scoped)
-- Manual carry-over without automation
-- Missing event emission
+**Definition of Done**
+- [ ] OpenAPI spec: `GET /api/v1/projects/my-week` — returns all tasks bucketed for current user in current ISO week.
+- [ ] `PUT /api/v1/projects/my-week/{taskId}` — assign a task to a bucket (`focus`, `this_week`, `later`) for the current week; creates or updates the `my_week_items` record.
+- [ ] `DELETE /api/v1/projects/my-week/{taskId}` — remove a task from My Week (current week only).
+- [ ] `MyWeekBucketEnum`: `focus`, `this_week`, `later`.
+- [ ] Carry-over: a scheduled job (or on-read lazy trigger) moves `focus` and `this_week` incomplete items to next week's `focus` bucket on week boundary. Document the strategy (lazy carry-over on first GET of new week).
+- [ ] `MyWeekUpdated` domain event emitted with `{ userId, weekNumber, year, changes: TaskId[] }`.
+- [ ] `my_week_items` table: `(user_id, task_id, week_number, year, bucket)` with unique constraint on `(user_id, task_id, week_number, year)`.
+- [ ] Integration tests: get My Week (empty, then with tasks), assign to bucket (PUT), remove from bucket, carry-over (simulate new week, verify previous items appear in new week), 401.
+- [ ] Unit tests for `MyWeekService`: bucket assignment, carry-over logic, `MyWeekUpdated` event.
+- [ ] `pnpm typecheck` passes.
 
-**TDD:** Write failing integration tests before implementation. Tests must verify all planning operations, carry-over logic, and event emission.  
-**BDD:** Enables "As a user, I can plan my week and carry over incomplete tasks" scenarios.
+**Out of Scope**
+- Team-level "sprint" planning (separate feature)
+- Calendar integration
+- Push notifications for My Week carry-over
 
-### Subtasks:
-- [ ] API‑PROJ‑013.1: Add My Week endpoints to OpenAPI spec. (AGENT)  
-  **verification:** Spec validates; codegen passes.
-- [ ] API‑PROJ‑013.2: Write integration tests (red). (AGENT) – `artifacts/api-server/__tests__/api/projects/my-week.test.ts`  
-  **verification:** Tests fail (no implementation).
-- [ ] API‑PROJ‑013.3: Implement `MyWeekService` and repository. (AGENT) – `services/projects/my-week-service.ts`  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑013.4: Create routes, run tests to green. (AGENT) – `routes/projects/my-week.ts`  
-  **verification:** All tests pass.
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
 
-**Rules to Follow:**
-- All subtasks must have specific file paths
-- Tests must fail before implementation (TDD red phase)
-- Service encapsulates planning logic complexity
-- Event emission verified in tests
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/my-week.ts`, `artifacts/api-server/src/services/projects/my-week-service.ts`, `artifacts/api-server/src/routes/projects/my-week.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/projects/my-week.test.ts`, `artifacts/api-server/src/services/projects/__tests__/my-week-service.test.ts`
+- Documentation: [N/A]
+- Migration files: DB-PROJ-004 (my_week_items table migration)
 
-**Advanced Code Patterns:**
-- TDD red-green-refactor cycle
-- Service layer encapsulation
-- Event-driven architecture
-- User-scoped data access
+**Rollback**
+- Granularity: file-level — remove route, service, repository; revert spec.
+- Halt condition: carry-over duplicating tasks across weeks → halt and fix unique constraint.
 
-**Anti-Patterns:**
-- Missing file paths in subtasks
-- Writing implementation before tests
-- Shallow service without encapsulation
-- Missing event emission tests
+**Rules to Follow**
+- ISO week numbering: use `date-fns` `getISOWeek` and `getISOWeekYear` to determine `week_number` and `year` for current week.
+- Lazy carry-over: on `GET /my-week`, check if previous week has incomplete `focus` or `this_week` items for the user; if so, insert them into current week before returning.
+- `PUT` is upsert semantics — if same `(user_id, task_id, week_number, year)` exists, update `bucket`; else insert.
+- All methods return `Result<T, DomainError>` — no `throw`.
+- Task must belong to the same `organization_id` as the requesting user (validate via task lookup).
 
----
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/projects/my-week.test.ts
+pnpm test -- artifacts/api-server/src/services/projects/__tests__/my-week-service.test.ts
+pnpm typecheck
+```
 
-### [ ] API‑PROJ‑014: Board & Queue API
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑005, API‑PROJ‑008.  
-**Definition of Done:** Board management and retrieval:
-- `GET /projects/{projectId}/board` – returns all lanes with their tasks ordered by position, lane summaries (count, status).
-- `POST /projects/{projectId}/board/lanes` – create a new lane.
-- `PATCH /projects/{projectId}/board/lanes/{laneId}` – update lane name, type, order.
-- `DELETE /projects/{projectId}/board/lanes/{laneId}` – soft delete lane (tasks remain, moved to default lane).
-- `PATCH /projects/{projectId}/board/tasks/{taskId}/move` – move task between lanes and/or update position. Supports bulk reorder.
-- Queue lane type: tasks in queue have ownership rules (first‑to‑claim or assigned).
-**Integration tests:** create lanes, move task between lanes, reorder within lane, delete lane (tasks reassigned).  
-**DDD:** Board lanes and queue behaviour are core PM workflow (PROJ‑DOM‑002).  
-**Deep Module:** Service hides lane management and complex reordering logic.
+**Advanced Code Patterns**
+- ISO week: `import { getISOWeek, getISOWeekYear } from 'date-fns'; const weekNumber = getISOWeek(new Date()); const year = getISOWeekYear(new Date())`.
+- Upsert: `db.insert(myWeekItems).values({ userId, taskId, weekNumber, year, bucket }).onConflictDoUpdate({ target: [myWeekItems.userId, myWeekItems.taskId, myWeekItems.weekNumber, myWeekItems.year], set: { bucket } })`.
+- Lazy carry-over: `const prevWeekItems = await myWeekRepo.findIncomplete(userId, prevWeek, prevYear, ['focus', 'this_week']); if (prevWeekItems.length > 0) { await myWeekRepo.bulkUpsert(prevWeekItems.map(i => ({ ...i, weekNumber: currentWeek, year: currentYear, bucket: 'focus' }))); }`.
 
-**Rules to Follow:**
-- Lane operations must preserve task integrity
-- Position updates must be atomic
-- Queue lanes enforce ownership rules
-- Soft delete for lanes (tasks preserved)
-- Bulk reorder operations transactional
+**Anti-Patterns**
+- Using calendar week (Sunday-start) instead of ISO week (Monday-start) — inconsistent with standard week planning tools.
+- Carry-over via scheduled job without lazy fallback (tasks missed if scheduler fails).
+- Task validation missing (allows My Week to reference tasks from other organizations).
 
-**Advanced Code Patterns:**
-- Board state management
-- Atomic position updates
-- Queue ownership enforcement
-- Transactional bulk operations
-
-**Anti-Patterns:**
-- Non-atomic position updates
-- Hard deletion of lanes with tasks
-- Missing queue ownership validation
-- Inconsistent board state
-
-**TDD:** Write failing integration tests before implementation. Tests must cover lane creation, task movement, bulk reordering, and queue behavior.
-
-### Subtasks:
-- [ ] API‑PROJ‑014.1: Add board endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑014.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑014.3: Implement `BoardService` and lane repository. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑014.4: Create routes, run tests to green. (AGENT)
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: My Week is a personal planning projection over the Tasks aggregate. It uses `week_number/year` as the planning period identifier.
+- TDD: Unit tests for carry-over logic, bucket upsert, and event emission.
+- BDD: "When a user views My Week at the start of a new week, incomplete Focus and This Week tasks from the previous week automatically appear in the current week's Focus bucket."
+- Deep Module: `MyWeekService.getMyWeek(userId, orgId)` hides lazy carry-over, ISO week calculation, task scoping, and event emission.
 
 ---
 
-### [ ] API‑PROJ‑015: Composite Project Workspace Endpoints
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑004, API‑PROJ‑008, API‑PROJ‑012, API‑PROJ‑018.  
-**Definition of Done:** Aggregate endpoints for the full project workspace:
-- `GET /projects/{projectId}/workspace/tasks` – tasks grouped by status or lane, with assignee details.
-- `GET /projects/{projectId}/workspace/timeline` – milestones, deadlines, and activity feed.
-- `GET /projects/{projectId}/workspace/time‑budget` – time entries, estimate vs actual, burn chart data.
-- `GET /projects/{projectId}/workspace/details` – project metadata, members, templates used.
-**Integration tests:** verify each sub‑view returns correct aggregated data.  
-**DDD:** Optimised payloads for the four workspace tabs (Tasks, Timeline, Time & Budget, Details).
+### Subtasks
+- [ ] API-PROJ-013.0.25 (AGENT): Read DB-PROJ-004 schema, `date-fns` ISO week API, and lazy carry-over pattern.
+  *No action — pause until fully understood.*
 
-### Subtasks:
-- [ ] API‑PROJ‑015.1: Add workspace endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑015.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑015.3: Implement `ProjectWorkspaceService`. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑015.4: Create routes, run tests to green. (AGENT)
+- [ ] API-PROJ-013.0.5 (AGENT): Research `date-fns` ISO week functions and Drizzle upsert `onConflictDoUpdate` (as of May 2026).
+  *Document findings briefly or note "no changes."*
 
----
+- [ ] API-PROJ-013.0.75 (AGENT): Confirm carry-over strategy — lazy (on first GET of new week) vs scheduled job — with user.
+  *If uncertain, ask the user before executing.*
 
-### [ ] API‑PROJ‑016: Project Templates Management API
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑007.  
-**Definition of Done:** CRUD for reusable project templates:
-- `GET /projects/templates` – list active templates with pagination.
-- `POST /projects/templates` – create template with blueprint (task structure, milestones, default assignees).
-- `GET /projects/templates/{templateId}` – get template detail.
-- `GET /projects/templates/{templateId}/versions` – list version history.
-- `POST /projects/templates/{templateId}/versions` – create a new version (increment version number).
-- `PATCH /projects/templates/{templateId}` – update template metadata.
-- `DELETE /projects/templates/{templateId}` – soft delete.
-**Integration tests:** create template, add version, list versions, soft delete.  
-**DDD:** Reusable project blueprints (PROJ‑DOM‑004).
+- [ ] API-PROJ-013.1 (AGENT): Add My Week spec endpoints and `MyWeekBucketEnum` to `openapi.yaml`.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
 
-### Subtasks:
-- [ ] API‑PROJ‑016.1: Add template endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑016.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑016.3: Implement `ProjectTemplateService` and repository. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑016.4: Create routes, run tests to green. (AGENT)
+- [ ] API-PROJ-013.2 (AGENT): Implement `MyWeekRepository` with upsert and `findIncomplete` for carry-over.
+  **File(s):** `lib/db/src/repositories/projects/my-week.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-013.3 (AGENT): Implement `MyWeekService` with lazy carry-over, ISO week calculation, and event.
+  **File(s):** `artifacts/api-server/src/services/projects/my-week-service.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-013.4 (AGENT): Write integration and unit tests; run codegen first.
+  **File(s):** `artifacts/api-server/__tests__/api/projects/my-week.test.ts`, `artifacts/api-server/src/services/projects/__tests__/my-week-service.test.ts`
+  **Verification:** `pnpm test` green ; `pnpm typecheck`
+
+- [ ] API-PROJ-013.5 (AGENT): Implement route and mount.
+  **File(s):** `artifacts/api-server/src/routes/projects/my-week.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- my-week.test.ts` 0 failures ; `pnpm typecheck`
+
+- [ ] API-PROJ-013.6 (HUMAN): Review carry-over logic, ISO week calculation, and event. Sign off.
+  **Verification:** Approved; carry-over confirmed; ISO week correct; 0 test failures.
 
 ---
 
-### [ ] API‑PROJ‑017: Project Creation from Template API
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑016, API‑PROJ‑004.  
-**Definition of Done:**
-- `POST /projects/templates/{templateId}/instantiate` – creates a new project with all tasks, milestones, and lane configuration defined in the template blueprint. Accepts overrides for project name, due date, and assignees.
-- `POST /projects/templates/{templateId}/preview` – dry‑run that returns what would be created without persisting.
-Returns 201 with the new project ID. Emits `ProjectCreatedFromTemplate` event.  
-**Integration tests:** instantiate project, verify all tasks and milestones created; preview returns correct structure.  
-**DDD:** Template application logic.
+## [ ] API-PROJ-014: Board & Queue API
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No board lane management or bulk task reorder endpoints. `lane_id` and `position` exist on tasks but no lane CRUD or reorder API.
+**Size:** Large
 
-### Subtasks:
-- [ ] API‑PROJ‑017.1: Add instantiate/preview endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑017.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑017.3: Implement `instantiateProject` and `previewProject` in ProjectTemplateService. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑017.4: Create route, run tests to green. (AGENT)
+**Description:** Implement board lane CRUD (create, list, rename, delete, reorder lanes), bulk task reorder within a lane (efficient positional update), and queue ownership endpoints.
 
----
+**Depends on:** API-PROJ-008 (tasks with `lane_id` and `position`), DB-PROJ-005 (lanes schema), AUTH-008, EVENT-001, ERROR-002.
+**Blocks:** [N/A] — standalone depth feature; downstream UI depends on this.
+**Related Files:** `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/lanes.ts`, `artifacts/api-server/src/services/projects/board-service.ts`, `artifacts/api-server/src/routes/projects/board.ts`
 
-### [ ] API‑PROJ‑018: Time Entry API
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑008, API‑PROJ‑004.  
-**Definition of Done:** Time tracking endpoints:
-- `GET /projects/{projectId}/time‑entries` – list entries with pagination, filter by `task_id`, `user_id`, `date` range, `billable`.
-- `POST /projects/{projectId}/time‑entries` – log hours against a task or project. Body: `{ taskId?, hours, description, date, billable }`.
-- `PATCH /projects/{projectId}/time‑entries/{entryId}` – update hours, description, or billable flag.
-- `DELETE /projects/{projectId}/time‑entries/{entryId}` – hard delete (time entries are financial records; deletion is restricted to admins or recent entries).
-- `POST /projects/{projectId}/time‑entries/{entryId}/approve` – mark as approved.
-Returns `Result<T, DomainError>`.  
-**Integration tests:** create entry, list by task, approve, delete.  
-**DDD:** Captures actual time spent (PROJ‑DOM‑005).
+**Imports / Exports**
+- Imports: `db`, Drizzle `lanes` and `tasks` tables, `DomainEventBus`, `neverthrow`
+- Exports: `LaneRepository`, `BoardService`, `boardRouter`; generated `LaneSchema`, `ReorderTasksSchema`, `ReorderLanesSchema` hooks (via codegen)
 
-### Subtasks:
-- [ ] API‑PROJ‑018.1: Add time entry endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑018.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑018.3: Implement `TimeEntryService` and repository. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑018.4: Create route, run tests to green. (AGENT)
+**Definition of Done**
+- [ ] OpenAPI spec: `GET /api/v1/projects/{projectId}/board` — returns all lanes with their tasks (ordered by `position`).
+- [ ] `POST /api/v1/projects/{projectId}/board/lanes` — create a new lane with `title` and initial `position`.
+- [ ] `PATCH /api/v1/projects/{projectId}/board/lanes/{laneId}` — rename or update lane color.
+- [ ] `DELETE /api/v1/projects/{projectId}/board/lanes/{laneId}` — soft delete lane; tasks in lane move to a default lane (not orphaned).
+- [ ] `POST /api/v1/projects/{projectId}/board/lanes/reorder` — reorder all lanes; body: `{ orderedLaneIds: string[] }`.
+- [ ] `POST /api/v1/projects/{projectId}/board/lanes/{laneId}/tasks/reorder` — bulk reorder tasks within a lane; body: `{ orderedTaskIds: string[] }`.
+- [ ] Reorder uses gap strategy: assigns positions 1000, 2000, 3000, ... from the submitted ordered list.
+- [ ] `LaneSchema`: `id`, `project_id`, `title`, `color`, `position`, `is_default` (boolean).
+- [ ] Queue ownership: `PATCH /api/v1/projects/{projectId}/board/lanes/{laneId}/owner` — assign a user as the queue owner for a lane.
+- [ ] Integration tests and unit tests pass.
+- [ ] `pnpm typecheck` passes.
 
----
+**Out of Scope**
+- WIP limits (future)
+- Swimlanes (future)
+- Cross-project boards (future)
 
-### [ ] API‑PROJ‑019: Budget vs Actual Endpoint
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑004, API‑PROJ‑018.  
-**Definition of Done:**
-- `GET /projects/{projectId}/budget‑vs‑actual` – returns comparison data:
-  - `estimated_hours` vs total logged hours
-  - `budget_hours` vs total logged hours (billable vs non‑billable breakdown)
-  - `budget_amount_cents` vs billable hours × hourly rate (or direct comparison if amounts are tracked)
-  - Burn‑down or burn‑up chart data (hours remaining over time)
-  - Variance percentages and status (on track / over budget / under budget)
-**Integration tests:** verify calculations with known time entries.  
-**DDD:** Financial oversight for project managers.
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+- Never delete the default lane without migrating tasks first
 
-### Subtasks:
-- [ ] API‑PROJ‑019.1: Add budget‑vs‑actual endpoint to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑019.2: Write integration tests with seeded time entries. (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑019.3: Implement calculation logic in `ProjectBudgetService`. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑019.4: Create route, run tests to green. (AGENT)
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/lanes.ts`, `artifacts/api-server/src/services/projects/board-service.ts`, `artifacts/api-server/src/routes/projects/board.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/projects/board.test.ts`, `artifacts/api-server/src/services/projects/__tests__/board-service.test.ts`
+- Documentation: [N/A]
+- Migration files: DB-PROJ-005 (lanes table migration)
 
----
+**Rollback**
+- Granularity: file-level — remove routes, service, repository; revert spec.
+- Halt condition: default lane deleted with tasks orphaned → halt; add default lane guard.
 
-### [ ] API‑PROJ‑020: Project Timeline & Progress Report API
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑004, API‑PROJ‑008, API‑PROJ‑012, EVENT‑001.  
-**Definition of Done:**
-- `GET /projects/{projectId}/timeline` – chronological feed of project events (task completions, milestone achievements, status changes, time entries, comments).
-- `GET /projects/{projectId}/progress‑report` – summary report including:
-  - Overall progress percentage
-  - Tasks completed vs total
-  - Milestone status (completed/upcoming/overdue)
-  - Recent activity (last 7 days)
-  - Budget status summary
-  - Upcoming deadlines
-**Integration tests:** verify feed includes all event types, report calculations correct.  
-**DDD:** Client‑ready and internal progress reporting.
+**Rules to Follow**
+- Default lane: each project has exactly one `is_default = true` lane that cannot be deleted; tasks in deleted lanes move to the default lane.
+- Bulk reorder transaction: update all task positions in a single transaction using `orderedTaskIds.map((id, index) => ({ id, position: (index + 1) * 1000 }))`.
+- Lane positions also use gap strategy: `orderedLaneIds.map((id, index) => ({ id, position: (index + 1) * 1000 }))`.
+- All methods return `Result<T, DomainError>` — no `throw`.
 
-### Subtasks:
-- [ ] API‑PROJ‑020.1: Add timeline and report endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑020.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑020.3: Implement `ProjectTimelineService` and `ProgressReportService`. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑020.4: Create routes, run tests to green. (AGENT)
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/projects/board.test.ts
+pnpm test -- artifacts/api-server/src/services/projects/__tests__/board-service.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- Bulk reorder in transaction: `db.transaction(async (tx) => { await Promise.all(orderedTaskIds.map((id, idx) => tx.update(tasks).set({ position: (idx + 1) * 1000 }).where(and(eq(tasks.id, id), eq(tasks.laneId, laneId), eq(tasks.projectId, projectId))))); })`.
+- Default lane guard for delete: `if (lane.isDefault) return err(new CannotDeleteDefaultLane(lane.id)); const defaultLane = await laneRepo.findDefault(projectId); await taskRepo.moveLane(laneId, defaultLane.id);`.
+- GET board: join lanes + tasks + assignees in one query, group by lane.
+
+**Anti-Patterns**
+- Updating task positions one by one with N separate UPDATE queries (use a transaction with all updates).
+- Deleting a lane without migrating its tasks (orphans tasks with NULL lane_id).
+- Dense positions (1, 2, 3) in initial lane creation (makes future reorder expensive).
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Board lanes are a view-optimisation of the Task aggregate. The `position` field on tasks enables ordered board views.
+- TDD: Unit tests for reorder algorithm, default lane guard, and task migration on lane delete.
+- BDD: "When a lane is deleted, all its tasks are automatically moved to the project's default lane."
+- Deep Module: `BoardService.reorderTasksInLane(laneId, orderedTaskIds, projectId, orgId)` hides gap calculation, transactional bulk update, and position validation.
 
 ---
 
-### [ ] API‑PROJ‑021: Recurring Work Plan Management API
-**Status:** ⏳ Not Started  
-**Depends on:** DB‑PROJ‑009.  
-**Definition of Done:** CRUD for recurring work plans (PM Scheduler):
-- `GET /projects/recurring‑plans` – list all recurring plans with status, next run date.
-- `POST /projects/{projectId}/recurring‑plans` – create a recurring work plan. Body: `{ template_id, frequency_rule (iCal RRULE), is_active }`.
-- `GET /projects/{projectId}/recurring‑plans/{planId}` – plan detail with generation history.
-- `PATCH /projects/{projectId}/recurring‑plans/{planId}` – update frequency, active status, or linked template.
-- `DELETE /projects/{projectId}/recurring‑plans/{planId}` – deactivate (soft delete).
-- `GET /projects/{projectId}/recurring‑plans/{planId}/generation‑log` – paginated list of all generations (when, what tasks were created, status).
-**Integration tests:** create plan, update frequency, list, deactivate.  
-**DDD:** This is the PM Scheduler feature – recurring work owned by the Projects context, not Appointments (PROJ‑DOM‑006).
+### Subtasks
+- [ ] API-PROJ-014.0.25 (AGENT): Read DB-PROJ-005 lanes schema, `tasks.lane_id`, `tasks.position`, and existing gap-position strategy from API-PROJ-007.
+  *No action — pause until fully understood.*
 
-### Subtasks:
-- [ ] API‑PROJ‑021.1: Add recurring plan endpoints to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑021.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑021.3: Implement `RecurringWorkPlanService` and repository. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑021.4: Create routes, run tests to green. (AGENT)
+- [ ] API-PROJ-014.0.5 (AGENT): Research Drizzle bulk UPDATE in transaction and efficient board GET with joins (as of May 2026).
+  *Document findings briefly or note "no changes."*
 
----
+- [ ] API-PROJ-014.0.75 (AGENT): Confirm default lane behavior and queue ownership semantics with user.
+  *If uncertain, ask the user before executing.*
 
-### [ ] API‑PROJ‑022: Recurring Work Generation Endpoint
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑021, API‑PROJ‑017.  
-**Definition of Done:**
-- `POST /projects/{projectId}/recurring‑plans/{planId}/generate` – manually triggers generation of the next set of tasks from the recurring plan.
-- Automatic generation via scheduled job: when `next_run_date` ≤ today, generate tasks from the linked template blueprint, update `last_run_date` and `next_run_date` based on RRULE, and append generated task IDs to `generated_task_list_json`.
-- Duplicate prevention: checks that the same template hasn't already generated tasks for the current period.
-- Emits `RecurringWorkGenerated` domain event with list of created task IDs.
-- Generation log entry created.
-**Integration tests:** manual generation creates expected tasks; duplicate call on same period returns `RecurringWorkDuplicate` error; verify `next_run_date` advances correctly for weekly/monthly rules.  
-**DDD:** Core PM Scheduler behaviour (PROJ‑DOM‑006).
+- [ ] API-PROJ-014.1 (AGENT): Add board/lane spec endpoints to `openapi.yaml`.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
 
-### Subtasks:
-- [ ] API‑PROJ‑022.1: Add generate endpoint to OpenAPI. (AGENT)  
-  **verification:** Spec validates.
-- [ ] API‑PROJ‑022.2: Write integration tests (red). (AGENT)  
-  **verification:** Red.
-- [ ] API‑PROJ‑022.3: Implement generation logic in `RecurringWorkPlanService`. (AGENT)  
-  **verification:** Unit tests pass.
-- [ ] API‑PROJ‑022.4: Create route, run tests to green. (AGENT)
-- [ ] API‑PROJ‑022.5: Implement scheduled job for automatic generation (cron or background worker). (AGENT)  
-  **verification:** Scheduled job runs and generates tasks correctly.
+- [ ] API-PROJ-014.2 (AGENT): Implement `LaneRepository` with `findDefault` and `moveLane`.
+  **File(s):** `lib/db/src/repositories/projects/lanes.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-014.3 (AGENT): Implement `BoardService` with reorder, default lane guard, and queue ownership.
+  **File(s):** `artifacts/api-server/src/services/projects/board-service.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-014.4 (AGENT): Write integration and unit tests.
+  **File(s):** `artifacts/api-server/__tests__/api/projects/board.test.ts`, `artifacts/api-server/src/services/projects/__tests__/board-service.test.ts`
+  **Verification:** `pnpm test` green ; `pnpm typecheck`
+
+- [ ] API-PROJ-014.5 (AGENT): Implement board route and mount.
+  **File(s):** `artifacts/api-server/src/routes/projects/board.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- board.test.ts` 0 failures ; `pnpm typecheck`
+
+- [ ] API-PROJ-014.6 (HUMAN): Review default lane guard, bulk reorder transaction, and queue ownership. Sign off.
+  **Verification:** Approved; default lane cannot be deleted; reorder is transactional; 0 test failures.
 
 ---
 
-### [ ] API‑PROJ‑050: Projects Domain Events Verification
-**Status:** ⏳ Not Started  
-**Depends on:** API‑PROJ‑003, API‑PROJ‑007, API‑PROJ‑011, API‑PROJ‑013, API‑PROJ‑017, API‑PROJ‑021, DB‑SETTINGS‑002.  
-**Definition of Done:** The following domain events are emitted and appear in `audit_logs` via the `AuditEventSubscriber`:
-- `TaskCompleted` – on task status move to `done`
-- `ProjectCompleted` – on project status transition to `completed`
-- `MilestoneCompleted` – on milestone marked complete
-- `MyWeekUpdated` – on planning changes
-- `ProjectCreatedFromTemplate` – on template instantiation
-- `RecurringWorkGenerated` – on recurring plan generation
-- `TimeEntryApproved` – on time entry approval
-Integration test verifies end‑to‑end: perform each action via API → query `audit_logs` → row with correct event name exists.
+## [ ] API-PROJ-015: Composite Project Workspace Endpoints
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟡 Medium
+**Current State:** All project sub-resources (tasks, milestones, board) require separate API calls. No composite "workspace" endpoint for efficient single-request page load.
+**Size:** Medium
 
-### Subtasks:
-- [ ] API‑PROJ‑050.1: Verify all service methods emit the correct events (already implemented; verify). (AGENT)  
-  **verification:** Unit tests for event emission pass.
-- [ ] API‑PROJ‑050.2: Write integration test: complete task → check audit log for `TaskCompleted`. (AGENT)  
-  **verification:** Green.
-- [ ] API‑PROJ‑050.3: Write integration tests for remaining events. (AGENT)  
-  **verification:** Green.
-- [ ] API‑PROJ‑050.4: All integration tests green. (AGENT)
+**Description:** Add composite read endpoints that return a project along with its tasks, milestones, and board in a single response — optimising for the frontend project workspace page load.
+
+**Depends on:** API-PROJ-004 (projects routes), API-PROJ-008 (tasks routes), API-PROJ-012 (milestones routes), API-PROJ-014 (board routes).
+**Blocks:** [N/A] — read-only aggregation layer.
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/projects/workspace.ts`, `artifacts/api-server/src/services/projects/workspace-service.ts`
+
+**Imports / Exports**
+- Imports: `ProjectService`, `TaskService`, `MilestoneService`, `BoardService`
+- Exports: `WorkspaceService`, `workspaceRouter`; generated `ProjectWorkspaceSchema` hook (via codegen)
+
+**Definition of Done**
+- [ ] OpenAPI spec: `GET /api/v1/projects/{projectId}/workspace` — returns a single response with `{ project, board, milestones, recentActivity }`.
+- [ ] `GET /api/v1/projects/{projectId}/workspace/summary` — lightweight summary: `{ project, openTaskCount, completedTaskCount, overdueMilestoneCount, progress_percent }`.
+- [ ] `ProjectWorkspaceSchema` as a composite schema in spec.
+- [ ] `WorkspaceService.getWorkspace(projectId, orgId)` calls `ProjectService.getProject`, `BoardService.getBoard`, `MilestoneService.listMilestones` in parallel with `Promise.all`.
+- [ ] Response time target: < 200ms (documented, not enforced — note in spec).
+- [ ] Integration tests: GET workspace (all sub-views populated), GET summary, 404 on unknown project, 401.
+- [ ] `pnpm typecheck` passes.
+
+**Out of Scope**
+- Mutations via workspace endpoint (write through individual sub-resource endpoints)
+- Real-time workspace updates (WebSocket — future task)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/projects/workspace.ts`, `artifacts/api-server/src/services/projects/workspace-service.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/projects/workspace.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — remove workspace route and service.
+- Halt condition: workspace endpoint takes > 500ms consistently in tests → profile and add query optimisations.
+
+**Rules to Follow**
+- `WorkspaceService` is a pure aggregation layer — no business logic, no state mutation.
+- All sub-service calls in `Promise.all` — never sequential (minimise latency).
+- `summary` endpoint calculates counts via SQL aggregate queries, not application-level counting.
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/projects/workspace.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- Parallel service calls: `const [project, board, milestones] = await Promise.all([ projectService.getProject(projectId, orgId), boardService.getBoard(projectId, orgId), milestoneService.listMilestones(projectId, orgId, { limit: 50 }) ])`.
+- Result unwrapping: use `neverthrow` `combine` or manual `isErr` checks on each result before assembling response.
+
+**Anti-Patterns**
+- Sequential service calls (creates latency proportional to number of sub-services).
+- Duplicating business logic in `WorkspaceService` (it should only aggregate, not enforce domain rules).
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: `WorkspaceService` is an Application Service (not a Domain Service) — it orchestrates multiple domain services without containing domain logic.
+- TDD: Integration tests verify the composite response shape.
+- BDD: "When the project workspace is loaded, the response includes the project, all board lanes with tasks, and upcoming milestones in a single request."
+- Deep Module: `WorkspaceService.getWorkspace(projectId, orgId)` hides parallel fetching, Result aggregation, and response shaping.
+
+---
+
+### Subtasks
+- [ ] API-PROJ-015.0.25 (AGENT): Read all existing project sub-service interfaces before designing the aggregation.
+  *No action — pause until fully understood.*
+
+- [ ] API-PROJ-015.1 (AGENT): Add `ProjectWorkspace` and `ProjectWorkspaceSummary` schemas + endpoints to `openapi.yaml`.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
+
+- [ ] API-PROJ-015.2 (AGENT): Implement `WorkspaceService` with `Promise.all` parallel aggregation.
+  **File(s):** `artifacts/api-server/src/services/projects/workspace-service.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-015.3 (AGENT): Write integration tests (workspace shape, summary counts, 404, 401).
+  **File(s):** `artifacts/api-server/__tests__/api/projects/workspace.test.ts`
+  **Verification:** `pnpm test -- workspace.test.ts` green ; `pnpm typecheck`
+
+- [ ] API-PROJ-015.4 (AGENT): Implement workspace route and mount.
+  **File(s):** `artifacts/api-server/src/routes/projects/workspace.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- workspace.test.ts` 0 failures ; `pnpm typecheck`
+
+- [ ] API-PROJ-015.5 (HUMAN): Review parallel aggregation, response shape, and summary counts. Sign off.
+  **Verification:** Approved; 0 failures; no sequential calls.
+
+---
+
+## [ ] API-PROJ-016: Project Templates – CRUD & Versioning
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No project template endpoints exist. Users cannot create or manage reusable project structures.
+**Size:** Large
+
+**Description:** Implement project template CRUD with versioning and soft delete. Templates define a reusable project structure (default lanes, default tasks, milestone schema) without creating live projects.
+
+**Depends on:** DB-PROJ-006 (project_templates + template_versions schema), AUTH-008, EVENT-001, ERROR-002.
+**Blocks:** API-PROJ-017 (template instantiation reads templates).
+**Related Files:** `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/templates.ts`, `artifacts/api-server/src/services/projects/template-service.ts`, `artifacts/api-server/src/routes/projects/templates.ts`
+
+**Imports / Exports**
+- Imports: `db`, Drizzle `projectTemplates`, `templateVersions` tables, `DomainEventBus`, `neverthrow`
+- Exports: `TemplateRepository`, `TemplateService`, `templatesRouter`; generated `ProjectTemplateSchema`, `CreateProjectTemplateSchema` hooks (via codegen)
+
+**Definition of Done**
+- [ ] OpenAPI spec: `GET /api/v1/project-templates`, `POST`, `GET /{templateId}`, `PATCH /{templateId}`, `DELETE /{templateId}` (soft).
+- [ ] `POST /api/v1/project-templates/{templateId}/versions` — create a new version snapshot of the template definition.
+- [ ] `GET /api/v1/project-templates/{templateId}/versions` — list all versions (paginated).
+- [ ] `ProjectTemplateSchema`: `title`, `description`, `default_lanes: LaneDefinition[]`, `default_tasks: TaskDefinition[]`, `default_milestones: MilestoneDefinition[]`, `is_public` (org-level sharing), `version` (integer, auto-incremented on definition change).
+- [ ] `TemplateRepository`: `findById`, `findByOrg` (with `is_public` filter), `create`, `update`, `softDelete`, `createVersion`, `listVersions`.
+- [ ] `TemplateService`: `listTemplates`, `getTemplate`, `createTemplate`, `updateTemplate` (auto-increments `version`), `deleteTemplate`, `createVersion`, `listVersions`. All return `Result<T, DomainError>`.
+- [ ] `updateTemplate` auto-increments `version` and creates a version snapshot.
+- [ ] Integration tests and unit tests pass.
+- [ ] `pnpm typecheck` passes.
+
+**Out of Scope**
+- Template marketplace (cross-org sharing — future)
+- Template import/export
+- Project instantiation from template (API-PROJ-017)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `lib/db/src/repositories/projects/templates.ts`, `artifacts/api-server/src/services/projects/template-service.ts`, `artifacts/api-server/src/routes/projects/templates.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/projects/templates.test.ts`, `artifacts/api-server/src/services/projects/__tests__/template-service.test.ts`
+- Documentation: [N/A]
+- Migration files: DB-PROJ-006 (project_templates, template_versions tables)
+
+**Rollback**
+- Granularity: file-level — remove routes, service, repository; revert spec.
+- Halt condition: version counter not incrementing on update → halt and fix `updateTemplate`.
+
+**Rules to Follow**
+- `version` is an integer auto-incremented by the service on each `updateTemplate` call — never set by the client.
+- `createVersion` stores a JSON snapshot of the full template definition at the current `version`.
+- Soft delete: `deleted_at` column; `findByOrg` always filters `WHERE deleted_at IS NULL`.
+- `is_public` allows any user in the same organization to instantiate the template (read-only access to public templates for non-owners).
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/projects/templates.test.ts
+pnpm test -- artifacts/api-server/src/services/projects/__tests__/template-service.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- Auto-version on update: `db.transaction(async (tx) => { const updated = await tx.update(projectTemplates).set({ ...dto, version: sql`${projectTemplates.version} + 1` }).where(...).returning(); await tx.insert(templateVersions).values({ templateId: updated.id, version: updated.version, definition: JSON.stringify(dto) }); return updated; })`.
+- Version snapshot: `definition` column is JSONB — stores `{ lanes, tasks, milestones }` at the time of the version creation.
+
+**Anti-Patterns**
+- Storing template versions in a separate file or outside the DB (loses history on schema change).
+- Allowing client to set the `version` field directly.
+- Missing soft delete filter (exposes deleted templates to list queries).
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Templates are an independent aggregate — they define a project structure without being a project. Versioning enables safe template evolution.
+- TDD: Unit tests for auto-version increment, version snapshot creation, and soft delete filter.
+- BDD: "When a template is updated, a version snapshot is automatically created and the version number is incremented."
+- Deep Module: `TemplateService.updateTemplate(id, dto, orgId)` hides version increment, snapshot creation, and soft delete check.
+
+---
+
+### Subtasks
+- [ ] API-PROJ-016.0.25 (AGENT): Read DB-PROJ-006 schema (project_templates, template_versions) and versioning strategy.
+  *No action — pause until fully understood.*
+
+- [ ] API-PROJ-016.0.5 (AGENT): Research Drizzle `sql` template literal for atomic version increment and JSONB column storage (as of May 2026).
+  *Document findings briefly or note "no changes."*
+
+- [ ] API-PROJ-016.1 (AGENT): Add template spec endpoints to `openapi.yaml`.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
+
+- [ ] API-PROJ-016.2 (AGENT): Implement `TemplateRepository` with version snapshot creation.
+  **File(s):** `lib/db/src/repositories/projects/templates.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-016.3 (AGENT): Implement `TemplateService` with auto-version and soft delete.
+  **File(s):** `artifacts/api-server/src/services/projects/template-service.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-016.4 (AGENT): Write integration and unit tests.
+  **File(s):** `artifacts/api-server/__tests__/api/projects/templates.test.ts`, `artifacts/api-server/src/services/projects/__tests__/template-service.test.ts`
+  **Verification:** `pnpm test` green ; `pnpm typecheck`
+
+- [ ] API-PROJ-016.5 (AGENT): Implement templates route and mount.
+  **File(s):** `artifacts/api-server/src/routes/projects/templates.ts`, `artifacts/api-server/src/routes/index.ts`
+  **Verification:** `pnpm test -- templates.test.ts` 0 failures ; `pnpm typecheck`
+
+- [ ] API-PROJ-016.6 (HUMAN): Review versioning strategy, soft delete filter, and `is_public` access control. Sign off.
+  **Verification:** Approved; version auto-increments; soft delete filters; 0 test failures.
+
+---
+
+## [ ] API-PROJ-017: Project Creation from Template
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** No template instantiation endpoint. Templates exist (API-PROJ-016) but cannot be used to create projects.
+**Size:** Large
+
+**Description:** Implement template instantiation — creating a live project (with lanes, tasks, milestones) from a template definition — including a dry-run preview mode and the `ProjectCreatedFromTemplate` domain event.
+
+**Depends on:** API-PROJ-016 (templates must exist), API-PROJ-003 (ProjectService creates the project), API-PROJ-007 (TaskService creates tasks), API-PROJ-011 (MilestoneService creates milestones), API-PROJ-014 (BoardService creates lanes), DB-PROJ-001..DB-PROJ-006.
+**Blocks:** [N/A] — terminal task in PROJECTS-DEPTH.
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/projects/template-instantiation-service.ts`, `artifacts/api-server/src/routes/projects/templates.ts`
+
+**Imports / Exports**
+- Imports: `TemplateService`, `ProjectService`, `TaskService`, `MilestoneService`, `BoardService`, `DomainEventBus`, `neverthrow`
+- Exports: `TemplateInstantiationService`; instantiation route added to `templatesRouter`
+
+**Definition of Done**
+- [ ] OpenAPI spec: `POST /api/v1/project-templates/{templateId}/instantiate` with `CreateProjectFromTemplateRequestBody`: `{ name, ownerId, startDate, dryRun?: boolean }`.
+- [ ] `dryRun: true` — returns a preview `{ wouldCreate: { project, lanes, tasks, milestones } }` without writing to the database.
+- [ ] `dryRun: false` (default) — creates the project and all child resources atomically in a single transaction.
+- [ ] Instantiation: creates project, lanes (from `default_lanes`), tasks (from `default_tasks`, mapped to created lane IDs), milestones (from `default_milestones`).
+- [ ] Date offset: if template task has `due_date_offset_days` (e.g., +7), calculate `dueDate = startDate + offset_days`.
+- [ ] `ProjectCreatedFromTemplate` event emitted: `{ projectId, templateId, templateVersion, orgId }`.
+- [ ] Access control: user must have access to the template (own it or `is_public = true`) and have permission to create projects.
+- [ ] Integration tests and unit tests pass.
+- [ ] `pnpm typecheck` passes.
+
+**Out of Scope**
+- Template variable substitution (e.g., `{{client_name}}` in task titles — future)
+- Async template instantiation for large templates
+- Template versioning during instantiation (always uses latest version unless `version` param specified — document this)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`
+- Never modify: `pnpm-workspace.yaml`, root `tsconfig.json`, `tsconfig.base.json`, `.replit`
+- Never commit: `.env*`, credentials, secrets
+- Never allow instantiation of a template from another organization (unless `is_public = true`)
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/projects/template-instantiation-service.ts`, `artifacts/api-server/src/routes/projects/templates.ts`
+- Tests added/updated in: `artifacts/api-server/__tests__/api/projects/template-instantiation.test.ts`, `artifacts/api-server/src/services/projects/__tests__/template-instantiation-service.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — remove instantiation route and service.
+- Halt condition: partial project created on transaction failure (some lanes but no tasks) → halt; ensure entire instantiation is wrapped in a single transaction.
+
+**Rules to Follow**
+- Entire instantiation (project + lanes + tasks + milestones) in a single DB transaction. If any step fails, roll back everything.
+- `dryRun` mode: compute the full instantiation preview in application code without any DB writes.
+- Date offset calculation: `const dueDate = startDate ? addDays(new Date(startDate), task.dueDateOffsetDays ?? 0) : undefined`.
+- `templateId` and `templateVersion` recorded on the project for audit trail.
+- All methods return `Result<T, DomainError>` — no `throw`.
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm test -- artifacts/api-server/__tests__/api/projects/template-instantiation.test.ts
+pnpm test -- artifacts/api-server/src/services/projects/__tests__/template-instantiation-service.test.ts
+pnpm typecheck
+```
+
+**Advanced Code Patterns**
+- Transactional instantiation: `db.transaction(async (tx) => { const project = await projectRepo.create(tx, projectDto); const laneIdMap = new Map(); for (const laneDef of template.defaultLanes) { const lane = await laneRepo.create(tx, { ...laneDef, projectId: project.id }); laneIdMap.set(laneDef.tempId, lane.id); } await Promise.all(template.defaultTasks.map(taskDef => taskRepo.create(tx, { ...taskDef, projectId: project.id, laneId: laneIdMap.get(taskDef.tempLaneId), dueDate: startDate ? addDays(startDate, taskDef.dueDateOffsetDays ?? 0) : null }))); await Promise.all(template.defaultMilestones.map(msDef => milestoneRepo.create(tx, { ...msDef, projectId: project.id, dueDate: startDate ? addDays(startDate, msDef.dueDateOffsetDays ?? 0) : null }))); return project; })`.
+- Dry-run: `if (dryRun) return ok({ wouldCreate: { project: projectDto, lanes: laneCreates, tasks: taskCreates, milestones: milestoneCreates } })` — no DB calls.
+- Lane ID mapping: template tasks reference `tempLaneId` (a template-internal identifier); real lane IDs are assigned during instantiation and mapped via `laneIdMap`.
+
+**Anti-Patterns**
+- Non-transactional instantiation (partial project created on error — cannot be easily cleaned up).
+- Dry-run that hits the database (defeats the purpose of a preview).
+- Missing `laneIdMap` (tasks assigned to template lane IDs rather than real DB lane IDs).
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Template instantiation is a domain operation that transforms a Template aggregate into a new Project aggregate with all child entities. `ProjectCreatedFromTemplate` is a domain event.
+- TDD: Unit tests for date offset calculation, dry-run preview (no DB calls), lane ID mapping, and transactional rollback.
+- BDD: "When a project is created from a template with dryRun: true, no data is written to the database, and the preview shows all lanes, tasks, and milestones that would be created."
+- Deep Module: `TemplateInstantiationService.instantiate(templateId, dto, orgId)` hides transaction, lane ID mapping, date offset calculation, and event emission.
+
+---
+
+### Subtasks
+- [ ] API-PROJ-017.0.25 (AGENT): Read all service interfaces (`ProjectService`, `TaskService`, `MilestoneService`, `BoardService`, `TemplateService`) and understand instantiation dependencies.
+  *No action — pause until fully understood.*
+
+- [ ] API-PROJ-017.0.5 (AGENT): Research `date-fns` `addDays`, Drizzle transactional multi-entity create, and `tempId` → real ID mapping pattern (as of May 2026).
+  *Document findings briefly or note "no changes."*
+
+- [ ] API-PROJ-017.0.75 (AGENT): Confirm how `dryRun` preview mode should handle lane ID mapping (template IDs vs real IDs) with user.
+  *If uncertain, ask the user before executing.*
+
+- [ ] API-PROJ-017.1 (AGENT): Add instantiation spec endpoint to `openapi.yaml`.
+  **File(s):** `lib/api-spec/openapi.yaml`
+  **Verification:** `pnpm codegen` ; `pnpm typecheck`
+
+- [ ] API-PROJ-017.2 (AGENT): Implement `TemplateInstantiationService` (dry-run + transactional instantiation).
+  **File(s):** `artifacts/api-server/src/services/projects/template-instantiation-service.ts`
+  **Verification:** `pnpm typecheck`
+
+- [ ] API-PROJ-017.3 (AGENT): Write integration and unit tests (including dry-run and partial failure rollback).
+  **File(s):** `artifacts/api-server/__tests__/api/projects/template-instantiation.test.ts`, `artifacts/api-server/src/services/projects/__tests__/template-instantiation-service.test.ts`
+  **Verification:** `pnpm test` green ; `pnpm typecheck`
+
+- [ ] API-PROJ-017.4 (AGENT): Add instantiation route to templates router.
+  **File(s):** `artifacts/api-server/src/routes/projects/templates.ts`
+  **Verification:** `pnpm test -- template-instantiation.test.ts` 0 failures ; `pnpm typecheck`
+
+- [ ] API-PROJ-017.5 (HUMAN): Review transactional instantiation, dry-run, and date offset. Sign off.
+  **Verification:** Approved; transaction confirmed; dry-run writes nothing; lane ID mapping correct; date offsets applied; `ProjectCreatedFromTemplate` event emitted; 0 test failures.
 
 ---

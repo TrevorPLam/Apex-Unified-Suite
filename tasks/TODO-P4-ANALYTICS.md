@@ -1,213 +1,437 @@
 # TODO-P4-ANALYTICS.md – Phase 4 Analytics Context
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
-
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
-
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This file covers the Analytics and Reporting backend. All endpoints require admin authentication (firm JWT with admin role). The service encapsulates complex aggregation logic behind a simple interface.
+This file covers the Analytics and Reporting backend. All endpoints require admin authentication. The service encapsulates complex aggregation logic, query caching, and multi-domain metric calculation behind a simple interface.
 
 ---
 
-## Analytics Context
-
-*This section builds the Analytics and Reporting backend. All endpoints require admin authentication (firm JWT with admin role). The service encapsulates complex aggregation logic behind a simple interface.*
-
 ### [ ] API‑ANALYTICS‑001: Analytics – Expand OpenAPI Spec
 **Status:** ⏳ Not Started  
-**Depends on:** DB‑ANALYTICS‑001, DOMAIN‑003 (analytics feature file).  
-**Definition of Done:** OpenAPI spec adds `analytics` tag and paths with comprehensive schemas:  
-- `GET /analytics/reports` – list saved reports with pagination, filter by type, status  
-- `POST /analytics/reports` – create new saved report (name, description, query_config)  
-- `GET /analytics/reports/{reportId}` – get report metadata and latest run data  
-- `POST /analytics/reports/{reportId}/run` – execute report on‑demand (async)  
-- `GET /analytics/reports/{reportId}/data` – get report results with pagination  
-- `GET /analytics/dashboards/{dashboardId}` – get dashboard configuration and data  
-- `GET /analytics/metrics/leads` – lead funnel metrics (by stage, time range)  
-- `GET /analytics/metrics/projects` – project progress metrics  
-- `GET /analytics/metrics/finance` – financial summaries (revenue, expenses)  
-- `GET /analytics/metrics/portal` – portal usage statistics  
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No analytics endpoints exist in the OpenAPI spec. `lib/api-spec/openapi.yaml` has no `analytics` tag. Admins cannot create, run, or retrieve analytics reports via API.  
+**Size:** Small  
 
-All endpoints require admin authentication (firm JWT with admin role).  
-Schemas: `AnalyticsReport`, `AnalyticsQuery`, `DashboardConfig`, `MetricsResponse`.  
-Examples included for each endpoint.  
-**Performance:** All query endpoints support date range filtering and pagination with default limits.
+**Description:** Extend the OpenAPI spec with analytics report management, on-demand report execution, and metrics endpoints, enabling codegen to produce typed hooks and Zod validators.  
 
-**Subtasks:**
-- [ ] API‑ANALYTICS‑001.1: Add analytics tag and all paths to OpenAPI with admin auth annotation. (AGENT) – `lib/api‑spec/openapi.yaml`  
-  **verification:** Spec validates; admin auth requirements clearly marked.
-- [ ] API‑ANALYTICS‑001.2: Define comprehensive schemas for reports, queries, and metrics. (AGENT)  
-  **verification:** Generated types compile without errors.
-- [ ] API‑ANALYTICS‑001.3: Add example request/response bodies for all endpoints. (AGENT)  
-  **verification:** Swagger UI renders examples correctly.
-- [ ] API‑ANALYTICS‑001.4: Run `pnpm codegen` and `pnpm typecheck`. (HUMAN/AGENT)  
-  **verification:** No type errors; generated hooks available.
+**Depends on:** DB‑ANALYTICS‑001, DOMAIN‑003 (analytics feature file)  
+**Blocks:** API‑ANALYTICS‑002 (integration tests require spec)  
+**Related Files:** `lib/api-spec/openapi.yaml`  
+
+**Imports / Exports**
+- Imports: [N/A — YAML spec file]
+- Exports: `analytics` tag and paths in `lib/api-spec/openapi.yaml`; generated types via codegen
+
+**Definition of Done**
+- [ ] OpenAPI spec adds `analytics` tag with all paths
+- [ ] `GET /analytics/reports` — list with pagination, filter by type/status
+- [ ] `POST /analytics/reports` — create saved report with `query_config`
+- [ ] `GET /analytics/reports/{reportId}` — report metadata and latest run data
+- [ ] `POST /analytics/reports/{reportId}/run` — execute report on-demand (async job)
+- [ ] `GET /analytics/reports/{reportId}/data` — paginated report results
+- [ ] `GET /analytics/metrics/leads` — lead funnel metrics by stage and time range
+- [ ] `GET /analytics/metrics/projects` — project progress metrics
+- [ ] `GET /analytics/metrics/finance` — financial summaries (revenue, expenses)
+- [ ] `GET /analytics/metrics/portal` — portal usage statistics
+- [ ] All endpoints annotated with admin authentication requirement
+- [ ] Schemas: `AnalyticsReport`, `AnalyticsQuery`, `MetricsResponse` in `components/schemas`
+- [ ] `pnpm --filter @workspace/api-spec run codegen` succeeds with no errors
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Real-time streaming analytics
+- Scheduled report execution (P5+)
+- User-level analytics (admin-only scope)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Do not hand-edit generated files — always run `codegen` after spec changes
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`
+- Tests added/updated in: [N/A]
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: function-level — revert analytics tag/paths from `openapi.yaml`; re-run codegen
+- Halt condition: if `codegen` fails or produces type errors, stop and fix spec
+
+**Rules to Follow**
+- All endpoints require admin authentication annotation
+- All query endpoints must document date range filtering and pagination parameters
+- Async report execution must return a job ID (not block the request)
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Reuse `PaginationParams` and `DateRange` parameter components from existing spec
+- Use `AsyncJobResponse` schema for the async report run endpoint
+
+**Anti-Patterns**
+- Missing admin auth annotation — security gap
+- Inline schemas instead of `$ref` — breaks codegen deduplication
+- Synchronous report execution endpoint — causes timeout on large datasets
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Analytics is a read-only projection of domain events; the spec exposes a clean query interface
+- TDD: Spec must be complete before API‑ANALYTICS‑002 tests can be written
+- BDD: "As an admin, I can create a leads funnel report and execute it on-demand"
+- Deep Module: The spec hides complex aggregation, caching, and async execution behind simple REST endpoints
+
+---
+
+### Subtasks
+
+- [ ] API‑ANALYTICS‑001.0.25 (AGENT): Read this task, `lib/api-spec/openapi.yaml` (existing structure), and `DB‑ANALYTICS‑001` schema in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑ANALYTICS‑001.0.5 (AGENT): Research OpenAPI 3.0 patterns for analytics/reporting APIs with async job execution (May 2026).  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑ANALYTICS‑001.0.75 (AGENT): Reason about `AnalyticsQuery` schema shape. Default: JSON object with `filters`, `groupBy`, `dateRange`, `metrics` fields.  
+  *If uncertain, use that shape.*
+
+- [ ] API‑ANALYTICS‑001.1 (AGENT): Add analytics tag and all paths/schemas to OpenAPI with admin auth annotations.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Spec validates; admin auth requirements clearly marked.
+
+- [ ] API‑ANALYTICS‑001.2 (AGENT): Run `pnpm --filter @workspace/api-spec run codegen` and `pnpm run typecheck`.  
+  **File(s):** [N/A — generated files]  
+  **Verification:** No type errors; generated types available.
+
+- [ ] API‑ANALYTICS‑001.3 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
 
 ---
 
 ### [ ] API‑ANALYTICS‑002: Analytics – Integration Tests (TDD Red)
 **Status:** ⏳ Not Started  
-**Depends on:** API‑ANALYTICS‑001, TEST‑INFRA‑001, DB‑MIGRATE‑ALL.  
-**Definition of Done:** `artifacts/api-server/__tests__/api/analytics/analytics.test.ts` contains failing tests for:  
-- `POST /analytics/reports` → 201, report saved with query_config  
-- `GET /analytics/reports` → 200, pagination, filter by type  
-- `POST /analytics/reports/{id}/run` → 200, async job queued  
-- `GET /analytics/reports/{id}/data` → 200, paginated results  
-- `GET /analytics/metrics/leads` → 200, funnel data by stage  
-- `GET /analytics/metrics/projects` → 200, progress summaries  
-- `GET /analytics/metrics/finance` → 200, financial summaries  
-- `GET /analytics/metrics/portal` → 200, portal usage statistics  
-- Unauthorized access (non‑admin) → 403 `InsufficientPermissions`  
-- Invalid date range → 400 `InvalidDateRange`  
-- Report not found → 404 `ReportNotFound`
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No analytics integration tests exist. `artifacts/api-server/src/__tests__/api/analytics/` does not exist. All analytics endpoint tests are blocked until API‑ANALYTICS‑001 spec is complete.  
+**Size:** Small  
 
-**Subtasks:**
-- [ ] API‑ANALYTICS‑002.1: Write integration tests for all analytics endpoints. (AGENT)  
-  **verification:** Test suite compiles and runs, all red (no routes exist).
+**Description:** Write failing integration tests for all analytics endpoints (TDD red phase), including report CRUD, async execution, paginated results, and per-domain metric endpoints.  
+
+**Depends on:** API‑ANALYTICS‑001, TEST‑INFRA‑001, DB‑MIGRATE‑ALL  
+**Blocks:** API‑ANALYTICS‑003 (service must satisfy these tests)
+**Related Files:** `artifacts/api-server/src/__tests__/api/analytics/analytics.test.ts`  
+
+**Imports / Exports**
+- Imports: `supertest`; `createTestServer()`, `generateTestToken()` from test utilities
+- Exports: [N/A — test file]
+
+**Definition of Done**
+- [ ] `artifacts/api-server/src/__tests__/api/analytics/analytics.test.ts` exists with failing tests for:
+- [ ] `POST /analytics/reports` → 201, report saved with `query_config`
+- [ ] `GET /analytics/reports` → 200, paginated results with filter support
+- [ ] `POST /analytics/reports/{id}/run` → 200, async job ID returned
+- [ ] `GET /analytics/reports/{id}/data` → 200, paginated results
+- [ ] `GET /analytics/metrics/leads` → 200, funnel data by stage
+- [ ] `GET /analytics/metrics/projects` → 200, progress summaries
+- [ ] `GET /analytics/metrics/finance` → 200, financial summaries
+- [ ] `GET /analytics/metrics/portal` → 200, portal usage statistics
+- [ ] Unauthorized access (non-admin) → 403 `InsufficientPermissions`
+- [ ] Invalid date range → 400 `InvalidDateRange`
+- [ ] Report not found → 404 `ReportNotFound`
+- [ ] Test suite compiles and runs with all tests red
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Testing report scheduling
+- Performance or load testing
+- End-to-end UI testing
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Tests must always use `TEST_DATABASE_URL`
+
+**Output Artifacts**
+- Code changes in: [N/A]
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/analytics/analytics.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete `artifacts/api-server/src/__tests__/api/analytics/`; no DB state changes
+- Halt condition: if test file fails to compile, stop and fix TypeScript errors
+
+**Rules to Follow**
+- Admin token required for all analytics endpoint tests
+- Seed domain data (leads, projects, finance records) for metric endpoint tests
+- Tests must be independent via `afterEach` teardown
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- analytics.test.ts
+# Expected: all tests red
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Seed multi-domain data (CRM, projects, finance) for metrics tests in `beforeAll`
+- Verify async job ID returned — not the result itself
+
+**Anti-Patterns**
+- Writing implementation before tests — violates TDD red phase
+- Missing cross-domain metric test coverage
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: [N/A]
+- TDD: This IS the red phase; all tests must fail before implementation begins
+- BDD: "As an admin, I can run a leads funnel report and see data grouped by stage"
+- Deep Module: [N/A]
+
+---
+
+### Subtasks
+
+- [ ] API‑ANALYTICS‑002.0.25 (AGENT): Read this task, API‑ANALYTICS‑001 spec, and `TEST‑INFRA‑001` test harness documentation in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑ANALYTICS‑002.0.5 (AGENT): Research Vitest + Supertest patterns for analytics APIs with async job returns (May 2026).  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑ANALYTICS‑002.0.75 (AGENT): Reason about test data strategy for multi-domain metric endpoints. Default: seed minimal records per domain in `beforeAll`.  
+  *If uncertain, use direct DB seed approach.*
+
+- [ ] API‑ANALYTICS‑002.1 (AGENT): Write all integration tests for analytics endpoints. Tests must all fail (red phase).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/analytics/analytics.test.ts`  
+  **Verification:** `pnpm --filter @workspace/api-server test -- analytics.test.ts` compiles and runs; all tests red.
+
+- [ ] API‑ANALYTICS‑002.2 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
 
 ---
 
 ### [ ] API‑ANALYTICS‑003: Analytics – Service & Repository (Deep Module)
 **Status:** ⏳ Not Started  
-**Depends on:** DB‑MIGRATE‑ALL, ERROR‑002 (Analytics errors), ARCH‑001.2 (BaseRepository).  
-**Definition of Done:**  
-- `lib/db/src/repositories/analytics.ts` exports `AnalyticsRepository` extending `BaseRepository<AnalyticsReport>` with soft delete support.  
-- `artifacts/api-server/src/services/analytics/analytics-service.ts` exports `AnalyticsService` with methods:  
-  - `createReport(dto)` – validates query_config, stores report  
-  - `executeReport(reportId, parameters)` – runs query against database, caches results  
-  - `getReportData(reportId, pagination)` – returns cached or fresh results  
-  - `getLeadsFunnel(dateRange)` – aggregates lead data by stage  
-  - `getProjectsProgress(dateRange)` – calculates project completion metrics  
-  - `getFinanceSummary(dateRange)` – summarizes invoices and payments  
-  - `getPortalUsage(dateRange)` – tracks portal activity  
-- All queries use organization‑scoped data aggregation  
-- Methods return `Either<DomainError, Result>`  
-- **Caching:** Report results cached for 15 minutes to improve performance  
-**Deep Module:** Service encapsulates complex aggregation logic, query optimization, and caching strategy behind simple interface
+**Actor:** MIXED  
+**Priority:** 🔴 Critical  
+**Current State:** No `AnalyticsRepository` or `AnalyticsService` exists. `lib/db/src/repositories/analytics.ts` and `artifacts/api-server/src/services/analytics/` do not exist. All analytics integration tests are failing.  
+**Size:** Large  
 
-**Rules to Follow:**
-- All aggregation queries must be organization-scoped
-- Cache invalidation on data changes
-- Query optimization for large datasets
-- Result pagination for performance
-- Admin authorization required
+**Description:** Implement `AnalyticsRepository` and a deep `AnalyticsService` encapsulating complex multi-domain aggregation, 15-minute result caching, and async report execution behind a simple seven-method interface.  
 
-**Advanced Code Patterns:**
-- Complex SQL aggregation patterns
-- Multi-level caching strategy
-- Query result optimization
-- Organization data isolation
+**Depends on:** DB‑MIGRATE‑ALL, ERROR‑002, ARCH‑001.2 (BaseRepository)  
+**Blocks:** API‑ANALYTICS‑004 (routes require service)
+**Related Files:** `lib/db/src/repositories/analytics.ts`, `artifacts/api-server/src/services/analytics/analytics-service.ts`  
 
-**Anti-Patterns:**
-- Global data aggregation (no scoping)
-- Missing pagination on large datasets
-- Inefficient queries (N+1 problems)
-- Missing cache invalidation
+**Imports / Exports**
+- Imports: `BaseRepository` from `@workspace/db`; `drizzle-orm` (eq, and, gte, lte, sql); `AnalyticsReport` schema type
+- Exports: `AnalyticsRepository` (class), `AnalyticsService` (class), `AnalyticsQuery` (type), `MetricsResponse` (type)
 
-**Subtasks:**
-- [ ] API‑ANALYTICS‑003.1: Implement `AnalyticsRepository` with soft delete. (AGENT) – `lib/db/src/repositories/analytics.ts`  
-  **verification:** Unit tests for repository pass.
-- [ ] API‑ANALYTICS‑003.2: Implement `AnalyticsService` with aggregation logic and caching. (AGENT) – `services/analytics/analytics-service.ts`  
-  **verification:** Unit tests with mocked DB pass.
-- [ ] API‑ANALYTICS‑003.3: Write unit tests for all service methods (success + error paths). (AGENT)  
-  **verification:** All tests green.
-- [ ] API‑ANALYTICS‑003.4: Depth refactor check: method count ≤ 8, service encapsulates aggregation complexity, no `throw`. (AGENT)  
-  **verification:** Manual inspection + `pnpm typecheck`.
+**Definition of Done**
+- [ ] `lib/db/src/repositories/analytics.ts` exports `AnalyticsRepository` extending `BaseRepository<AnalyticsReport>` with soft delete
+- [ ] `artifacts/api-server/src/services/analytics/analytics-service.ts` exports `AnalyticsService` with exactly these methods:
+  - [ ] `createReport(dto)` — validates `query_config`, stores report
+  - [ ] `executeReport(reportId, parameters)` — runs query against DB, caches results for 15 min
+  - [ ] `getReportData(reportId, pagination)` — returns cached or fresh results
+  - [ ] `getLeadsFunnel(dateRange)` — aggregates lead data by stage (org-scoped)
+  - [ ] `getProjectsProgress(dateRange)` — calculates project completion metrics (org-scoped)
+  - [ ] `getFinanceSummary(dateRange)` — summarises invoices and payments (org-scoped)
+  - [ ] `getPortalUsage(dateRange)` — tracks portal activity (org-scoped)
+- [ ] All queries are organisation-scoped
+- [ ] Result cache uses per-organisation TTL (15 minutes); invalidated on report re-run
+- [ ] All service methods return `Result<T, DomainError>`
+- [ ] Unit tests cover all 7 methods: success paths, invalid config, org isolation, cache hit vs. miss
+- [ ] `pnpm run typecheck` passes with zero errors
 
-**Rules to Follow:**
-- Method count limited to 8 for maintainability
-- Service must encapsulate multiple aggregation concerns
-- All methods return Result<T, DomainError>
-- No exception throwing in service layer
-- Organization scoping enforced in all queries
+**Out of Scope**
+- Real-time aggregation or streaming
+- Scheduled report runs
+- Cross-organisation data aggregation
 
-**Advanced Code Patterns:**
-- Deep module encapsulation
-- Result pattern for error handling
-- Caching strategy implementation
-- Complex aggregation queries
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- All queries must be scoped by `organizationId` — never aggregate global data
 
-**Anti-Patterns:**
-- Shallow service with single aggregation type
-- Exception-based error handling
-- Missing organization scoping
-- Direct database access without abstraction
+**Output Artifacts**
+- Code changes in: `lib/db/src/repositories/analytics.ts`, `artifacts/api-server/src/services/analytics/analytics-service.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/services/analytics/analytics-service.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete `lib/db/src/repositories/analytics.ts` and `artifacts/api-server/src/services/analytics/`; no DB state changes
+- Halt condition: if `pnpm run typecheck` fails or org-isolation tests fail, stop and fix before proceeding
+
+**Rules to Follow**
+- Method count must be ≤ 7 (deep module principle)
+- All aggregation queries must include `WHERE organization_id = $orgId`
+- Cache is per-organisation, keyed by `(orgId, reportId, params)` with 15-minute TTL
+- All methods return `Result<T, DomainError>` — no `throw`
+- Use GROUP BY aggregation instead of N+1 queries for metric endpoints
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-server test -- analytics-service
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Single-query aggregation with `GROUP BY` + `COUNT(*)` for funnel and metrics endpoints
+- `Map<string, { data, expiresAt }>` in-process cache keyed by `(orgId, reportId, paramsHash)`
+- `db.transaction()` for multi-step report creation + initial metadata write
+
+**Anti-Patterns**
+- Global data aggregation without org scoping — data leakage across organisations
+- N+1 queries for metric calculations — use GROUP BY aggregation
+- Missing cache invalidation on re-run — stale data returned
+- Exception throwing in service layer — use Result pattern
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Analytics is a read-model projection; the service reads from multiple bounded contexts but never writes to them
+- TDD: Write unit tests for org isolation and cache hit/miss before implementing queries
+- BDD: "When an admin runs a finance summary for Q1, only their organisation’s data appears"
+- Deep Module: 7 public methods hide complex SQL aggregation, multi-domain data joining, caching, and async job coordination
+
+---
+
+### Subtasks
+
+- [ ] API‑ANALYTICS‑003.0.25 (AGENT): Read this task, `DB‑ANALYTICS‑001` schema, `ARCH‑001.2-IMPL` BaseRepository, and `analytics.test.ts` in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑ANALYTICS‑003.0.5 (AGENT): Research Drizzle ORM multi-table GROUP BY aggregation patterns and in-process caching strategies for ESM Node.js (May 2026).  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑ANALYTICS‑003.0.75 (AGENT): Reason about cache key strategy for metric endpoints. Default: `(orgId, metricType, dateRangeHash)` — simple and avoids key collisions.  
+  *If uncertain, use that approach.*
+
+- [ ] API‑ANALYTICS‑003.1 (AGENT): Implement `AnalyticsRepository` with soft delete.  
+  **File(s):** `lib/db/src/repositories/analytics.ts`  
+  **Verification:** Unit tests against test DB pass.
+
+- [ ] API‑ANALYTICS‑003.2 (AGENT): Implement `AnalyticsService` with all 7 methods, org scoping, and caching.  
+  **File(s):** `artifacts/api-server/src/services/analytics/analytics-service.ts`  
+  **Verification:** Unit tests with mocked repository and cache pass.
+
+- [ ] API‑ANALYTICS‑003.3 (AGENT): Write unit tests for all 7 service methods (success + error + org isolation + cache hit/miss).  
+  **File(s):** `artifacts/api-server/src/__tests__/services/analytics/analytics-service.test.ts`  
+  **Verification:** All tests green.
+
+- [ ] API‑ANALYTICS‑003.4 (AGENT): Verify method count ≤ 7 and no `throw` in service layer.  
+  **File(s):** [N/A — inspection]  
+  **Verification:** `pnpm run typecheck` clean; manual inspection confirms constraints.
+
+- [ ] API‑ANALYTICS‑003.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
 
 ---
 
 ### [ ] API‑ANALYTICS‑004: Analytics – Routes & Green Tests
 **Status:** ⏳ Not Started  
-**Depends on:** API‑ANALYTICS‑003, AUTH‑008, ERROR‑001.  
-**Definition of Done:** Routes wired with admin auth middleware, validation using generated Zod schemas. Integration tests from API‑ANALYTICS‑002 turn green.
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** No analytics routes exist. `artifacts/api-server/src/routes/analytics/` does not exist. Integration tests from API‑ANALYTICS‑002 are all failing (red).  
+**Size:** Small  
 
-**Subtasks:**
-- [ ] API‑ANALYTICS‑004.1: Create analytics routes with admin auth and validation. (AGENT) – `routes/analytics/analytics.ts`  
-  **verification:** Route tests with mocked service pass.
-- [ ] API‑ANALYTICS‑004.2: Add analytics router to main app. (AGENT) – `routes/index.ts`  
-  **verification:** `pnpm typecheck` clean.
-- [ ] API‑ANALYTICS‑004.3: Run integration tests to green. (AGENT)  
-  **verification:** All tests from API‑ANALYTICS‑002 pass.
+**Description:** Wire analytics routes with admin auth middleware and Zod validation, turning the API‑ANALYTICS‑002 integration tests from red to green.  
 
----
+**Depends on:** API‑ANALYTICS‑003 (service), AUTH‑008 (admin auth middleware), ERROR‑001  
+**Blocks:** [N/A — final phase of analytics implementation]
+**Related Files:** `artifacts/api-server/src/routes/analytics/analytics.ts`, `artifacts/api-server/src/routes/index.ts`  
 
-## Progress Tracking
+**Imports / Exports**
+- Imports: `express` (Router); `AnalyticsService`; `adminAuthMiddleware`; generated Zod schemas
+- Exports: `analyticsRouter` (Express Router)
 
-### Overall Status
-**Analytics Context:** [ ] 0/4 parent tasks complete
+**Definition of Done**
+- [ ] `artifacts/api-server/src/routes/analytics/analytics.ts` exports `analyticsRouter` with all 10 endpoints wired
+- [ ] All routes protected by `adminAuthMiddleware`
+- [ ] Request validation uses generated Zod schemas from `lib/api-zod/src/generated/`
+- [ ] Routes delegate to `AnalyticsService` methods
+- [ ] `analyticsRouter` mounted at `/analytics` in `routes/index.ts`
+- [ ] All integration tests from API‑ANALYTICS‑002 pass (green)
+- [ ] `pnpm run typecheck` passes with zero errors
 
-### Context Breakdown
-- **Analytics API:** [ ] 0/1 complete (OpenAPI spec)
-- **Analytics Tests:** [ ] 0/1 complete (integration tests)
-- **Analytics Service:** [ ] 0/1 complete (service & repository)
-- **Analytics Routes:** [ ] 0/1 complete (routes & green tests)
+**Out of Scope**
+- Report scheduling routes (P5+)
+- WebSocket streaming of analytics data
 
-### Dependencies
-- **DB-ANALYTICS-001** enables analytics database operations
-- **DOMAIN-003** provides analytics feature specifications
-- **ERROR-002** enables proper error handling
-- **AUTH-008** enables admin authentication
-- **ARCH-001.2** provides BaseRepository pattern
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
 
-### Next Actions
-- [ ] Start API-ANALYTICS-001.1: Add analytics paths to OpenAPI
-- [ ] Start API-ANALYTICS-002.1: Write integration tests (red)
-- [ ] Start API-ANALYTICS-003.1: Implement AnalyticsRepository
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/routes/analytics/analytics.ts`, `artifacts/api-server/src/routes/index.ts`
+- Tests added/updated in: [N/A — existing tests from API‑ANALYTICS‑002 must turn green]
+- Documentation: [N/A]
+- Migration files: [N/A]
 
-### Verification Commands
+**Rollback**
+- Granularity: file-level — delete `artifacts/api-server/src/routes/analytics/`; revert `routes/index.ts` mount
+- Halt condition: if integration tests do not turn green after route wiring, stop and debug service integration
+
+**Rules to Follow**
+- All analytics routes must be protected by `adminAuthMiddleware`
+- Use generated Zod schemas for validation; do not write custom schemas
+- Use `asyncHandler` wrapper to avoid try/catch in every route handler
+
+**Verification**
 ```bash
-# Analytics verification
-pnpm test -- analytics
-pnpm typecheck
-
-# Service verification
-pnpm test -- analytics-service
-pnpm typecheck
-
-# Routes verification
-pnpm test -- analytics-routes
-pnpm typecheck
+pnpm --filter @workspace/api-server test -- analytics.test.ts
+# Expected: all tests green
+pnpm run typecheck
 ```
 
+**Advanced Code Patterns**
+- Route handlers delegate entirely to `AnalyticsService` — zero business logic in routes
+- `asyncHandler` wrapper for all routes
+
+**Anti-Patterns**
+- Business logic in route handlers — belongs in `AnalyticsService`
+- Missing admin auth middleware — exposes sensitive analytical data
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Routes are the thin API layer of the Analytics bounded context
+- TDD: This is the green phase; routes must make API‑ANALYTICS‑002 tests pass
+- BDD: [N/A]
+- Deep Module: [N/A]
+
 ---
 
-## File Index
+### Subtasks
 
-### Analytics Backend
-- `lib/api-spec/openapi.yaml` - Analytics OpenAPI paths and schemas
-- `artifacts/api-server/src/services/analytics/analytics-service.ts` - Analytics aggregation service
-- `lib/db/src/repositories/analytics.ts` - Analytics repository
-- `routes/analytics/analytics.ts` - Analytics routes
-- `artifacts/api-server/__tests__/api/analytics/analytics.test.ts` - Integration tests
+- [ ] API‑ANALYTICS‑004.0.25 (AGENT): Read this task, `analytics.test.ts`, `AnalyticsService` implementation, and `routes/index.ts` structure in full.  
+  *No action — pause until fully understood.*
 
-### Analytics Components
-- `artifacts/api-server/src/services/analytics/` - Analytics service modules:
-  - `report-service.ts` - Report management
-  - `metrics-service.ts` - Metrics calculation
-  - `cache-service.ts` - Result caching
+- [ ] API‑ANALYTICS‑004.0.5 (AGENT): Confirm `asyncHandler` wrapper pattern is consistent with other analytics routes (May 2026).  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑ANALYTICS‑004.0.75 (AGENT): Reason about the number of route files needed. Default: single `analytics.ts` file for all 10 endpoints to reduce navigation overhead.  
+  *If uncertain, prefer a single file.*
+
+- [ ] API‑ANALYTICS‑004.1 (AGENT): Create analytics routes wired to `AnalyticsService` with admin auth.  
+  **File(s):** `artifacts/api-server/src/routes/analytics/analytics.ts`  
+  **Verification:** Route file compiles; `pnpm run typecheck` clean.
+
+- [ ] API‑ANALYTICS‑004.2 (AGENT): Mount `analyticsRouter` in main router.  
+  **File(s):** `artifacts/api-server/src/routes/index.ts`  
+  **Verification:** `pnpm run typecheck` clean.
+
+- [ ] API‑ANALYTICS‑004.3 (AGENT): Run integration tests from API‑ANALYTICS‑002 to green.  
+  **File(s):** [N/A — run existing tests]  
+  **Verification:** `pnpm --filter @workspace/api-server test -- analytics.test.ts` → all green.
+
+- [ ] API‑ANALYTICS‑004.4 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+## Execution Order
+
+```
+API‑ANALYTICS‑001 (OpenAPI spec + codegen)
+  └─> API‑ANALYTICS‑002 (integration tests, TDD red)
+        └─> API‑ANALYTICS‑003 (service & repository)
+              └─> API‑ANALYTICS‑004 (routes + green tests)
+```

@@ -1,136 +1,230 @@
 # TODO-P4-DASHBOARD.md – Phase 4 Dashboard Aggregation & Frontend
 
-This task document is engineered for 100% agentic coding. The owner of this repository is not a software developer. The owner of this repo has decided to integrate "The Framework" into the agentic task flow to ensure perfect execution. This is a blend of deep module, DDD, TDD, and BDD; purposely leaving these labels in every open task for context injection and agentic steering.
 
-Every parent task should be small in size, and should be broken down into subtasks with direct file paths when applicable.
 
-Each SMALL parent task should have a box to mark complete, a unqiue task ID, and a status indicator.
-
-Each SMALLER subtask should have a box to mark complete, a unique TASK ID related to the parent task ID, and direct file paths when application, and a task description.
-
-Each parent task should have a well reasoned definition of done, out of scope, rules to follow, advanced code patterns, anti-patterns, related files, depends on, imports from/exports to, blocks, verification.
-
-Each subtask/task should direct specfic commands to be utilized through the process, optimized to reduce context usage, swift execution, etc.
-
-This file covers the Dashboard Aggregation endpoint and Frontend implementation strategy. The backend provides aggregated metrics across all bounded contexts, while the frontend implements a component-based dashboard with React Query hooks and responsive bento grid layout.
+This file covers the Dashboard Aggregation endpoint and Frontend implementation. The backend aggregates metrics across all bounded contexts; the frontend uses React Query hooks with a responsive bento grid layout.
 
 ---
-
-## Dashboard Aggregation
 
 ### [ ] API‑DASH‑001: Dashboard Aggregation Endpoint
 **Status:** ⏳ Not Started  
-**Depends on:** All Phase 3 API implementations (CRM, Projects, Finance) for data aggregation.  
-**Definition of Done:** `GET /api/v1/dashboard/aggregate` endpoint that returns aggregated metrics across all bounded contexts for the dashboard:  
-- **CRM metrics:** total leads, leads by stage, conversion rate, active deals count, total deal value  
-- **Projects metrics:** active projects, overall completion percentage, overdue tasks count  
-- **Finance metrics:** total unpaid invoices, monthly revenue, budget utilization percentage  
-- **Appointments metrics:** upcoming appointments, availability utilization rate  
-- **Document metrics:** total documents, pending signature requests  
-- **Portal metrics:** active portal clients, recent activity count  
-- **Time range filtering:** support `period` parameter (7d, 30d, 90d, 1y)  
-- **Organization scoping:** all metrics filtered by authenticated user's organization  
-- **Caching:** 5-minute cache for performance using organization_id + period as cache key  
-**Response format:** `{ crm: {...}, projects: {...}, finance: {...}, appointments: {...}, documents: {...}, portal: {...}, lastUpdated: ISO timestamp }`  
-**Related Files:** `artifacts/api-server/src/services/dashboard/dashboard-service.ts`, `routes/dashboard.ts`
+**Actor:** MIXED  
+**Priority:** 🟠 High  
+**Current State:** No dashboard aggregation endpoint exists. `artifacts/api-server/src/services/dashboard/` and `routes/dashboard.ts` do not exist. The frontend dashboard uses static mock data. No OpenAPI spec entry for `/dashboard`.  
+**Size:** Medium  
 
-### Subtasks:
-- [ ] API‑DASH‑001.1: Add dashboard aggregation endpoint to OpenAPI spec with comprehensive response schema. (AGENT) – `lib/api‑spec/openapi.yaml`  
-  **verification:** Spec validates; generated types include all metric fields.
-- [ ] API‑DASH‑001.2: Write integration tests for aggregation endpoint (TDD Red). (AGENT) – `__tests__/api/dashboard.test.ts`  
-  **verification:** Tests fail with 404 (no route).
-- [ ] API‑DASH‑001.3: Implement `DashboardService` with aggregation queries across all contexts. (AGENT) – `services/dashboard/dashboard-service.ts`  
-  **verification:** Unit tests with mocked repositories pass.
-- [ ] API‑DASH‑001.4: Implement caching layer with organization_id + period cache key. (AGENT)  
-  **verification:** Cache tests pass; second request within cache window returns cached data.
-- [ ] API‑DASH‑001.5: Create route and wire to service. (AGENT) – `routes/dashboard.ts`  
-  **verification:** Integration tests go green.
-- [ ] API‑DASH‑001.6: Add endpoint to main router with auth middleware. (AGENT) – `routes/index.ts`  
-  **verification:** `pnpm typecheck` passes.
+**Description:** Build `GET /api/v1/dashboard/aggregate` — a single endpoint that aggregates metrics from all bounded contexts (CRM, Projects, Finance, Appointments, Documents, Portal), org-scoped, with 5-minute in-process cache.  
+
+**Depends on:** All Phase 3 API implementations (CRM, Projects, Finance) for data aggregation  
+**Blocks:** FRONT‑DASH‑001 (frontend hook requires this endpoint)  
+**Related Files:** `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/dashboard/dashboard-service.ts`, `artifacts/api-server/src/routes/dashboard.ts`  
+
+**Imports / Exports**
+- Imports: `BaseRepository` (per-context); `drizzle-orm` sql helpers; `express` Router
+- Exports: `DashboardService` (class), `dashboardRouter` (Express Router), `DashboardAggregateResponse` (type)
+
+**Definition of Done**
+- [ ] OpenAPI spec adds `GET /dashboard/aggregate` with `period` query param (7d/30d/90d/1y) and full response schema
+- [ ] `pnpm --filter @workspace/api-spec run codegen` succeeds
+- [ ] Integration test: `GET /dashboard/aggregate` → 200 with all metric sections present (TDD red then green)
+- [ ] `artifacts/api-server/src/services/dashboard/dashboard-service.ts` exports `DashboardService` with `aggregate(orgId, period)` method
+- [ ] All metrics organisation-scoped; no cross-org data leakage
+- [ ] 5-minute in-process cache keyed by `(orgId, period)`; cache invalidated on mutation events
+- [ ] Response includes `lastUpdated: ISO timestamp`
+- [ ] `dashboardRouter` mounted in `routes/index.ts` with `authMiddleware`
+- [ ] `pnpm run typecheck` passes with zero errors
+
+**Out of Scope**
+- Real-time WebSocket updates (deferred to Phase 5+)
+- Per-metric endpoint (single aggregation endpoint only)
+- Historical trend data (current period snapshots only)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- All queries must include `WHERE organization_id = $orgId` — no global data
+
+**Output Artifacts**
+- Code changes in: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/services/dashboard/dashboard-service.ts`, `artifacts/api-server/src/routes/dashboard.ts`, `artifacts/api-server/src/routes/index.ts`
+- Tests added/updated in: `artifacts/api-server/src/__tests__/api/dashboard/dashboard.test.ts`
+- Documentation: [N/A]
+- Migration files: [N/A]
+
+**Rollback**
+- Granularity: file-level — delete `artifacts/api-server/src/services/dashboard/`, `routes/dashboard.ts`; revert `routes/index.ts` mount; revert spec changes; re-run codegen
+- Halt condition: if `pnpm run typecheck` fails or any integration test fails, stop and fix before proceeding
+
+**Rules to Follow**
+- Single `aggregate()` method on `DashboardService` — deep module principle
+- Cache key must be `(orgId, period)` — never share data across organisations
+- If any sub-aggregation fails (e.g. finance query errors), return partial results with an `errors` field
+
+**Verification**
+```bash
+pnpm --filter @workspace/api-spec run codegen
+pnpm --filter @workspace/api-server test -- dashboard.test.ts
+pnpm run typecheck
+```
+
+**Advanced Code Patterns**
+- Parallel `Promise.allSettled()` for all 6 sub-aggregation queries — avoids serial blocking
+- `Map<string, { data, expiresAt }>` in-process cache keyed by `(orgId, period)`
+- Partial result pattern — return what succeeded plus an `errors[]` array for failed contexts
+
+**Anti-Patterns**
+- Serial aggregation queries — multiplies latency
+- Missing org scoping — data leakage across organisations
+- Failing entire response if one sub-context errors — poor UX; use partial results
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Dashboard is a cross-cutting read model; it reads from multiple bounded contexts but writes to none
+- TDD: Write integration test (red) before implementing the service
+- BDD: "As a user, I see up-to-date metrics from all business areas on a single dashboard screen"
+- Deep Module: `DashboardService.aggregate()` hides 6 parallel DB queries, caching, error tolerance, and org scoping behind one call
 
 ---
 
-## Dashboard Frontend
+### Subtasks
+
+- [ ] API‑DASH‑001.0.25 (AGENT): Read this task, existing Phase 3 API implementations, and `lib/api-spec/openapi.yaml` structure in full.  
+  *No action — pause until fully understood.*
+
+- [ ] API‑DASH‑001.0.5 (AGENT): Research `Promise.allSettled()` aggregation patterns and in-process caching strategies for Express 5 ESM (May 2026). Confirm partial result pattern.  
+  *Document findings briefly or note "no changes."*
+
+- [ ] API‑DASH‑001.0.75 (AGENT): Reason about which Phase 3 repositories to inject into `DashboardService`. Default: inject per-context repository instances; do not create new DB connections.  
+  *If uncertain, ask before executing.*
+
+- [ ] API‑DASH‑001.1 (AGENT): Add `GET /dashboard/aggregate` to OpenAPI spec; run codegen.  
+  **File(s):** `lib/api-spec/openapi.yaml`  
+  **Verification:** Codegen succeeds; generated types available.
+
+- [ ] API‑DASH‑001.2 (AGENT): Write integration test for aggregation endpoint (TDD red phase).  
+  **File(s):** `artifacts/api-server/src/__tests__/api/dashboard/dashboard.test.ts`  
+  **Verification:** Test compiles and fails with 404 (no route).
+
+- [ ] API‑DASH‑001.3 (AGENT): Implement `DashboardService.aggregate()` with parallel queries and caching.  
+  **File(s):** `artifacts/api-server/src/services/dashboard/dashboard-service.ts`  
+  **Verification:** Unit tests with mocked repositories pass.
+
+- [ ] API‑DASH‑001.4 (AGENT): Create route and wire to service; mount in main router.  
+  **File(s):** `artifacts/api-server/src/routes/dashboard.ts`, `artifacts/api-server/src/routes/index.ts`  
+  **Verification:** Integration test turns green.
+
+- [ ] API‑DASH‑001.5 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
 
 ### [ ] FRONT‑DASH‑001: Dashboard Frontend Strategy
 **Status:** ⏳ Not Started  
-**Depends on:** API‑DASH‑001 (backend aggregation endpoint).  
-**Definition of Done:** Frontend dashboard implementation strategy established with:  
-- **Client‑side hooks approach:** Use React Query hooks to call API‑DASH‑001 endpoint until real‑time updates are needed  
-- **Component structure:** `components/dashboard/` with modular metric cards (CRMCard, ProjectsCard, FinanceCard, etc.)  
-- **Real‑time strategy:** Future Phase 5+ will add WebSocket updates; current Phase 4 uses polling (30‑second refresh)  
-- **Loading states:** Skeleton loaders for each metric card during initial load and refresh  
-- **Error handling:** Graceful degradation showing last successful data with error banner  
-- **Responsive layout:** Bento grid layout that adapts to mobile/tablet/desktop viewports  
-**Implementation decision:** Use client‑side hooks approach for Phase 4, defer real‑time WebSocket updates to Phase 5+ when infrastructure is ready.  
-**Interim strategy:** Until API‑DASH‑001 exists, use client‑side hooks with mock data that matches the expected API response structure for seamless migration.  
-**Related Files:** `artifacts/apex-os/src/components/dashboard/`, `src/hooks/useDashboard.ts`
+**Actor:** AGENT  
+**Priority:** 🟠 High  
+**Current State:** The dashboard page (`artifacts/apex-os/src/pages/Dashboard.tsx`) renders static mock data. No `useDashboard` hook exists. No `components/dashboard/` metric card components exist. UI cannot display real aggregated data.  
+**Size:** Medium  
 
-### Subtasks:
-- [ ] FRONT‑DASH‑001.1: Create dashboard component structure with metric cards. (AGENT) – `components/dashboard/`  
-  **verification:** Components render with mock data.
-- [ ] FRONT‑DASH‑001.2: Implement `useDashboard` hook using React Query to call API‑DASH‑001. (AGENT) – `src/hooks/useDashboard.ts`  
-  **verification:** Hook fetches data successfully; includes loading/error states.
-- [ ] FRONT‑DASH‑001.3: Add skeleton loaders and error handling to dashboard components. (AGENT)  
-  **verification:** Loading states display properly; error banner appears on API failure.
-- [ ] FRONT‑DASH‑001.4: Implement responsive bento grid layout for dashboard. (AGENT) – `components/dashboard/Dashboard.tsx`  
-  **verification:** Layout adapts correctly to different viewport sizes.
-- [ ] FRONT‑DASH‑001.5: Add 30‑second polling refresh with user control to pause/resume. (AGENT)  
-  **verification:** Data refreshes automatically; pause/resume controls work.
-- [ ] FRONT‑DASH‑001.6: Update main dashboard page to use new aggregation endpoint. (AGENT) – `src/pages/Dashboard.tsx`  
-  **verification:** Dashboard displays real aggregated data from API.
+**Description:** Implement the dashboard frontend using React Query hooks against `API‑DASH‑001`, modular bento-grid metric cards with skeleton loaders, and 30-second polling with pause/resume control.  
 
----
+**Depends on:** API‑DASH‑001 (backend aggregation endpoint)  
+**Blocks:** [N/A — final phase of dashboard implementation]
+**Related Files:** `artifacts/apex-os/src/hooks/useDashboard.ts`, `artifacts/apex-os/src/components/dashboard/`, `artifacts/apex-os/src/pages/Dashboard.tsx`  
 
-## Progress Tracking
+**Imports / Exports**
+- Imports: `useQuery` from `@tanstack/react-query`; generated dashboard API hook; `Skeleton`, `Card` from `shadcn/ui`; `motion` from `framer-motion`
+- Exports: `useDashboard` (hook), `DashboardPage` (page component), metric card components
 
-### Overall Status
-**Dashboard Context:** [ ] 0/2 parent tasks complete
+**Definition of Done**
+- [ ] `artifacts/apex-os/src/hooks/useDashboard.ts` exports `useDashboard(period)` using React Query, polling every 30 seconds
+- [ ] Hook exposes `{ data, isLoading, isError, lastUpdated, pause, resume }` API
+- [ ] `artifacts/apex-os/src/components/dashboard/` contains: `CRMCard.tsx`, `ProjectsCard.tsx`, `FinanceCard.tsx`, `AppointmentsCard.tsx`, `DocumentsCard.tsx`, `PortalCard.tsx`
+- [ ] Each metric card shows skeleton loader during `isLoading`; graceful error state with last known data
+- [ ] `artifacts/apex-os/src/pages/Dashboard.tsx` updated to use `useDashboard` hook (not mock data)
+- [ ] Responsive bento grid layout adapts to mobile/tablet/desktop
+- [ ] Pause/resume polling control visible in dashboard header
+- [ ] `pnpm run typecheck` passes with zero errors
+- [ ] `pnpm --filter @workspace/apex-os run dev` shows live dashboard data
 
-### Context Breakdown
-- **Backend Aggregation:** [ ] 0/1 complete (API endpoint)
-- **Frontend Implementation:** [ ] 0/1 complete (components & hooks)
+**Out of Scope**
+- WebSocket real-time updates (deferred to Phase 5+)
+- Per-metric drill-down pages (separate analytics feature)
+- Dashboard customisation (pinning/reordering cards)
 
-### Dependencies
-- **All Phase 3 APIs** provide data sources for aggregation
-- **API‑DASH‑001** enables frontend dashboard functionality
-- **React Query** provides data fetching and caching
-- **Bento grid layout** provides responsive design system
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Do not add business logic to metric card components — they are pure display components
 
-### Next Actions
-- [ ] Start API-DASH-001.1: Add dashboard endpoint to OpenAPI
-- [ ] Start FRONT-DASH-001.1: Create dashboard component structure
-- [ ] Start FRONT-DASH-001.2: Implement useDashboard hook
+**Output Artifacts**
+- Code changes in: `artifacts/apex-os/src/hooks/useDashboard.ts`, `artifacts/apex-os/src/components/dashboard/`, `artifacts/apex-os/src/pages/Dashboard.tsx`
+- Tests added/updated in: [N/A]
+- Documentation: [N/A]
+- Migration files: [N/A]
 
-### Verification Commands
+**Rollback**
+- Granularity: file-level — delete `artifacts/apex-os/src/hooks/useDashboard.ts` and `components/dashboard/`; revert `Dashboard.tsx` to mock data version
+- Halt condition: if `pnpm run typecheck` fails, stop and fix types before proceeding
+
+**Rules to Follow**
+- Use generated React Query hook from `lib/api-client-react` — do not hand-write `fetch()` calls
+- All metric cards must be pure display components with no data fetching
+- `useDashboard` is the single source of truth for dashboard data — no per-card fetching
+
+**Verification**
 ```bash
-# Backend Dashboard verification
-pnpm test -- dashboard
-pnpm typecheck
-
-# Frontend Dashboard verification
+pnpm run typecheck
 pnpm --filter @workspace/apex-os run dev
-# Verify dashboard renders correctly
+# Navigate to /dashboard; verify live data, skeleton loaders, pause/resume
 ```
 
+**Advanced Code Patterns**
+- `useQuery` with `refetchInterval: 30_000` and `enabled: !isPaused` state for pause/resume polling
+- Skeleton components as direct replacements for metric cards during loading
+- `AnimatePresence` for smooth card transitions when data updates
+
+**Anti-Patterns**
+- Per-card data fetching — creates N parallel requests; use single `useDashboard` hook
+- Hard-coded mock data in production components — use `mockData.ts` only during dev until API is live
+- Polling without pause/resume — unnecessary load on the backend when tab is in background
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: [N/A — frontend presentation layer]
+- TDD: [N/A — no unit tests for pure display components; rely on typecheck and visual verification]
+- BDD: "As a user, I see my dashboard data refresh every 30 seconds with a visible last-updated timestamp"
+- Deep Module: `useDashboard` hides React Query setup, polling, pause/resume, and error handling behind a simple hook API
+
 ---
 
-## File Index
+### Subtasks
 
-### Backend
-- `lib/api-spec/openapi.yaml` - Dashboard aggregation OpenAPI spec
-- `artifacts/api-server/src/services/dashboard/dashboard-service.ts` - Dashboard aggregation service
-- `routes/dashboard.ts` - Dashboard routes
-- `artifacts/api-server/__tests__/api/dashboard.test.ts` - Integration tests
+- [ ] FRONT‑DASH‑001.0.25 (AGENT): Read this task, `API‑DASH‑001` response schema, existing `Dashboard.tsx`, and mock data shape in full.  
+  *No action — pause until fully understood.*
 
-### Frontend
-- `src/hooks/useDashboard.ts` - React Query hook for dashboard data
-- `artifacts/apex-os/src/components/dashboard/Dashboard.tsx` - Main dashboard component
-- `artifacts/apex-os/src/components/dashboard/` - Metric card components:
-  - `CRMCard.tsx` - CRM metrics card
-  - `ProjectsCard.tsx` - Projects metrics card
-  - `FinanceCard.tsx` - Finance metrics card
-  - `AppointmentsCard.tsx` - Appointments metrics card
-  - `DocumentsCard.tsx` - Documents metrics card
-  - `PortalCard.tsx` - Portal metrics card
-- `src/pages/Dashboard.tsx` - Dashboard page (updated to use new aggregation)
+- [ ] FRONT‑DASH‑001.0.5 (AGENT): Research React Query `refetchInterval` and `enabled` patterns for pause/resume polling (May 2026). Confirm `AnimatePresence` usage for card transitions.  
+  *Document findings briefly or note "no changes."*
+
+- [ ] FRONT‑DASH‑001.0.75 (AGENT): Reason about whether to use the generated hook from `api-client-react` or build a custom one. Default: use the generated hook; wrap it in `useDashboard` for polling control.  
+  *If uncertain, use the generated hook approach.*
+
+- [ ] FRONT‑DASH‑001.1 (AGENT): Create all 6 metric card components with skeleton loader states.  
+  **File(s):** `artifacts/apex-os/src/components/dashboard/`  
+  **Verification:** Components render with placeholder props; `pnpm run typecheck` clean.
+
+- [ ] FRONT‑DASH‑001.2 (AGENT): Implement `useDashboard` hook with polling and pause/resume.  
+  **File(s):** `artifacts/apex-os/src/hooks/useDashboard.ts`  
+  **Verification:** Hook returns `{ data, isLoading, isError, pause, resume }`; `pnpm run typecheck` clean.
+
+- [ ] FRONT‑DASH‑001.3 (AGENT): Update `Dashboard.tsx` to use `useDashboard` hook and bento grid layout.  
+  **File(s):** `artifacts/apex-os/src/pages/Dashboard.tsx`  
+  **Verification:** `pnpm run typecheck` clean; dev server renders dashboard.
+
+- [ ] FRONT‑DASH‑001.4 (HUMAN): Final review and sign-off.  
+  **Verification:** Approved.
+
+---
+
+## Execution Order
+
+```
+API‑DASH‑001 (OpenAPI spec + service + routes)
+  └─> FRONT‑DASH‑001 (React components + useDashboard hook)
+```

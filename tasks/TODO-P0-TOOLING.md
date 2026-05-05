@@ -4,148 +4,368 @@ This document contains tooling and infrastructure tasks that enable development 
 
 ---
 
-## [ ] TOOLING-001: Create Project Scaffolding Files  
-**Status:** ⏳ Not Started  
-**Current state:** The codebase has **no `README.md`**, **no `.env.example`**, and **no `.prettierrc`** – these files are completely missing.  
-**Definition of Done:** `README.md`, `.env.example`, `.prettierrc` exist and are up‑to‑date.  
-**Out of Scope:** Full deployment documentation, advanced ESLint config (ESLint is not configured at all – that can be added in a future tooling pass).  
-**Blocks:** All development tasks  
-**Blocked By:** none  
-**Related Files:** `README.md`, `.env.example`, `.prettierrc`  
-**Advanced Code Patterns:** Centralised environment variable validation; type-safe configuration management; environment-specific overrides; configuration schema evolution.
-**Anti-Patterns:** Missing `.env.example` (devs guessing variables); no README (onboarding chaos); hardcoded environment variables; runtime configuration errors.
-**Rules to Follow:**
-- `README.md` must explain the project, setup, and architecture highlights
-- `.env.example` must document every required variable with descriptions
-- All environment variables must be validated at startup
-- Configuration must be type-safe with Zod schemas
-- Environment-specific validation rules must be enforced
+## [ ] TOOLING-001: Create Project Scaffolding Files
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** The codebase has **no `README.md`** at root, **no `.env.example`**, and **no `.prettierrc`** — these files are completely missing. A `scripts/README.md` exists but does not serve as a project-level README.
+**Size:** Medium
 
-**DDD:** N/A – project scaffolding, but the README should mention the domain and bounded contexts.  
-**TDD:** N/A.  
-**BDD:** N/A.  
-**Deep Module:** N/A.
+**Description** Create `README.md`, `.env.example`, and `.prettierrc` at the repository root. Implement Zod-based environment variable validation in the API server to fail fast on missing/invalid config.
 
-### Subtasks:
-- [ ] TOOLING-001.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
-- [ ] TOOLING-001.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
-- [ ] TOOLING-001.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
-- [ ] TOOLING-001.1: Write `README.md` with project overview, quick start, architecture summary, and link to bounded contexts. (AGENT) – `README.md`  
-  **Verification:** `README.md` exists and covers all required sections.
-- [ ] TOOLING-001.2: Create `.env.example` and environment variable validation. Create Zod schema for `process.env` and validate at server startup. List all required variables: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `PORTAL_JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `ESIGN_PROVIDER_API_KEY`, `ESIGN_PROVIDER_BASE_URL`, `MAGIC_LINK_EXPIRY_MINUTES`, `PORTAL_JWT_EXPIRY_HOURS`, etc. (AGENT) – `.env.example`, `src/lib/env-validation.ts`  
-  **Verification:** `.env.example` lists all required variables with descriptions; server fails fast with clear error messages for missing/invalid variables; `pnpm run build:validate-config` passes.
-- [ ] TOOLING-001.3: Add `.prettierrc` with project‑wide rules (semi: true, singleQuote: true, trailingComma: 'all'). (AGENT) – `.prettierrc`  
+**Depends on:** [N/A]
+**Blocks:** All development tasks requiring environment setup or onboarding
+**Related Files:** `README.md`, `.env.example`, `.prettierrc`, `artifacts/api-server/src/lib/env-validation.ts`
+
+**Imports / Exports**
+- Imports: [N/A]
+- Exports: Exports `env` config object from `env-validation.ts` (typed, validated)
+
+**Definition of Done**
+- [ ] `README.md` exists with project overview, quick-start guide, architecture summary, and link to `docs/bounded-contexts.md`
+- [ ] `.env.example` lists all required variables with descriptions (see Rules section for full list)
+- [ ] `.prettierrc` exists with project-wide rules (`semi: true`, `singleQuote: true`, `trailingComma: "all"`)
+- [ ] `artifacts/api-server/src/lib/env-validation.ts` exports a Zod-validated `env` object; server fails fast with clear error messages on missing/invalid variables
+- [ ] `pnpm prettier --check src/` runs without errors after configuration
+
+**Out of Scope**
+- Full deployment or CI/CD documentation
+- ESLint configuration (separate TOOLING task)
+- Advanced Prettier plugin setup
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never modify: `.replit`, `pnpm-workspace.yaml`, root `tsconfig.json`
+- Never commit: actual `.env` values, credentials, secrets — only `.env.example` with placeholder values
+- `env-validation.ts` must never log or expose secret values; log only which key is missing/invalid
+
+**Output Artifacts**
+- Code changes in: `artifacts/api-server/src/lib/env-validation.ts`
+- Documentation: `README.md`, `.env.example`, `.prettierrc`
+
+**Rollback**
+- Granularity: file-level
+- Halt condition: `pnpm typecheck` fails after adding `env-validation.ts` → revert the validation file; scaffolding files (README, .env.example, .prettierrc) can remain
+
+**Rules to Follow**
+- `README.md` must mention the domain and bounded contexts
+- `.env.example` must document every required variable with a description:
+  `DATABASE_URL`, `JWT_SECRET`, `PORT`, `PORTAL_JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `ESIGN_PROVIDER_API_KEY`, `ESIGN_PROVIDER_BASE_URL`, `MAGIC_LINK_EXPIRY_MINUTES`, `PORTAL_JWT_EXPIRY_HOURS`
+- All environment variables must be validated at server startup via Zod
+- Configuration must be type-safe — consumers import `env` from `env-validation.ts`, never `process.env` directly
+- Environment-specific validation rules must be enforced (e.g., `NODE_ENV` guards)
+
+**Verification**
+```bash
+pnpm typecheck
+pnpm prettier --check src/
+# Manual: start api-server with a missing var and confirm descriptive error message
+```
+
+**Advanced Code Patterns**
+- Centralised environment variable validation with Zod (`z.object({ DATABASE_URL: z.string().url(), ... })`)
+- Type-safe configuration export: `export const env = schema.parse(process.env)` — typed `env` object used everywhere instead of `process.env` directly
+- Environment-specific overrides via `NODE_ENV` branches within the Zod schema
+
+**Anti-Patterns**
+- Missing `.env.example` — developers guess required variables, leading to runtime failures
+- Accessing `process.env.DATABASE_URL` directly in business logic without validation
+- Logging secret values in error messages during startup validation
+- Hardcoded environment variable values anywhere in source
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: README should mention bounded contexts; `.env.example` documents infrastructure dependencies per context
+- TDD: [N/A] – scaffolding task; env-validation catches runtime misconfiguration at startup
+- BDD: [N/A]
+- Deep Module: `env-validation.ts` is a deep module — simple `env` object interface hiding complex Zod parsing and validation logic
+
+---
+
+### Subtasks
+- [ ] TOOLING-001.0.25 (AGENT): Read the entire task and all related info. No action – pause until fully understood.
+- [ ] TOOLING-001.0.5 (AGENT): Research latest best practices (as of 05/2026). Review Zod v4 schema patterns for env validation; check if `zod/v4` import path is required (Zod v3.25+ ships compatibility path); identify any new env vars from DOMAIN-004 ADRs.
+- [ ] TOOLING-001.0.75 (AGENT): Reason about the task. If any required env variable is unclear or its type is uncertain, ask the user before writing.
+- [ ] TOOLING-001.1 (AGENT): Write `README.md` with project overview, quick start, architecture summary, and link to bounded contexts.
+  **File(s):** `README.md`
+  **Verification:** File exists; covers all required sections.
+- [ ] TOOLING-001.2 (AGENT): Create `.env.example` with all required variables (see Rules section). Create Zod schema for `process.env` and validate at server startup.
+  **File(s):** `.env.example`, `artifacts/api-server/src/lib/env-validation.ts`
+  **Verification:** `.env.example` lists all required variables with descriptions; server fails fast with clear error on missing/invalid variables; `pnpm typecheck` passes.
+- [ ] TOOLING-001.3 (AGENT): Add `.prettierrc` with project-wide rules (`semi: true`, `singleQuote: true`, `trailingComma: "all"`).
+  **File(s):** `.prettierrc`
   **Verification:** `pnpm prettier --check src/` runs without errors after configuration.
-- [ ] TOOLING-001.4 (AGENT): Add environment variables for new services: `REDIS_URL` (if caching/real‑time component chosen), `MEILISEARCH_URL` or `TYPESENSE_URL` (if external search engine chosen in ADR), `WS_PORT` (if WebSocket server runs separately). Update `.env.example` accordingly.  
-  **Verification:** All new variables documented; configuration validation passes.
+- [ ] TOOLING-001.4 (AGENT): Add environment variables for future services to `.env.example`: `REDIS_URL` (if caching/real-time chosen), `MEILISEARCH_URL` or `TYPESENSE_URL` (if external search engine chosen in DOMAIN-004 ADR), `WS_PORT` (if WebSocket runs separately). Mark these as optional/conditional.
+  **File(s):** `.env.example`, `artifacts/api-server/src/lib/env-validation.ts`
+  **Verification:** All new variables documented; configuration validation passes with optional variables absent.
+- [ ] TOOLING-001.5 (HUMAN): Final review and sign-off.
+  **Verification:** Approved.
 
 ---
 
-## [ ] TOOLING-002: Enable Strict TypeScript Flags  
-**Status:** ⏳ Not Started  
-**Current state:** `tsconfig.base.json` currently has `noImplicitOverride: false`, `noUnusedLocals: false`, `strictFunctionTypes: false` – these are explicitly disabled for prototyping. This task enables them for production rigour.  
-**Definition of Done:** `tsconfig.base.json` sets `noImplicitOverride: true`, `noUnusedLocals: true`, `strictFunctionTypes: true`. Workspace typecheck passes.  
-**Out of Scope:** Full ESLint integration.  
-**Blocks:** All implementation tasks  
-**Blocked By:** none  
-**Related Files:** `tsconfig.base.json`  
-**Advanced Code Patterns:** Strict type checking to catch domain invariant violations at compile time.  
-**Anti-Patterns:** Relaxed flags masking missing overloads or unreachable code.  
-**Rules to Follow:**  
-- Apply changes only to `tsconfig.base.json`.  
-- Fix all flagged errors before marking complete.
+## [ ] TOOLING-002: Enable Strict TypeScript Flags
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🟠 High
+**Current State:** `tsconfig.base.json` has `noImplicitOverride: false`, `noUnusedLocals: false`, and `strictFunctionTypes: false` — explicitly disabled for prototyping. All other strict flags (`strictNullChecks`, `noImplicitAny`, `strictBindCallApply`, etc.) are already enabled.
+**Size:** Small
 
-**DDD:** Strict typing reinforces domain invariants (e.g., email format, required fields) without runtime checks.  
-**TDD:** Run `pnpm typecheck` as a test; we will later include typecheck in CI.  
-**BDD:** N/A.  
-**Deep Module:** N/A.
+**Description** Enable the three remaining disabled strict flags in `tsconfig.base.json` and fix all resulting type errors, hardening the codebase for production-grade type safety.
 
-### Subtasks:
-- [ ] TOOLING-002.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
-- [ ] TOOLING-002.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
-- [ ] TOOLING-002.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
-- [ ] TOOLING-002.1: Enable `noImplicitOverride: true` in `tsconfig.base.json`. (AGENT) – `tsconfig.base.json`  
-  **Verification:** Flag enabled; typecheck passes or errors are documented.
-- [ ] TOOLING-002.2: Enable `noUnusedLocals: true` in `tsconfig.base.json`. (AGENT) – `tsconfig.base.json`  
-  **Verification:** Flag enabled; unused locals removed or prefixed with underscore.
-- [ ] TOOLING-002.3: Enable `strictFunctionTypes: true` in `tsconfig.base.json`. (AGENT) – `tsconfig.base.json`  
+**Depends on:** [N/A]
+**Blocks:** All implementation tasks that rely on correct TypeScript strictness
+**Related Files:** `tsconfig.base.json`
+
+**Imports / Exports**
+- Imports: [N/A]
+- Exports: [N/A]
+
+**Definition of Done**
+- [ ] `noImplicitOverride: true` set in `tsconfig.base.json`
+- [ ] `noUnusedLocals: true` set in `tsconfig.base.json`
+- [ ] `strictFunctionTypes: true` set in `tsconfig.base.json`
+- [ ] `pnpm run typecheck` passes with zero errors after all three flags enabled
+
+**Out of Scope**
+- Full ESLint integration (separate TOOLING task)
+- Enabling `noUnusedParameters` (deferred — may cause too many false positives during prototyping)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never commit: `.env*`, credentials, secrets
+- Apply changes **only** to `tsconfig.base.json` — do not modify individual workspace `tsconfig.json` files unless fixing a genuine error they expose
+
+**Output Artifacts**
+- Configuration change in: `tsconfig.base.json`
+- Code fixes in: any file flagged by newly enabled strict rules
+
+**Rollback**
+- Granularity: file-level (`tsconfig.base.json`)
+- Halt condition: A flag produces >20 unfixable errors in generated/third-party code → disable that specific flag and document the exception; do not revert the others
+
+**Rules to Follow**
+- Apply changes only to `tsconfig.base.json`
+- Fix all flagged errors before marking complete; do not suppress with `// @ts-ignore` unless it's generated code
+- Unused locals: prefix with `_` if intentionally unused (e.g., `_unusedParam`)
+
+**Verification**
+```bash
+pnpm run typecheck    # must pass with zero errors
+pnpm run build
+```
+
+**Advanced Code Patterns**
+- Strict typing reinforces domain invariants (e.g., email format, required fields) at compile time without runtime overhead
+- `strictFunctionTypes` prevents unsafe covariant function assignments in callback patterns (critical for repository and service interfaces)
+
+**Anti-Patterns**
+- Suppressing errors with `// @ts-ignore` or `any` casts instead of fixing the root cause
+- Relaxing flags in individual `tsconfig.json` overrides to silence errors
+- Leaving unused locals in domain code (signals incomplete refactors)
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: Strict typing reinforces domain invariants — e.g., `email format`, required fields — without runtime checks
+- TDD: `pnpm typecheck` acts as a compile-time test; included in CI after TOOLING-002 is complete
+- BDD: [N/A]
+- Deep Module: [N/A]
+
+---
+
+### Subtasks
+- [ ] TOOLING-002.0.25 (AGENT): Read the entire task and all related info. No action – pause until fully understood.
+- [ ] TOOLING-002.0.5 (AGENT): Research latest best practices (as of 05/2026). Review TypeScript 5.x strict flag documentation; understand the implications of each flag for the existing codebase.
+- [ ] TOOLING-002.0.75 (AGENT): Reason about the task. Run a dry-run typecheck mentally or on a branch to estimate error count. If errors seem excessive, discuss with user before enabling all flags at once.
+- [ ] TOOLING-002.1 (AGENT): Enable `noImplicitOverride: true` in `tsconfig.base.json`.
+  **File(s):** `tsconfig.base.json`
+  **Verification:** Flag enabled; `pnpm run typecheck` passes or all errors are documented.
+- [ ] TOOLING-002.2 (AGENT): Enable `noUnusedLocals: true` in `tsconfig.base.json`.
+  **File(s):** `tsconfig.base.json`
+  **Verification:** Flag enabled; unused locals removed or prefixed with `_`.
+- [ ] TOOLING-002.3 (AGENT): Enable `strictFunctionTypes: true` in `tsconfig.base.json`.
+  **File(s):** `tsconfig.base.json`
   **Verification:** Flag enabled; function type errors resolved.
-- [ ] TOOLING-002.4: Run full workspace typecheck and fix all errors. (AGENT)  
-  **Verification:** `pnpm run typecheck` passes without errors; `pnpm run build:typescript` optimized for CI caching; build times improve by >20%.
+- [ ] TOOLING-002.4 (AGENT): Run full workspace typecheck and fix all errors.
+  **File(s):** affected workspace files
+  **Verification:** `pnpm run typecheck` passes with zero errors.
+- [ ] TOOLING-002.5 (HUMAN): Final review and sign-off.
+  **Verification:** Approved.
 
 ---
 
-## [ ] TOOLING-003: Audit and Clean Up Unused Dependencies  
-**Status:** ⏳ Not Started  
-**Current state:** Multiple packages are declared but never imported – e.g., `cookie‑parser`, `react‑hook‑form`, `next‑themes`, `react‑day‑picker`, etc. (see INCOMPLETE.md §12 for full list).  
-**Definition of Done:** Unused packages are either wired into a Phase 1 feature or removed, with decision documented.  
-**Out of Scope:** Adding new dependencies.  
-**Blocks:** All implementation tasks  
-**Blocked By:** none  
-**Advanced Code Patterns:** Lean dependency tree; only keep what is used.  
-**Anti-Patterns:** Leaving dead dependencies that bloat the build and confuse developers.  
-**Rules to Follow:**  
-- For each package flagged in the analysis, determine if it's needed immediately.  
-- If not, remove it (with a comment if it will be reintroduced later).  
+## [ ] TOOLING-003: Audit and Clean Up Unused Dependencies
+**Status:** ⏳ Not Started
+**Actor:** MIXED
+**Priority:** 🟡 Medium
+**Current State:** Multiple packages are declared but never imported — e.g., `cookie-parser`, `react-hook-form`, `next-themes`, `react-day-picker`, and others (see INCOMPLETE.md §12 for full list). Build output and install time are inflated by dead packages.
+**Size:** Small
 
-**DDD:** N/A – purely technical cleanup.  
-**TDD:** N/A.  
-**BDD:** N/A.  
-**Deep Module:** N/A.
+**Description** Audit all workspace `package.json` files for unused dependencies; for each, decide to wire into a Phase 1 feature or remove. Document every decision.
 
-### Subtasks:
-- [ ] TOOLING-003.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
-- [ ] TOOLING-003.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
-- [ ] TOOLING-003.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
-- [ ] TOOLING-003.1: Audit list of unused deps and decide fate. (HUMAN)  
-  **Verification:** Decision documented in a comment within the relevant `package.json` or in a separate audit file.  
+**Depends on:** [N/A]
+**Blocks:** All implementation tasks (cleaner dependency tree reduces confusion and build time)
+**Related Files:** `artifacts/apex-os/package.json`, `artifacts/api-server/package.json`, workspace `package.json` files
+
+**Imports / Exports**
+- Imports: [N/A]
+- Exports: [N/A]
+
+**Definition of Done**
+- [ ] Every unused package identified and a fate decision documented (wire-in or remove)
+- [ ] Packages decided for removal are removed from their `package.json` files
+- [ ] `pnpm run typecheck` still passes after removals
+- [ ] `npx depcheck` (or equivalent) shows no dead packages
+
+**Out of Scope**
+- Adding new dependencies
+- Upgrading existing dependencies (separate task)
+- ESLint or build config changes
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never modify: `.replit`, root `tsconfig.json`, `pnpm-workspace.yaml`
+- Never commit: `.env*`, credentials, secrets
+- Do not remove packages that will clearly be needed in Phase 1 (e.g., `react-hook-form` is used in auth forms)
+
+**Output Artifacts**
+- Updated `package.json` files for affected workspaces
+- Documentation: decision log appended to `docs/dependencies.md` (create if absent)
+
+**Rollback**
+- Granularity: file-level (individual `package.json` files)
+- Halt condition: `pnpm run typecheck` fails after a removal → restore that package and mark it as "wire-in" instead
+
+**Rules to Follow**
+- For each package flagged, determine if it's needed in Phase 1 before removing
+- If removing, add a comment in `docs/dependencies.md` noting what was removed and why
+- Lean dependency tree — only keep what is actively used or imminently needed
+
+**Verification**
+```bash
+pnpm run typecheck
+npx depcheck --ignore-patterns="*.test.ts"
+pnpm run build
+```
+
+**Advanced Code Patterns**
+- [N/A] – dependency audit is a maintenance task
+
+**Anti-Patterns**
+- Leaving dead dependencies that inflate the build bundle and confuse developers about available libraries
+- Removing packages without checking if they're needed in an upcoming phase
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: [N/A] – technical cleanup
+- TDD: [N/A]
+- BDD: [N/A]
+- Deep Module: [N/A]
+
+---
+
+### Subtasks
+- [ ] TOOLING-003.0.25 (AGENT): Read the entire task and all related info. No action – pause until fully understood.
+- [ ] TOOLING-003.0.5 (AGENT): Research latest best practices (as of 05/2026). Review `depcheck` usage in pnpm monorepos; identify which packages on the "unused" list will be consumed in Phase 1 (e.g., `react-hook-form` for auth forms).
+- [ ] TOOLING-003.0.75 (AGENT): Reason about the task. If any package's fate is ambiguous, ask the user before removing.
+- [ ] TOOLING-003.1 (HUMAN): Audit list of unused deps and decide fate of each: wire-in or remove.
+  **File(s):** workspace `package.json` files
+  **Verification:** Decision documented in `docs/dependencies.md` or as comments in `package.json`.
   **Blocks:** TOOLING-003.2 (removal).
-- [ ] TOOLING-003.2: Remove those decided as unnecessary. (AGENT) – `package.json` files  
-  **Verification:** `pnpm run typecheck` still passes, and a dependency‑check tool (e.g., `npx depcheck`) shows no dead packages.
+- [ ] TOOLING-003.2 (AGENT): Remove packages decided as unnecessary.
+  **File(s):** affected `package.json` files
+  **Verification:** `pnpm run typecheck` passes; `npx depcheck` shows no dead packages.
+- [ ] TOOLING-003.3 (HUMAN): Final review and sign-off.
+  **Verification:** Approved.
 
 ---
 
-## [ ] TOOLING-004: Pin Zod Version & Verify drizzle‑zod Compatibility  
-**Status:** ⏳ Not Started  
-**Current state:** `zod` version is catalog‑pinned to `3.25.76`. Actual `drizzle-zod` version is `0.8.3` (not 0.45.2), compatibility must be verified before proceeding.  
-**Definition of Done:**  
-- Compatibility test passes: `drizzle-zod 0.8.3` works with catalog Zod `3.25.76`.  
-- A minimal Drizzle schema + `drizzle‑zod` test exists, proving `createSelectSchema` and `createInsertSchema` work correctly and pass `pnpm typecheck`.  
-- Documentation updated to reflect actual compatibility status (compatible or pinned).  
-**Out of Scope:** Full ESLint integration.  
-**Blocks:** All database schema tasks  
-**Blocked By:** DEP-001.4  
-**Related Files:** `package.json` (root and relevant workspaces), `lib/db/src/__tests__/zod-compat.test.ts`  
-**Advanced Code Patterns:** Semantic versioning with automated compatibility testing; dependency pinning strategies; automated vulnerability scanning; semantic release workflows.
-**Anti-Patterns:** Floating dependency versions that can introduce incompatibilities; manual dependency management; lack of compatibility testing; ignoring security advisories.
-**Rules to Follow:**
+## [ ] TOOLING-004: Pin Zod Version & Verify drizzle-zod Compatibility
+**Status:** ⏳ Not Started
+**Actor:** AGENT
+**Priority:** 🔴 Critical
+**Current State:** `zod` is catalog-pinned to `^3.25.76`. `drizzle-zod` is `^0.8.3` in `lib/db/package.json`. The DB schema template (`lib/db/src/schema/index.ts`) already uses `import { z } from "zod/v4"` — indicating the `zod/v4` sub-path export from Zod 3.25+ is in use. Compatibility must be verified with an actual test before any version changes.
+**Size:** Small
+
+**Description** Verify that `drizzle-zod 0.8.3` + `drizzle-orm 0.45.2` + `zod 3.25.76` (including the `zod/v4` sub-path) work correctly together by running a minimal schema test. Document the finding. If the test fails, determine the correct version pin strategy.
+
+**Depends on:** DEP-001
+**Blocks:** All database schema tasks (Phase 2)
+**Related Files:** `pnpm-workspace.yaml`, `lib/db/package.json`, `lib/db/src/schema/index.ts`, `lib/db/src/__tests__/zod-compat.test.ts`, `docs/dependencies.md`
+
+**Imports / Exports**
+- Imports: `drizzle-orm/pg-core`, `drizzle-zod`, `zod/v4`
+- Exports: test artifacts only (no production exports from this task)
+
+**Definition of Done**
+- [ ] `lib/db/src/__tests__/zod-compat.test.ts` exists with a minimal Drizzle table and `createSelectSchema` / `createInsertSchema` assertions
+- [ ] Test passes: `pnpm vitest run zod-compat`
+- [ ] `pnpm typecheck` passes with no new errors
+- [ ] `docs/dependencies.md` states compatibility finding and re-verification instructions
+- [ ] If incompatible: version pin strategy documented and approved by HUMAN before any changes
+
+**Out of Scope**
+- Upgrading Zod to v4.x (full major) without user approval
+- Defining actual production schema tables (Phase 2 DB tasks)
+
+**Safety Boundaries**
+- Never modify: `lib/api-client-react/src/generated/`, `lib/api-zod/src/generated/`, `.generated/`
+- Never modify: `.replit`, root `tsconfig.json`
+- Never commit: `.env*`, credentials, secrets
+- Do NOT change any version pin before the compatibility test passes — test first, change later if needed
+
+**Output Artifacts**
+- Tests added in: `lib/db/src/__tests__/zod-compat.test.ts`
+- Documentation: `docs/dependencies.md`
+
+**Rollback**
+- Granularity: file-level
+- Halt condition: Test fails and the version incompatibility cannot be resolved → halt all Phase 2 schema work; raise with user for resolution
+
+**Rules to Follow**
 - Verify compatibility BEFORE changing any version pin
-- All dependency changes must pass automated compatibility tests
-- Security vulnerabilities must be addressed within 30 days
-- Version pins must include exact versions, not ranges
-- Compatibility matrix must be documented for all major dependencies
+- If test passes → no pin change needed; document the finding
+- If test fails → decide on pin/zod upgrade strategy with user approval
+- `zod/v4` sub-path is a compatibility shim in Zod 3.25+; do not confuse with Zod v4 full major
+- Security vulnerabilities in any pinned dependency must be addressed within 30 days
 
-**DDD:** N/A – technical plumbing to keep the validation layer (Zod) aligned with the persistence layer (Drizzle).  
-**TDD:**  
-- Create `lib/db/src/__tests__/zod-compat.test.ts`.  
-- Write a test that defines a minimal Drizzle table (e.g., `test_table`) and generates `insertTestTableSchema` / `selectTestTableSchema` using `drizzle‑zod`.  
-- The test must verify that `selectTestTableSchema` is a Zod object with the expected shape and that `pnpm typecheck` passes.  
-**BDD:** N/A – no user‑visible behaviour.  
-**Deep Module:** N/A.
+**Verification**
+```bash
+pnpm vitest run zod-compat
+pnpm typecheck
+```
 
-### Subtasks:
-- [ ] TOOLING-004.0.25: Read the task in full, do not execute any actions until you have read the entire task and all its info, included related files. (AGENT)
-- [ ] TOOLING-004.0.5: Conduct up to date (05/2026), online research on the topics of the tasks and subtasks. This should include, but not be limited to, proper implementation, best practices, highest standards, advanced code patterns, anti-patterns, etc. (AGENT)
-- [ ] TOOLING-004.0.75: Reason over the entire task, the targeted and related code files, and your research. Does this task seem accurate, or is something not right? If there is ANY ambiguity or uncertainty, check with the user before execution. (AGENT)
-- [ ] TOOLING-004.1: Verify Zod 3.25.76 + drizzle-zod 0.8.3 compatibility by running the test in TOOLING‑004.2 BEFORE changing any version pin. If the test passes, REMOVE the version pin change from the task entirely. (AGENT)  
-  **Verification:** Test passes → no pin change needed; document finding. Test fails → decide on pin/zod upgrade strategy.
-- [ ] TOOLING-004.2: Create a minimal test table in `lib/db/src/__tests__/zod-compat.test.ts` and implement the Zod schema generation assertions. (AGENT)  
+**Advanced Code Patterns**
+- Compatibility testing before dependency upgrades — test the integration, not just the individual packages
+- Semantic versioning awareness: `drizzle-zod 0.8.x` uses `drizzle-orm` peer dependency; always verify peer ranges before upgrading either
+
+**Anti-Patterns**
+- Changing version pins before running the compatibility test
+- Assuming Zod 3.25 `zod/v4` sub-path is identical to Zod v4.x full release (they are different)
+- Manual dependency management without documented compatibility matrix
+
+**DDD / TDD / BDD / Deep Module notes**
+- DDD: [N/A] – technical plumbing keeping the validation layer (Zod) aligned with the persistence layer (Drizzle)
+- TDD: Create `lib/db/src/__tests__/zod-compat.test.ts`; write a test defining a minimal Drizzle table and asserting `createInsertSchema` / `createSelectSchema` produce correct Zod shapes; test must pass before marking complete
+- BDD: [N/A] – no user-visible behaviour
+- Deep Module: [N/A]
+
+---
+
+### Subtasks
+- [ ] TOOLING-004.0.25 (AGENT): Read the entire task and all related info. No action – pause until fully understood.
+- [ ] TOOLING-004.0.5 (AGENT): Research latest best practices (as of 05/2026). Confirm `drizzle-zod 0.8.3` peer dependency requirements; understand the `zod/v4` sub-path in Zod 3.25+ vs. a full Zod v4 upgrade; review Drizzle changelog for any breaking changes since 0.45.x.
+- [ ] TOOLING-004.0.75 (AGENT): Reason about the task. Inspect `lib/db/src/schema/index.ts` for the `zod/v4` import. If the compatibility matrix is unclear, discuss with user before running tests.
+- [ ] TOOLING-004.1 (AGENT): Verify `zod 3.25.76` + `drizzle-zod 0.8.3` + `zod/v4` sub-path compatibility by running the test in TOOLING-004.2 BEFORE changing any version pin.
+  **File(s):** `lib/db/src/__tests__/zod-compat.test.ts`
+  **Verification:** Test passes → no pin change needed; document finding. Test fails → determine version strategy.
+- [ ] TOOLING-004.2 (AGENT): Create minimal test table in `lib/db/src/__tests__/zod-compat.test.ts` and implement Zod schema generation assertions using `createSelectSchema` and `createInsertSchema`.
+  **File(s):** `lib/db/src/__tests__/zod-compat.test.ts`
   **Verification:** `pnpm vitest run zod-compat` passes; `pnpm typecheck` passes.
-- [ ] TOOLING-004.3: Document the compatibility finding in `docs/dependencies.md`. (AGENT)  
-  **Verification:** `docs/dependencies.md` states "Zod 3.25.76 is compatible with drizzle-zod 0.8.3 as of [date]; re‑verify on any drizzle‑zod upgrade."
-- [ ] TOOLING-004.4: Run `pnpm test` and `pnpm typecheck`; ensure compatibility. (HUMAN)  
-  **Verification:** Confirmed.  
+- [ ] TOOLING-004.3 (AGENT): Document the compatibility finding in `docs/dependencies.md`.
+  **File(s):** `docs/dependencies.md`
+  **Verification:** File states "Zod 3.25.76 is compatible with drizzle-zod 0.8.3 as of [date]; re-verify on any drizzle-zod upgrade."
+- [ ] TOOLING-004.4 (HUMAN): Run `pnpm test` and `pnpm typecheck`; confirm compatibility.
+  **Verification:** Confirmed.
   **Blocks:** All schema tasks (Phase 2).
+- [ ] TOOLING-004.5 (HUMAN): Final review and sign-off.
+  **Verification:** Approved.
 
 ---
 
